@@ -8,22 +8,21 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@rollup/plugin-commonjs": "25.0.4",
     "@codemirror/lang-javascript": "6.2.1",
     "@codemirror/theme-one-dark": "6.1.2",
+    "@rollup/plugin-commonjs": "25.0.4",
     "axios": "1.6.0",
     "codemirror": "6.0.1",
+    "decimal.js": "10.4.2",
     "element-plus": "2.2.9",
-    "qrcode.vue": "3.3.3",
+    "pinia": "^2.1.7",
     "sass": "1.53.0",
     "vite-plugin-style-import": "1.4.1",
     "vite-plugin-svg-icons": "2.0.1",
-    "vue": "3.2.32",
+    "vue": "^3.4.31",
     "vue-codemirror": "6.1.1",
     "vue-i18n": "9.2.0-beta.36",
-    "vue-router": "4.1.0",
-    "echarts": "^4.9.0",
-    "decimal.js": "10.4.2"
+    "vue-router": "4.1.0"
   },
   "devDependencies": {
     "@types/prismjs": "1.26.0",

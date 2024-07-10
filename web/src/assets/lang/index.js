@@ -1,8 +1,9 @@
 /**
- * @description 引入i18n
+ * 引入i18n
+ *
  * @author 刘志栋
  * @version 1.0
- * @since 0.11.2
+ * @since 2024/07/10
  */
 import {createI18n} from "vue-i18n";
 

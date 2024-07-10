@@ -5,7 +5,11 @@ let router = createRouter({
     routes: [
         {
             path: '/',
-            component: () => import('@/ScriptExecDemo/playground.vue'),
+            component: () => import('@/board/demo.vue'),
+        },
+        {
+            path: '/script',
+            component: () => import('@/script/playground.vue'),
         }
     ],
 });
