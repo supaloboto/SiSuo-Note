@@ -10,6 +10,10 @@ let router = createRouter({
         {
             path: '/script',
             component: () => import('@/script/playground.vue'),
+        },
+        {
+            path: '/vditor',
+            component: () => import('@/components/editor/index.vue'),
         }
     ],
 });

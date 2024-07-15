@@ -17,6 +17,7 @@
     "element-plus": "2.2.9",
     "pinia": "^2.1.7",
     "sass": "1.53.0",
+    "vditor": "^3.10.4",
     "vite-plugin-style-import": "1.4.1",
     "vite-plugin-svg-icons": "2.0.1",
     "vue": "^3.4.31",
