@@ -10,12 +10,14 @@ import {ref} from "vue";
 
 const compList = ref([{
   type: 'note',
-  id: 'test'
+  id: 'test',
+  pos: {x: 100, y: 120},
 }]);
+
 </script>
 
 <template>
-  <sisuo-comp v-for="(comp,index) in compList" :key="comp.id" :compInfo="comp"></sisuo-comp>
+  <sisuo-comp v-for="(comp,index) in compList" :key="comp.id" :compInfo="comp" :pos="comp.pos"></sisuo-comp>
 </template>
 
 <style scoped>
