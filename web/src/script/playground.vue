@@ -2,10 +2,10 @@
 import {Codemirror} from "vue-codemirror";
 import {javascript} from "@codemirror/lang-javascript";
 import {computed, ref, watch} from "vue";
-import expressionSplit from "@/ScriptExecDemo/expressionSplit";
-import {analyseExpressionToAST} from "@/ScriptExecDemo/ast";
-import {getExecutableTree} from "@/ScriptExecDemo/treeRender";
-import {getValueRefs} from "@/ScriptExecDemo/exec";
+import expressionSplit from "@/script/expressionSplit";
+import {analyseExpressionToAST} from "@/script/ast";
+import {getExecutableTree} from "@/script/treeRender";
+import {getValueRefs} from "@/script/exec";
 
 // 用户输入
 const inputRef = ref(null);

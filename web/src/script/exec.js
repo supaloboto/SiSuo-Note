@@ -1,6 +1,6 @@
 import {computed, ref} from "vue";
-import {Calc, Constant, Param} from "@/ScriptExecDemo/treeRender";
-import {runFormula} from "@/ScriptExecDemo/formula/runExpression";
+import {Calc, Constant, Param} from "@/script/treeRender";
+import {runFormula} from "@/script/formula/runExpression";
 
 /**
  * 获取变量引用
