@@ -20,10 +20,15 @@ const mouseMove = (evt) => {
   canvasStore.currentPointer.y = evt.clientY;
 }
 
+// 点击空白处 取消选中
+const clickBlank = () => {
+  canvasStore.currentPointer.selected = [];
+}
+
 </script>
 
 <template>
-  <div id="sisuo-canvas" @mousemove="mouseMove">
+  <div id="sisuo-canvas" @mousemove="mouseMove" @click="clickBlank">
     <sisuo-comp v-for="(comp,index) in components" :key="comp.id" :component="comp"></sisuo-comp>
   </div>
 </template>

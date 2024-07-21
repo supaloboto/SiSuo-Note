@@ -6,7 +6,7 @@
 * @since 2024/07/10
 */
 <script setup>
-import {computed, ref, toRef, watch} from "vue";
+import {computed, nextTick, ref, toRef, watch} from "vue";
 import {useCanvasStore} from "@/store/canvas";
 
 const props = defineProps({
@@ -82,39 +82,45 @@ const resizeWatch = ref(null);
  * 开始调整大小
  */
 const resizeStart = (evt, wrapper) => {
-  // 获取鼠标位置与对角点位之间矩阵量的方法
-  const getMouseRect = () => {
-    return {
-      width: wrapper.includes('w') ? (props.component.pos.x + props.component.rect.width - mousePos.value.x) : (mousePos.value.x - props.component.pos.x),
-      height: wrapper.includes('n') ? (props.component.pos.y + props.component.rect.height - mousePos.value.y) : (mousePos.value.y - props.component.pos.y),
-    }
-  }
-  // 记录当拖拽开始时的矩阵量
-  let lastRect = getMouseRect();
-  // 建立监听 在拖拽中调整组件大小
-  resizeWatch.value = watch(mousePos, () => {
-    const currentRect = getMouseRect();
-    // 以10px为最小宽度
-    if (currentRect.width > 10) {
-      const widthOffset = currentRect.width - lastRect.width;
+  // 组件大小调整方法
+  const resizeComp = () => {
+    // 获取当前由[选中定位点的对角点]与[鼠标位置]构成的矩阵宽高
+    // 因为鼠标位置实际上是鼠标图标的左上角 因此对鼠标位置数据做一点修正以使定位点感觉更加跟手
+    const fixedMousePos = {
+      x: mousePos.value.x - 6,
+      y: mousePos.value.y - 6,
+    };
+    const currentRect = {
+      width: wrapper.includes('w') ? (props.component.pos.x + props.component.rect.width - fixedMousePos.x) : (fixedMousePos.x - props.component.pos.x),
+      height: wrapper.includes('n') ? (props.component.pos.y + props.component.rect.height - fixedMousePos.y) : (fixedMousePos.y - props.component.pos.y),
+    };
+    // 以10px为最小宽度 调整组件宽度
+    const widthOffset = currentRect.width - props.component.rect.width;
+    if (props.component.rect.width + widthOffset > 10) {
       props.component.rect.width += widthOffset;
       // 如果是调整了左边的两个点 则需要调整位置
       if (wrapper.includes('w')) {
         props.component.pos.x -= widthOffset;
       }
     }
-    // 以10px为最小高度
-    if (currentRect.height > 10) {
-      const heightOffset = currentRect.height - lastRect.height;
+    // 以10px为最小高度 调整组件高度
+    const heightOffset = currentRect.height - props.component.rect.height;
+    if (props.component.rect.height + heightOffset > 10) {
       props.component.rect.height += heightOffset;
       // 如果是调整了上边的两个点 则需要调整位置
       if (wrapper.includes('n')) {
         props.component.pos.y -= heightOffset;
       }
     }
-    // 记录矩阵量
-    lastRect = getMouseRect();
+  }
+  // 因为@dragstart会在鼠标已经做了一定位移之后才触发 所以这里先手动调用一次 避免出现鼠标移动较快时定位点不跟手的情况
+  resizeComp();
+  // 建立监听 在拖拽中调整组件大小
+  resizeWatch.value = watch(mousePos, () => {
+    resizeComp();
   }, {deep: true});
+  // 因为有时候鼠标移动太快会导致监听不到mouseup事件 所以在document上建立监听
+  document.addEventListener('mouseup', resizeEnd);
 }
 
 /**
@@ -122,6 +128,9 @@ const resizeStart = (evt, wrapper) => {
  */
 const resizeEnd = () => {
   resizeWatch.value && resizeWatch.value();
+  resizeWatch.value = null;
+  // 移除document上的监听
+  document.removeEventListener('mouseup', resizeEnd);
 }
 
 </script>
@@ -140,7 +149,7 @@ const resizeEnd = () => {
     <div v-if="selected" v-for="wrapper in wrappers" :key="wrapper"
          :class="`resize-wrapper ${wrapper}`"
          @dragstart.stop.prevent="resizeStart($event,wrapper)"
-         @mouseup.stop="resizeEnd"
+         @mouseup="resizeEnd"
          @click.stop
          draggable="true"
     ></div>
