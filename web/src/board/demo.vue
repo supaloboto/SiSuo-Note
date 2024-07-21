@@ -6,20 +6,32 @@
 * @since 2024/07/10
 */
 <script setup>
-import {ref} from "vue";
+import {computed, ref} from "vue";
+import {useCanvasStore} from "@/store/canvas";
 
-const compList = ref([{
-  type: 'note',
-  id: 'test',
-  pos: {x: 100, y: 120},
-}]);
+const canvasStore = useCanvasStore();
+
+// 获取组件列表
+const components = computed(() => canvasStore.components);
+
+// 监听鼠标位置 同步到store
+const mouseMove = (evt) => {
+  canvasStore.currentPointer.x = evt.clientX;
+  canvasStore.currentPointer.y = evt.clientY;
+}
 
 </script>
 
 <template>
-  <sisuo-comp v-for="(comp,index) in compList" :key="comp.id" :compInfo="comp" :pos="comp.pos"></sisuo-comp>
+  <div id="sisuo-canvas" @mousemove="mouseMove">
+    <sisuo-comp v-for="(comp,index) in components" :key="comp.id" :component="comp"></sisuo-comp>
+  </div>
 </template>
 
 <style scoped>
-
+#sisuo-canvas {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
 </style>

@@ -9,15 +9,13 @@ import {defineStore} from "pinia";
 
 export const useGlobalStore = defineStore('global', {
     state: () => ({
-        // 系统设置 在index.html中引入的sysConfig.js文件中定义
+        // 系统设置
         sysConfig: null,
         // 用户信息
         userInfo: {id: null, name: null, sessionId: null},
-        // 页面模式 edit/view/check/test
-        pageMode: 'edit',
+        // 协议模式 http/https 协议影响到页面与系统剪切板的互动
+        protocol: 'http',
     }),
-    actions: {
-    },
-    getters: {
-    },
+    actions: {},
+    getters: {},
 })

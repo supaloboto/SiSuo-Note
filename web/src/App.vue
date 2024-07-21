@@ -1,8 +1,6 @@
 <template>
   <el-config-provider :locale="locale">
-    <div id="app">
-      <router-view></router-view>
-    </div>
+    <router-view></router-view>
   </el-config-provider>
 </template>
 
@@ -30,12 +28,18 @@ export default {
 
 <style lang="scss">
 /* 全局样式 */
-.eln-operation-button {
-  margin: 0 5px;
-  font-size: 20px;
-  cursor: pointer;
-  &:hover {
-    color: #409eff;
-  }
+html {
+  height: 100%;
+  display: flex;
+}
+
+body {
+  display: flex;
+  flex: 1;
+}
+
+#app {
+  display: flex;
+  flex: 1;
 }
 </style>
