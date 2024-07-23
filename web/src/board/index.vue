@@ -5,9 +5,9 @@
 * @version 1.0
 * @since 2024/07/10
 */
-<script setup>
+<script setup lang="ts">
 import {computed, ref} from "vue";
-import {useCanvasStore} from "@/store/canvas";
+import {useCanvasStore} from "@/stores/canvas";
 
 const canvasStore = useCanvasStore();
 
@@ -15,7 +15,7 @@ const canvasStore = useCanvasStore();
 const components = computed(() => canvasStore.components);
 
 // 监听鼠标位置 同步到store
-const mouseMove = (evt) => {
+const mouseMove = (evt: MouseEvent) => {
   canvasStore.currentPointer.x = evt.clientX;
   canvasStore.currentPointer.y = evt.clientY;
 }

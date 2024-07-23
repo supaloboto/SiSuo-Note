@@ -7,8 +7,8 @@
  */
 import {markRaw} from 'vue'
 // 引入组件
-import Component from "./component.vue";
-import Note from "./note";
+import SisuoComp from "./sisuo-comp.vue";
+import Note from "./blocks/note/index.vue";
 
 // 注册组件
 const compRegis = {
@@ -22,6 +22,6 @@ export default {
         globalProperties.$comp = (type) => {
             return compRegis[type];
         }
-        app.component('sisuo-comp', Component);
+        app.component('sisuo-comp', SisuoComp);
     },
 };

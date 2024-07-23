@@ -3,15 +3,16 @@
 // 双击事件
 const dblclick = (evt) => {
   // 双击时打开编辑器
+  console.log('dblclick');
 }
 
 const contextMenu = (evt) => {
-  console.log('contextMenu')
+  console.log('contextMenu');
 }
 
 defineExpose({
   dblclick, contextMenu
-})
+});
 
 </script>
 

@@ -1,39 +1,55 @@
-# vue-empty
+# vue-project
 
-## Project setup
-```
-yarn install
-```
+This template should help get you started developing with Vue 3 in Vite.
 
-### Compiles and hot-reloads for development
-```
-yarn run serve
-```
+## Recommended IDE Setup
 
-### Compiles and minifies for production
-```
-yarn run build
-```
+[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
 
-### Run your tests
-```
-yarn run test
-```
+## Type Support for `.vue` Imports in TS
 
-### Lints and fixes files
-```
-yarn run lint
+TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+
+## Customize configuration
+
+See [Vite Configuration Reference](https://vitejs.dev/config/).
+
+## Project Setup
+
+```sh
+yarn
 ```
 
-### Run your end-to-end tests
-```
-yarn run test:e2e
+### Compile and Hot-Reload for Development
+
+```sh
+yarn dev
 ```
 
-### Run your unit tests
-```
-yarn run test:unit
+### Type-Check, Compile and Minify for Production
+
+```sh
+yarn build
 ```
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+### Run Unit Tests with [Vitest](https://vitest.dev/)
+
+```sh
+yarn test:unit
+```
+
+### Run End-to-End Tests with [Cypress](https://www.cypress.io/)
+
+```sh
+yarn test:e2e:dev
+```
+
+This runs the end-to-end tests against the Vite development server.
+It is much faster than the production build.
+
+But it's still recommended to test the production build with `test:e2e` before deploying (e.g. in CI environments):
+
+```sh
+yarn build
+yarn test:e2e
+```

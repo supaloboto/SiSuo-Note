@@ -7,7 +7,7 @@
 */
 <script setup>
 import {computed, nextTick, ref, toRef, watch} from "vue";
-import {useCanvasStore} from "@/store/canvas";
+import {useCanvasStore} from "@/stores/canvas.ts";
 
 const props = defineProps({
   component: {type: Object},

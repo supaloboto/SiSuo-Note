@@ -1,5 +1,5 @@
 <script setup>
-import {Codemirror} from "vue-codemirror";
+import Codemirror from "codemirror-editor-vue3";
 import {javascript} from "@codemirror/lang-javascript";
 import {computed, ref, watch} from "vue";
 import expressionSplit from "@/script/expressionSplit";

@@ -1,30 +1,9 @@
-<template>
-  <el-config-provider :locale="locale">
-    <router-view></router-view>
-  </el-config-provider>
-</template>
-
-<script>
-import zhCn from 'element-plus/lib/locale/lang/zh-cn'
-
-export default {
-  name: "App",
-  data() {
-    return {};
-  },
-  created() {
-  },
-  mounted() {
-  },
-  computed: {},
-  methods: {},
-  setup() {
-    return {
-      locale: zhCn,
-    }
-  },
-};
+<script setup lang="ts">
 </script>
+
+<template>
+  <router-view></router-view>
+</template>
 
 <style lang="scss">
 /* 全局样式 */
