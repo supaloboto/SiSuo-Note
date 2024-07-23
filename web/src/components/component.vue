@@ -14,6 +14,9 @@ const props = defineProps({
   readonly: {type: Boolean, default: false},
 });
 
+// 组件ref
+const compRef = ref(null);
+
 // 组件位置样式
 const compDivStyle = computed(() => {
   return {
@@ -44,6 +47,8 @@ const dragStart = () => {
     props.component.pos.x = pos.x - dragMouseOffset.x;
     props.component.pos.y = pos.y - dragMouseOffset.y;
   }, {deep: true});
+  // 因为有时候鼠标移动太快会导致监听不到mouseup事件 所以在document上建立监听
+  document.addEventListener('mouseup', dragEnd);
 }
 /**
  * 结束拖拽方法
@@ -52,6 +57,8 @@ const dragStart = () => {
 const dragEnd = () => {
   dragWatch.value && dragWatch.value();
   dragWatch.value = null;
+  // 移除document上的监听
+  document.removeEventListener('mouseup', dragEnd);
 }
 
 /*------ 鼠标动作交互 ------*/
@@ -69,10 +76,13 @@ const mouseUp = (evt) => {
 
 // 双击
 const dblclick = (evt) => {
-  // todo 处理双击
+  compRef.value && compRef.value.dblclick && compRef.value.dblclick();
 }
 
-// todo 右键
+// 右键菜单
+const contextMenu = (evt) => {
+  compRef.value && compRef.value.contextMenu && compRef.value.contextMenu();
+}
 
 /*------ 四角边框 ------*/
 const selected = computed(() => canvasStore.currentPointer.selected.includes(props.component.id));
@@ -144,6 +154,7 @@ const resizeEnd = () => {
        @click.stop="click"
        @dblclick="dblclick"
        @mouseup="mouseUp"
+       @contextmenu.stop.prevent="contextMenu"
        draggable="true">
     <!-- 四角定位 -->
     <div v-if="selected" v-for="wrapper in wrappers" :key="wrapper"
@@ -155,6 +166,7 @@ const resizeEnd = () => {
     ></div>
     <!-- 组件 -->
     <component :is="$comp(component.type)"
+               ref="compRef"
                :compId="component.id"
                :data="component.data"
                :readonly="readonly"

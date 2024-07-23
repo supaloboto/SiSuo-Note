@@ -1,5 +1,18 @@
 <script setup>
 
+// 双击事件
+const dblclick = (evt) => {
+  // 双击时打开编辑器
+}
+
+const contextMenu = (evt) => {
+  console.log('contextMenu')
+}
+
+defineExpose({
+  dblclick, contextMenu
+})
+
 </script>
 
 <template>

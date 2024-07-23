@@ -10,7 +10,7 @@ import {defineStore} from "pinia";
 export const useCanvasStore = defineStore('canvas', {
     state: () => ({
         // 当前指针位置
-        currentPointer: {x: 0, y: 0, selected: []},
+        currentPointer: {x: 0, y: 0, selected: [], state: 'pointer'},
         // 其他用户指针位置 {user: '', x: 0, y: 0, selected: []]}
         pointers: [],
         // 组件列表
