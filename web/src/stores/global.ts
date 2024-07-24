@@ -2,7 +2,6 @@
  * 全局变量store
  *
  * @author 刘志栋
- * @version 1.0
  * @since 2023/05/23
  */
 import {defineStore} from "pinia";

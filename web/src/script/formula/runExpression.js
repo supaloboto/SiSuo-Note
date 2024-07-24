@@ -2,7 +2,6 @@
  * @deprecated 为了保持兼容性而留存
  * @description 数学算式执行工具 将算式拆解为二叉树 然后递归执行 以使手写算式也能套用DecimalJs以保证精度
  * @author 刘志栋
- * @version 1.0
  * @since 23.02.02
  */
 import * as Math from './math';

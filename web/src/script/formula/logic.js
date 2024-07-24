@@ -2,7 +2,6 @@
  * 逻辑公式
  *
  * @author 刘志栋
- * @version 1.0
  * @since 2023/12/22
  */
 import {argsToNumber, removeEmptyArgs} from "./runExpressionCommon";

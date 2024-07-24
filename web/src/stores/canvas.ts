@@ -2,13 +2,12 @@
  * 画布变量store
  *
  * @author 刘志栋
- * @version 1.0
  * @since 2023/05/23
  */
-import {defineStore} from "pinia";
+import {defineStore, StoreDefinition} from "pinia";
 import {ref} from "vue";
 
-export const useCanvasStore = defineStore('canvas', () => {
+export const useCanvasStore: StoreDefinition = defineStore('canvas', () => {
     // 组件列表
     const components = ref([{
         type: 'note',

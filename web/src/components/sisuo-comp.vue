@@ -2,7 +2,6 @@
 * 基础组件
 *
 * @author 刘志栋
-* @version 1.0
 * @since 2024/07/10
 */
 <script setup>

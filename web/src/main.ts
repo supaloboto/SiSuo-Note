@@ -2,7 +2,6 @@
  * 应用入口
  *
  * @author 刘志栋
- * @version 1.0
  * @since 2024/07/10
  */
 import './assets/css/main.css'
