@@ -1,28 +1,41 @@
+<!--
+ - 基础组件
+ -
+ - @author 刘志栋
+ - @since 2024/07/10
+ -->
+<script setup lang="ts">
 /**
-* 基础组件
-*
-* @author 刘志栋
-* @since 2024/07/10
-*/
-<script setup>
-import {computed, nextTick, ref, toRef, watch} from "vue";
-import {useCanvasStore} from "@/stores/canvas.ts";
+ * 基础组件
+ *
+ * @author 刘志栋
+ * @since 2024/07/10
+ */
 
-const props = defineProps({
-  component: {type: Object},
-  readonly: {type: Boolean, default: false},
-});
+import {computed, getCurrentInstance, ref, toRef, watch} from "vue";
+import {useCanvasStore} from "@/stores/canvas";
+import i18n from "@/assets/lang";
+import type {Component} from "@/components/component";
+
+const props = defineProps<Component>();
+
+// 使用$comp获取组件
+const {proxy} = getCurrentInstance() as any;
+const $comp = proxy.$comp;
+// 使用$t获取国际化文本
+const $t = i18n.global.t;
 
 // 组件ref
 const compRef = ref(null);
+const compData = toRef(props);
 
 // 组件位置样式
 const compDivStyle = computed(() => {
   return {
-    width: `${props.component.rect.width}px`,
-    height: `${props.component.rect.height}px`,
-    marginTop: `${props.component.pos.y}px`,
-    marginLeft: `${props.component.pos.x}px`,
+    width: `${props.rect.width}px`,
+    height: `${props.rect.height}px`,
+    marginTop: `${props.pos.y}px`,
+    marginLeft: `${props.pos.x}px`,
   }
 });
 
@@ -38,13 +51,13 @@ const dragWatch = ref(null);
 const dragStart = () => {
   // 拖拽开始 计算鼠标偏移量
   const dragMouseOffset = {
-    x: mousePos.value.x - props.component.pos.x,
-    y: mousePos.value.y - props.component.pos.y,
+    x: mousePos.value.x - props.pos.x,
+    y: mousePos.value.y - props.pos.y,
   };
   // 建立监听 在拖拽中移动组件
   dragWatch.value = watch(mousePos, (pos) => {
-    props.component.pos.x = pos.x - dragMouseOffset.x;
-    props.component.pos.y = pos.y - dragMouseOffset.y;
+    props.pos.x = pos.x - dragMouseOffset.x;
+    props.pos.y = pos.y - dragMouseOffset.y;
   }, {deep: true});
   // 因为有时候鼠标移动太快会导致监听不到mouseup事件 所以在document上建立监听
   document.addEventListener('mouseup', dragEnd);
@@ -61,36 +74,47 @@ const dragEnd = () => {
 }
 
 /*------ 鼠标动作交互 ------*/
-// 点击事件
-const click = (evt) => {
+/**
+ * 点击事件
+ */
+const click = (evt: MouseEvent) => {
   // 选中组件
-  canvasStore.selectComponent(props.component.id, !evt.ctrlKey);
+  canvasStore.selectComponent(props.id, !evt.ctrlKey);
 }
 
-// 鼠标抬起
-const mouseUp = (evt) => {
+/**
+ * 鼠标抬起
+ * @param evt
+ */
+const mouseUp = (evt: MouseEvent) => {
   // 因为dragStart需要preventDefault 所以dragEnd不能被自动触发 因此将停止拖拽的逻辑放在mouseUp上处理
   dragEnd();
 }
 
-// 双击
-const dblclick = (evt) => {
+/**
+ * 双击事件
+ * @param evt
+ */
+const dblclick = (evt: MouseEvent) => {
   compRef.value && compRef.value.dblclick && compRef.value.dblclick();
 }
 
-// 右键菜单
-const contextMenu = (evt) => {
+/**
+ * 右键事件
+ * @param evt
+ */
+const contextMenu = (evt: MouseEvent) => {
   compRef.value && compRef.value.contextMenu && compRef.value.contextMenu();
 }
 
 /*------ 四角边框 ------*/
-const selected = computed(() => canvasStore.currentPointer.selected.includes(props.component.id));
-const wrappers = ref(['nw', 'ne', 'sw', 'se']);
+const selected = computed(() => canvasStore.currentPointer.selected.includes(props.id));
+const wrappers = ref<string[]>(['nw', 'ne', 'sw', 'se']);
 const resizeWatch = ref(null);
 /**
  * 开始调整大小
  */
-const resizeStart = (evt, wrapper) => {
+const resizeStart = (evt: MouseEvent, wrapper: string) => {
   // 组件大小调整方法
   const resizeComp = () => {
     // 获取当前由[选中定位点的对角点]与[鼠标位置]构成的矩阵宽高
@@ -100,25 +124,25 @@ const resizeStart = (evt, wrapper) => {
       y: mousePos.value.y - 6,
     };
     const currentRect = {
-      width: wrapper.includes('w') ? (props.component.pos.x + props.component.rect.width - fixedMousePos.x) : (fixedMousePos.x - props.component.pos.x),
-      height: wrapper.includes('n') ? (props.component.pos.y + props.component.rect.height - fixedMousePos.y) : (fixedMousePos.y - props.component.pos.y),
+      width: wrapper.includes('w') ? (props.pos.x + props.rect.width - fixedMousePos.x) : (fixedMousePos.x - props.pos.x),
+      height: wrapper.includes('n') ? (props.pos.y + props.rect.height - fixedMousePos.y) : (fixedMousePos.y - props.pos.y),
     };
     // 以10px为最小宽度 调整组件宽度
-    const widthOffset = currentRect.width - props.component.rect.width;
-    if (props.component.rect.width + widthOffset > 10) {
-      props.component.rect.width += widthOffset;
+    const widthOffset = currentRect.width - props.rect.width;
+    if (props.rect.width + widthOffset > 10) {
+      props.rect.width += widthOffset;
       // 如果是调整了左边的两个点 则需要调整位置
       if (wrapper.includes('w')) {
-        props.component.pos.x -= widthOffset;
+        props.pos.x -= widthOffset;
       }
     }
     // 以10px为最小高度 调整组件高度
-    const heightOffset = currentRect.height - props.component.rect.height;
-    if (props.component.rect.height + heightOffset > 10) {
-      props.component.rect.height += heightOffset;
+    const heightOffset = currentRect.height - props.rect.height;
+    if (props.rect.height + heightOffset > 10) {
+      props.rect.height += heightOffset;
       // 如果是调整了上边的两个点 则需要调整位置
       if (wrapper.includes('n')) {
-        props.component.pos.y -= heightOffset;
+        props.pos.y -= heightOffset;
       }
     }
   }
@@ -162,13 +186,12 @@ const resizeEnd = () => {
          @mouseup="resizeEnd"
          @click.stop
          draggable="true"
-    ></div>
+    >
+    </div>
     <!-- 组件 -->
-    <component :is="$comp(component.type)"
+    <component :is="$comp(type)"
                ref="compRef"
-               :compId="component.id"
-               :data="component.data"
-               :readonly="readonly"
+               v-bind="compData"
                class="component"
                :class="{selected}"
     ></component>

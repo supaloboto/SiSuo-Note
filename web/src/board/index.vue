@@ -28,7 +28,7 @@ const clickBlank = () => {
 
 <template>
   <div id="sisuo-canvas" @mousemove="mouseMove" @click="clickBlank">
-    <sisuo-comp v-for="(comp,index) in components" :key="comp.id" :component="comp"></sisuo-comp>
+    <sisuo-comp v-for="(comp,index) in components" :key="comp.id" v-bind="comp"></sisuo-comp>
   </div>
 </template>
 

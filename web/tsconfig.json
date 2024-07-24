@@ -13,6 +13,7 @@
   ],
   "compilerOptions": {
     "module": "NodeNext",
+    "moduleResolution": "Bundler",
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {

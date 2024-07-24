@@ -10,7 +10,7 @@ import SisuoComp from "./sisuo-comp.vue";
 import Note from "./blocks/note/index.vue";
 
 // 注册组件
-const compRegis = {
+export const compRegis = {
     note: markRaw(Note),
 }
 

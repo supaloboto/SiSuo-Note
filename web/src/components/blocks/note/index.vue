@@ -1,18 +1,15 @@
-<script setup>
-
-// 双击事件
-const dblclick = (evt) => {
-  // 双击时打开编辑器
-  console.log('dblclick');
-}
-
-const contextMenu = (evt) => {
-  console.log('contextMenu');
-}
-
-defineExpose({
-  dblclick, contextMenu
-});
+<!--
+ - 笔记组件
+ -
+ - @author 刘志栋
+ - @since 2024/07/24
+ -->
+<script setup lang="ts">
+import {Note, NoteAction} from "@/components/blocks/note/note";
+// 定义组件属性
+const props = defineProps<Note>();
+// 组件行为初始化
+defineExpose(new NoteAction(props).expose());
 
 </script>
 

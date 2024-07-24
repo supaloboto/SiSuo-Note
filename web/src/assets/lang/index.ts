@@ -10,7 +10,8 @@ import zh from './zh.json';
 
 const i18n = createI18n({
     legacy: false,
-    locale: 'zh',
+    // 从localStorage中获取语言设置 默认中文
+    locale: localStorage.getItem('sisuo-note-lang') || 'zh',
     messages: {
         zh
     }
