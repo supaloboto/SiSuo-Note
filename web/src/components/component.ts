@@ -84,9 +84,11 @@ export abstract class ComponentAction {
      * 删除组件
      */
     delete(): boolean {
-        // 从store中删除
+        // 移除选中
+        this.unselect();
+        // 从组件列表中删除
         const componentStore = useComponentStore();
-        componentStore.components.value = componentStore.components.value.filter(item => item.id !== this.props.id);
+        componentStore.components = componentStore.components.filter(item => item.id !== this.props.id);
         componentStore.componentActionMap.delete(this.props.id);
         return true;
     }
