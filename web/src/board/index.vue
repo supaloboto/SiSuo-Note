@@ -1,17 +1,20 @@
-/**
-* 画布
-*
-* @author 刘志栋
-* @since 2024/07/10
-*/
+<!--
+ - 画布
+ -
+ - @author 刘志栋
+ - @since 2024/07/10
+ -->
 <script setup lang="ts">
-import {computed, ref} from "vue";
+import {computed} from "vue";
 import {useCanvasStore} from "@/stores/canvas";
+import {useComponentStore} from "@/stores/component";
+import {Hotkeys} from "@/board/hotkeys";
 
 const canvasStore = useCanvasStore();
+const componentStore = useComponentStore();
 
 // 获取组件列表
-const components = computed(() => canvasStore.components);
+const components = computed(() => componentStore.components);
 
 // 监听鼠标位置 同步到store
 const mouseMove = (evt: MouseEvent) => {
@@ -24,11 +27,14 @@ const clickBlank = () => {
   canvasStore.currentPointer.selected = [];
 }
 
+// 监听键盘事件
+Hotkeys.init();
+
 </script>
 
 <template>
   <div id="sisuo-canvas" @mousemove="mouseMove" @click="clickBlank">
-    <sisuo-comp v-for="(comp,index) in components" :key="comp.id" v-bind="comp"></sisuo-comp>
+    <sisuo-comp v-for="(comp,index) in components" :key="comp.id" :id="comp.id"></sisuo-comp>
   </div>
 </template>
 

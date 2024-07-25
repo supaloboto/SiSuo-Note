@@ -4,7 +4,9 @@ import 'vditor/dist/index.css'
 import {onMounted, ref} from "vue";
 
 const vditor = ref(null);
-
+const props = defineProps({
+  show: Boolean
+});
 onMounted(() => {
   vditor.value = new Vditor('vditor', {
     height: 560,

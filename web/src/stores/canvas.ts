@@ -1,48 +1,71 @@
 /**
- * 画布变量store
+ * 画布store
  *
  * @author 刘志栋
- * @since 2023/05/23
+ * @since 2023/07/23
  */
-import {defineStore, StoreDefinition} from "pinia";
+import {defineStore} from "pinia";
 import {ref} from "vue";
-import type {Component} from "@/components/component";
 
-export const useCanvasStore: StoreDefinition = defineStore('canvas', () => {
-    // 组件列表
-    const components = ref<Component[]>([{
-        type: 'note',
-        id: 'test',
-        pos: {x: 100, y: 120},
-        rect: {width: 100, height: 100},
-        data: {}
-    },{
-        type: 'note',
-        id: 'test2',
-        pos: {x: 300, y: 320},
-        rect: {width: 100, height: 100},
-        data: {}
-    }
-    ]);
+/**
+ * 指针状态
+ */
+export class Pointer {
+    // 用户
+    user: string;
+    // x坐标
+    x: number;
+    // y坐标
+    y: number;
+    // 选中的组件
+    selected: string[] = [];
+    // 状态
+    state: string = 'pinter';
+}
 
+/**
+ * 定义画布store
+ */
+export const useCanvasStore = defineStore('canvas', () => {
     // 当前指针位置
-    const currentPointer = ref({x: 0, y: 0, selected: [] as string[], state: 'pointer' as string});
+    const currentPointer = ref<Pointer>(new Pointer());
+    // 其他用户的指针位置
+    const pointers = ref<Pointer[]>([]);
+
     /**
-     * 选中/反选中组件
-     * @param id
-     * @param removeOthers
+     * 选中组件
+     * @param id 组件id
+     * @param removeOthers 是否移除其他选中
+     * @param reverse 是否反选
      */
-    const selectComponent = (id: string, removeOthers: boolean = true) => {
+    const selectComponent = (id: string, removeOthers: boolean, reverse: boolean) => {
         if (removeOthers) {
             currentPointer.value.selected = [];
         }
-        if (id) {
+        if (!id) {
+            return;
+        }
+        const index = currentPointer.value.selected.indexOf(id);
+        if (reverse && index > -1) {
+            currentPointer.value.selected.splice(index, 1);
+        } else if (index === -1) {
             currentPointer.value.selected.push(id);
         }
     };
 
-    // 其他用户的指针位置
-    const pointers: string[] = ref([]);
+    /**
+     * 取消选中组件
+     * @param id 组件id
+     */
+    const unSelectComponent = (id: string) => {
+        if (!id) {
+            return;
+        }
+        const index = currentPointer.value.selected.indexOf(id);
+        if (index > -1) {
+            currentPointer.value.selected.splice(index, 1);
+        }
+    }
 
-    return {currentPointer, selectComponent, pointers, components};
+    return {currentPointer, selectComponent, unSelectComponent, pointers};
 });

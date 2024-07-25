@@ -1,3 +1,6 @@
+import {useComponentStore} from "@/stores/component";
+import {useCanvasStore} from "@/stores/canvas";
+
 /**
  * 组件的统一父类
  * @author 刘志栋
@@ -26,8 +29,14 @@ export abstract class ComponentAction {
 
     constructor(props: Component) {
         this.props = props;
+        // 记录在store中
+        const componentStore = useComponentStore();
+        componentStore.componentActionMap.set(props.id, this);
     }
 
+    /**
+     * 获取组件属性 用于子类调用
+     */
     getProps(): Component {
         return this.props;
     }
@@ -53,12 +62,33 @@ export abstract class ComponentAction {
         return true;
     }
 
-    expose() {
-        return {
-            click: this.click,
-            dblclick: this.dblclick,
-            contextMenu: this.contextMenu
-        };
+    /**
+     * 被选中
+     */
+    select(removeOthers: boolean = true, reverse: boolean = false): boolean {
+        const canvasStore = useCanvasStore();
+        canvasStore.selectComponent(this.props.id, removeOthers, reverse);
+        return true;
+    }
+
+    /**
+     * 取消选中
+     */
+    unselect(): boolean {
+        const canvasStore = useCanvasStore();
+        canvasStore.unSelectComponent(this.props.id);
+        return true;
+    }
+
+    /**
+     * 删除组件
+     */
+    delete(): boolean {
+        // 从store中删除
+        const componentStore = useComponentStore();
+        componentStore.components.value = componentStore.components.value.filter(item => item.id !== this.props.id);
+        componentStore.componentActionMap.delete(this.props.id);
+        return true;
     }
 
 }
