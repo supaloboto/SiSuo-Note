@@ -24,6 +24,6 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
     // 配置文件后缀省略
-    extensions: ['.vue', '.js', '.ts']
+    extensions: ['.js', '.ts']
   }
 })

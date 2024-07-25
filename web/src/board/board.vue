@@ -33,6 +33,9 @@ Hotkeys.init();
 </script>
 
 <template>
+  <!-- 侧边栏 -->
+
+  <!-- 组件 -->
   <div id="sisuo-canvas" @mousemove="mouseMove" @click="clickBlank">
     <sisuo-comp v-for="(comp,index) in components" :key="comp.id" :id="comp.id"></sisuo-comp>
   </div>

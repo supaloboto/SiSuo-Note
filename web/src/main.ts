@@ -8,7 +8,7 @@ import './assets/css/main.css'
 import {createApp} from 'vue'
 import router from '@/router'
 import VueI18n from '@/assets/lang/index'
-import App from './App'
+import App from './App.vue'
 import ComponentRegister from '@/components/index'
 import {createPinia} from 'pinia'
 

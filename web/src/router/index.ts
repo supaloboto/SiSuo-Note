@@ -5,7 +5,7 @@ const router = createRouter({
     routes: [
         {
             path: '/',
-            component: () => import('@/board/index'),
+            component: () => import('@/views/BoardFrame.vue'),
         },
         {
             path: '/script',
@@ -13,7 +13,7 @@ const router = createRouter({
         },
         {
             path: '/vditor',
-            component: () => import('@/components/blocks/note/editor/index.vue'),
+            component: () => import('@/components/blocks/note/editor/editor.vue'),
         }
     ],
 })

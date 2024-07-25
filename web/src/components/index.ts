@@ -7,7 +7,7 @@
 import {markRaw} from 'vue'
 // 引入组件
 import SisuoComp from "./sisuo-comp.vue";
-import Note from "./blocks/note/index.vue";
+import Note from "./blocks/note/note.vue";
 
 // 注册组件
 export const compRegis = {
