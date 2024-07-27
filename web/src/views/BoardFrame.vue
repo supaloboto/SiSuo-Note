@@ -30,8 +30,9 @@ import Dock from "@/dock/dock.vue";
 }
 
 #board {
-  height: calc(100% - 50px);
-  width: calc(100% - 50px);
+  margin: auto;
+  height: calc(100% - 5px);
+  width: calc(100% - 5px);
   border: 1px solid #676767;
 }
 </style>

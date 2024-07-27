@@ -9,6 +9,7 @@ import {computed} from "vue";
 import {useCanvasStore} from "@/stores/canvas";
 import {useComponentStore} from "@/stores/component";
 import {Hotkeys} from "@/board/hotkeys";
+import Toolbar from "@/board/toolbar/toolbar.vue";
 
 const canvasStore = useCanvasStore();
 const componentStore = useComponentStore();
@@ -34,7 +35,7 @@ Hotkeys.init();
 
 <template>
   <!-- 侧边栏 -->
-
+  <toolbar></toolbar>
   <!-- 组件 -->
   <div id="sisuo-canvas" @mousemove="mouseMove" @click="clickBlank">
     <sisuo-comp v-for="(comp,index) in components" :key="comp.id" :id="comp.id"></sisuo-comp>

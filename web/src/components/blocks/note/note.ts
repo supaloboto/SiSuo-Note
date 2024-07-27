@@ -38,7 +38,7 @@ export class NoteAction extends BlockComponentAction {
     dblclick(): boolean {
         console.log("双击组件:", this.getProps().id);
         // 显示编辑器
-        this.showEditor.value = true;
+        // this.showEditor.value = true;
         return true;
     }
 

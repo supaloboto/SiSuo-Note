@@ -11,7 +11,12 @@ import Note from "./blocks/note/note.vue";
 
 // 注册组件
 export const compRegis = {
-    note: markRaw(Note),
+    // 笔记
+    note: {
+        name: 'note',
+        icon: 'component-note',
+        raw: markRaw(Note),
+    },
 }
 
 // 导出插件
@@ -19,7 +24,7 @@ export default {
     install(app) {
         const globalProperties = app.config.globalProperties;
         globalProperties.$comp = (type) => {
-            return compRegis[type];
+            return compRegis[type].raw;
         }
         app.component('sisuo-comp', SisuoComp);
     },

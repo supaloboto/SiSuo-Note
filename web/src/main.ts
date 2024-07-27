@@ -11,6 +11,7 @@ import VueI18n from '@/assets/lang/index'
 import App from './App.vue'
 import ComponentRegister from '@/components/index'
 import {createPinia} from 'pinia'
+import 'virtual:svg-icons-register'
 
 const app = createApp(App)
     .use(router)
