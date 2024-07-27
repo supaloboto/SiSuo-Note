@@ -5,9 +5,9 @@
  - @since 2024/07/25
  -->
 <script setup lang="ts">
-import Header from "@/header/header.vue";
-import Board from "@/board/board.vue";
-import Dock from "@/dock/dock.vue";
+import Header from "@/frame/header/header.vue";
+import Board from "@/frame/board/board.vue";
+import Dock from "@/frame/dock/dock.vue";
 
 </script>
 

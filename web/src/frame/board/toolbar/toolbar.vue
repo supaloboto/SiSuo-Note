@@ -5,7 +5,6 @@
  - @since 2024/07/27
  -->
 <script setup lang="ts">
-import Icon from "@/components/icon/icon.vue";
 // 引入国际化
 import i18n from "@/assets/lang";
 

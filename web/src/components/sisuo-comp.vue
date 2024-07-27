@@ -10,14 +10,12 @@ import {useCanvasStore} from "@/stores/canvas";
 import i18n from "@/assets/lang";
 import {type Component, ComponentAction} from "@/components/component";
 import {useComponentStore} from "@/stores/component";
+import {compRegis} from "@/components/index";
 
 const props = defineProps({
   id: String,
 });
 
-// 使用$comp获取组件
-const {proxy} = getCurrentInstance() as any;
-const $comp = proxy.$comp;
 // 使用$t获取国际化文本
 const $t = i18n.global.t;
 
@@ -213,7 +211,7 @@ const resizeEnd = () => {
          draggable="true"
     ></div>
     <!-- 组件 -->
-    <component :is="$comp(compData.type)" :id="compData.id" ref="compRef"
+    <component :is="compRegis[compData.type].raw" :id="compData.id" ref="compRef"
                class="component" :class="{selected}"></component>
   </div>
 </template>

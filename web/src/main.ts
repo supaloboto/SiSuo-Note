@@ -9,16 +9,19 @@ import {createApp} from 'vue'
 import router from '@/router'
 import VueI18n from '@/assets/lang/index'
 import App from './App.vue'
-import ComponentRegister from '@/components/index'
 import {createPinia} from 'pinia'
+// svg图标支持
 import 'virtual:svg-icons-register'
+import Icon from '@/frame/SvgIcon.vue'
 
 const app = createApp(App)
     .use(router)
     .use(VueI18n)
-    .use(ComponentRegister)
     .use(createPinia())
 
+// 挂载i18n
 app.config.globalProperties.$i18n = VueI18n;
+// 挂载icon组件
+app.component('Icon', Icon);
 
 app.mount('#app')

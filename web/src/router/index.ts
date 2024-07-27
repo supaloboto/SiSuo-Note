@@ -5,7 +5,7 @@ const router = createRouter({
     routes: [
         {
             path: '/',
-            component: () => import('@/views/BoardFrame.vue'),
+            component: () => import('@/views/BoardView.vue'),
         },
         {
             path: '/script',
