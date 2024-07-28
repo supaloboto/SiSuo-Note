@@ -47,17 +47,19 @@ const addComp = (compName: string) => {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 #toolbar {
   position: fixed;
   margin: auto;
   width: 50px;
   height: 650px;
-  background-color: #f0f0f0;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
+  border: 1px solid var(--toolbar-border-color);
+  border-radius: 5px;
+  background-color: var(--toolbar-background-color);
 }
 
 .toolbar-item {
@@ -68,5 +70,13 @@ const addComp = (compName: string) => {
   justify-content: center;
   align-items: center;
   cursor: pointer;
+}
+
+.toolbar-item-icon {
+
+  svg {
+    width: 50px;
+    height: 50px
+  }
 }
 </style>

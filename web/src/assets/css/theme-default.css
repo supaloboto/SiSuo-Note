@@ -1,0 +1,13 @@
+:root[theme='default'] {
+    /* Header样式 */
+    /* 看板样式 */
+    --board-background-color: #f5f5f5;
+    /* 侧边栏样式 */
+    --toolbar-background-color: #ffffff;
+    --toolbar-border-color: #707070;
+    /* Dock样式 */
+    /* 组件样式 */
+    --component-border-color: #000;
+    --component-resize-wrapper-border-color: #62bee6;
+    --component-resize-wrapper-fill-color: #62bee6;
+}

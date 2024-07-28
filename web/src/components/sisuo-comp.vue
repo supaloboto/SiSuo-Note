@@ -229,19 +229,19 @@ const resizeEnd = () => {
 
 /* 组件样式 */
 .component {
-  border: 1px solid #000;
+  border: 1px solid var(--component-border-color);
 }
 
 /* 组件被选中时的四角边框 */
 .selected {
-  border: 1px solid #62bee6 !important;
+  border: 1px solid var(--component-resize-wrapper-border-color) !important;
 }
 
 .resize-wrapper {
   position: absolute;
   width: 8px;
   height: 8px;
-  background-color: #62bee6;
+  background-color: var(--component-resize-wrapper-fill-color);
 }
 
 .nw {
