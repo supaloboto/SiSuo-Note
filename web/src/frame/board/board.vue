@@ -20,8 +20,11 @@ const components = computed(() => componentStore.components);
 
 // 监听鼠标位置 同步到store
 const mouseMove = (evt: MouseEvent) => {
-  canvasStore.currentPointer.x = evt.clientX;
-  canvasStore.currentPointer.y = evt.clientY;
+  // 获取画布的上边距和左边距
+  const canvas = document.getElementById("sisuo-canvas");
+  const canvasRect = canvas.getBoundingClientRect();
+  canvasStore.currentPointer.x = evt.clientX - canvasRect.left;
+  canvasStore.currentPointer.y = evt.clientY - canvasRect.top;
 }
 
 // 点击空白处 取消选中
@@ -35,16 +38,19 @@ Hotkeys.init();
 </script>
 
 <template>
-  <!-- 侧边栏 -->
-  <toolbar></toolbar>
-  <!-- 组件 -->
-  <div id="sisuo-canvas" @mousemove="mouseMove" @click="clickBlank">
-    <sisuo-comp v-for="(comp,index) in components" :key="comp.id" :id="comp.id"></sisuo-comp>
+  <div class="board-div">
+    <!-- 侧边栏 -->
+    <toolbar></toolbar>
+    <!-- 组件 -->
+    <div id="sisuo-canvas" @mousemove="mouseMove" @click="clickBlank">
+      <sisuo-comp v-for="(comp,index) in components" :key="comp.id" :id="comp.id"></sisuo-comp>
+    </div>
   </div>
 </template>
 
 <style scoped>
 #sisuo-canvas {
+  position: absolute;
   height: 100%;
   width: 100%;
   overflow: hidden;

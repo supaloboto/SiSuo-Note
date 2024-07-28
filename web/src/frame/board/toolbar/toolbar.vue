@@ -7,24 +7,22 @@
 <script setup lang="ts">
 // 引入国际化
 import i18n from "@/assets/lang";
+import {compRegis} from "@/components";
+import {computed} from "vue";
 
 const $t = i18n.global.t;
 
 // 获取组件注册信息
-import {compRegis} from "@/components";
-import {computed} from "vue";
-
 const compRegisList = computed(() => {
   const list = [];
   for (const key in compRegis) {
     list.push(compRegis[key]);
   }
-  console.log(list);
   return list;
 });
 
 const addComp = (compName: string) => {
-  console.log(compName);
+  console.log('addComp,' + compName);
 }
 
 </script>
@@ -50,9 +48,11 @@ const addComp = (compName: string) => {
 <style lang="scss" scoped>
 #toolbar {
   position: fixed;
-  margin: auto;
-  width: 50px;
-  height: 650px;
+  z-index: var(--toolbar-zindex);
+  top: calc(50% - 345px);
+  left: 12px;
+  width: 75px;
+  height: 615px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -60,23 +60,47 @@ const addComp = (compName: string) => {
   border: 1px solid var(--toolbar-border-color);
   border-radius: 5px;
   background-color: var(--toolbar-background-color);
+  box-shadow: 0 0 2px 0 var(--toolbar-shadow-color);
 }
 
 .toolbar-item {
-  width: 100%;
-  height: 50px;
+  margin: 5px;
+  width: 65px;
+  height: 70px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   cursor: pointer;
-}
 
-.toolbar-item-icon {
+  .toolbar-item-icon {
+    svg {
+      width: 42px;
+      height: 42px
+    }
+  }
 
-  svg {
-    width: 50px;
-    height: 50px
+  .toolbar-item-name {
+    margin-top: -5px;
+    font-size: 14px;
+    color: var(--toolbar-item-color);
   }
 }
+
+.toolbar-item:hover {
+  background-color: var(--toolbar-item-hover-backgroud-color);
+  border-radius: 5px;
+
+  .toolbar-item-icon {
+    svg {
+      --path-fill: var(--toolbar-item-hover-color);
+    }
+  }
+
+  .toolbar-item-name {
+    font-size: 14px;
+    color: var(--toolbar-item-hover-color);
+  }
+}
+
 </style>

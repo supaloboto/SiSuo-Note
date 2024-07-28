@@ -1,0 +1,9 @@
+<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+        "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink" width="128" height="128">
+    <path fill="var(--path-fill)" d="M896 128v768H128V128h768m64-64H64v896h896V64z"></path>
+    <path fill="var(--path-fill)" d="M121.6 320h832v64h-832z"></path>
+    <path fill="var(--path-fill)" d="M320 320h64v640H320zM640 320h64v640h-64z"></path>
+    <path fill="var(--path-fill)" d="M121.6 512h832v64h-832zM121.6 704h832v64h-832z"></path>
+</svg>

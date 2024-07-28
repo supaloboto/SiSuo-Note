@@ -16,4 +16,16 @@ export const compRegis = {
         icon: 'component-note',
         raw: markRaw(Note),
     },
+    // 表格
+    grid: {
+        name: 'grid',
+        icon: 'component-grid',
+        raw: markRaw(Note),
+    },
+    // 图表
+    chart: {
+        name: 'chart',
+        icon: 'component-chart',
+        raw: markRaw(Note),
+    },
 }

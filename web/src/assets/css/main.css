@@ -1,0 +1,9 @@
+/* 统一管理z-index */
+:root {
+    /* header */
+    --header-zindex: 100;
+    /* 侧边栏 */
+    --toolbar-zindex: 100;
+    /* dock */
+    --dock-zindex: 110;
+}

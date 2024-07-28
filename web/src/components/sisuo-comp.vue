@@ -140,14 +140,9 @@ const resizeStart = (evt: MouseEvent, wrapper: string) => {
     const pos = compData.value.pos;
     const rect = compData.value.rect;
     // 获取当前由[选中定位点的对角点]与[鼠标位置]构成的矩阵宽高
-    // 因为鼠标位置实际上是鼠标图标的左上角 因此对鼠标位置数据做一点修正以使定位点感觉更加跟手
-    const fixedMousePos = {
-      x: mousePos.value.x - 6,
-      y: mousePos.value.y - 6,
-    };
     const currentRect = {
-      width: wrapper.includes('w') ? (pos.x + rect.width - fixedMousePos.x) : (fixedMousePos.x - pos.x),
-      height: wrapper.includes('n') ? (pos.y + rect.height - fixedMousePos.y) : (fixedMousePos.y - pos.y),
+      width: wrapper.includes('w') ? (pos.x + rect.width - mousePos.value.x) : (mousePos.value.x - pos.x),
+      height: wrapper.includes('n') ? (pos.y + rect.height - mousePos.value.y) : (mousePos.value.y - pos.y),
     };
     // 以10px为最小宽度 调整组件宽度
     const widthOffset = currentRect.width - rect.width;

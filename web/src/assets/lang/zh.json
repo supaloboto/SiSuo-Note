@@ -9,6 +9,8 @@
     "copy": "复制"
   },
   "component": {
-    "note": "笔记"
+    "note": "笔记",
+    "grid": "表格",
+    "chart": "图表"
   }
 }

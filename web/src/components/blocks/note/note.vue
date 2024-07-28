@@ -32,7 +32,7 @@ const action = new NoteAction({
 </script>
 
 <template>
-  <div style="width:100%;height:100%;">
+  <div class="note-div">
     <div v-if="showEditor">
       <Editor :show="showEditor"/>
     </div>
@@ -40,5 +40,9 @@ const action = new NoteAction({
 </template>
 
 <style scoped>
-
+.note-div {
+  width: 100%;
+  height: 100%;
+  background-color: #fafafa;
+}
 </style>
