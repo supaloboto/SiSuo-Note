@@ -11,7 +11,7 @@ export default defineConfig({
     plugins: [
         vue(),
         vueJsx(),
-        vueDevTools(),
+        // vueDevTools(),
         // svg支持
         createSvgIconsPlugin({
             iconDirs: [path.resolve(process.cwd(), 'src/assets/icons')],
