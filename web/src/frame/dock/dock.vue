@@ -5,7 +5,7 @@
  - @since 2024/07/28
  -->
 <script setup lang="ts">
-import {nextTick, onMounted, onUpdated, ref} from "vue";
+import {ref} from "vue";
 
 // 对话框列表
 const dialogs = ref([{
@@ -47,7 +47,8 @@ const dialogs = ref([{
 }, {
   name: '当前正在打开的文档3-20240728',
 }, {
-  name: '当前正在打开的文档3-20240728',
+  id: 'setting',
+  name: '系统设置',
 }]);
 
 const mouseOnIndex = ref(-1);
@@ -115,6 +116,14 @@ const adjustTitlePos = (index: number) => {
     <div v-for="(dialog,index) in dialogs" :key="index"
          :class="{'dock-dialog':true,'dock-dialog-hover':index===mouseOnIndex}" @mouseover="mouseOver(index)"
          @mouseleave="mouseLeave(index)" @click="click(index)">
+      <!-- 对特殊dialog显示对应的icon  -->
+      <div v-if="dialog.id==='setting'">
+        <icon name="system-setting"></icon>
+      </div>
+      <!-- 普通dialog todo 使用缩略图 -->
+      <span v-else>
+        {{ dialog.name }}
+      </span>
       <!-- 悬浮标题 -->
       <transition name="hover-title" @enter="titleShow(index)">
         <div class="dock-dialog-hover-title" v-show="index===mouseOnIndex">
@@ -143,9 +152,30 @@ const adjustTitlePos = (index: number) => {
   margin-right: 5px;
   width: 50px;
   height: 50px;
-  border: 1px solid black;
+  border: 1px solid var(--dock-item-border-color);
+  border-radius: 2px;
+  background-color: var(--dock-item-background-color);
   /* 动画效果 */
-  transition: bottom 0.2s, width 0.2s, height 0.2s;
+  transition: bottom 0.2s, width 0.2s, height 0.2s, font-size 0.2s;
+  /* 内容居中 */
+  text-align: center;
+  align-content: center;
+  /* 空间有限 需要使文字更紧凑地显示 */
+  word-break: break-all;
+  user-select: none;
+  font-size: 12px;
+  color: var(--dock-item-font-color);
+  /* 避免文字溢出 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  svg {
+    /* 鼠标悬浮时尺寸变大 添加动画效果 */
+    transition: width 0.2s, height 0.2s;
+    width: 45px;
+    height: 45px;
+    --path-fill: var(--dock-item-font-color);
+  }
 }
 
 .dock-dialog-hover {
@@ -153,19 +183,33 @@ const adjustTitlePos = (index: number) => {
   bottom: 40px;
   width: 100px;
   height: 100px;
-  border: 1px solid black;
-  font-size: 12px;
+  box-shadow: 0 5px 10px 0 var(--dock-item-border-color);
+  /* 使文字变大 */
+  font-size: 16px;
+  /* 取消overflow-hidden以显示出悬浮标题 */
+  overflow: visible;
+
+  svg {
+    width: 80px;
+    height: 80px;
+  }
 
   .dock-dialog-hover-title {
     position: absolute;
     text-align: center;
+    align-content: center;
     width: max-content;
+    min-height: 20px;
     min-width: 40px;
     max-width: 30vw;
-    padding-inline: 10px;
+    padding: 2px 8px;
     bottom: 105px;
-    background-color: white;
-    border: 1px solid black;
+    background-color: var(--dock-item-background-color);
+    border: 1px solid var(--dock-item-title-border-color);
+    box-shadow: 0 2px 8px 0 var(--dock-item-title-border-color);
+    color: var(--dock-item-title-font-color);
+    border-radius: 5px;
+    font-size: 12px;
     /* 与dialog-div中线对齐 */
     left: 50%;
     transform: translateX(-50%);

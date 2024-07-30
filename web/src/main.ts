@@ -14,8 +14,8 @@ import {createPinia} from 'pinia'
 import 'virtual:svg-icons-register'
 import Icon from '@/frame/SvgIcon.vue'
 // 主题样式
-import '@/assets/css/theme-default.css'
-import '@/assets/css/theme-dark.css'
+import '@/assets/css/theme-default.scss'
+import '@/assets/css/theme-dark.scss'
 
 const app = createApp(App)
     .use(router)

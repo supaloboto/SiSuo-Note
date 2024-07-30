@@ -1,0 +1,37 @@
+/**
+ * 默认主题
+ * @author 刘志栋
+ * @since 2024-07-28
+ */
+:root[theme='default'] {
+  --body-background-color: #ffffff;
+  /* Header样式 */
+  --header-border-color: #b5b5b5;
+  --header-shadow-color: #b5b5b5;
+  --header-background-color: #fafafa;
+  --header-btn-icon-color: #bfbfbf;
+  --header-btn-hover-background-color: #dfdfdf;
+  --header-btn-hover-icon-color: #6a6a6a;
+  --header-title-color: #6a6a6a;
+  /* 看板样式 */
+  --board-background-color: #f5f5f5;
+  /* 侧边栏样式 */
+  --toolbar-background-color: #ffffff;
+  --toolbar-border-color: #d5d5d5;
+  --toolbar-shadow-color: #b3b3b3;
+  --toolbar-item-color: #000;
+  --toolbar-item-hover-backgroud-color: #92c2d5;
+  --toolbar-item-hover-color: #ffffff;
+  /* Dock样式 */
+  --dock-background-color: #fafafa;
+  --dock-border-color: #b5b5b5;
+  --dock-item-font-color: #636363;
+  --dock-item-border-color: #b2b2b2;
+  --dock-item-background-color: #f5f5f5;
+  --dock-item-title-font-color: #737373;
+  --dock-item-title-border-color: #cdcdcd;
+  /* 组件样式 */
+  --component-border-color: #000;
+  --component-resize-wrapper-border-color: #62bee6;
+  --component-resize-wrapper-fill-color: #62bee6;
+}
