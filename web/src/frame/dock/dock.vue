@@ -5,81 +5,52 @@
  - @since 2024/07/28
  -->
 <script setup lang="ts">
-import {ref} from "vue";
+import {computed, ref} from "vue";
+import {useDialogStore} from "@/stores/dialog";
+import {compRegis} from "@/components";
 
 // 对话框列表
-const dialogs = ref([{
-  name: '当前正在打开的文档2-20240728',
-}, {
-  name: '当前正在打开的文档2-20240728',
-}, {
-  name: '当前正在打开的文档3-20240728当前正在打开的文档3-20240728',
-}, {
-  name: '当前正在打开的文档3-20240728',
-}, {
-  name: '当前',
-}, {
-  name: '当前正在打开的文档3-20240728',
-}, {
-  name: '当前正在打开的文档3-20240728',
-}, {
-  name: '当前正在打开的文档3-20240728',
-}, {
-  name: '当前正在打开的文档3-20240728',
-}, {
-  name: '当前正在打开的文档3-20240728',
-}, {
-  name: '当前正在打开的文档3-20240728',
-}, {
-  name: '当前正在打开的文档3-20240728',
-}, {
-  name: '当前正在打开的文档3-20240728',
-}, {
-  name: '当前正在打开的文档3-20240728',
-}, {
-  name: '当前正在打开的文档3-20240728',
-}, {
-  name: '当前正在打开的文档3-20240728',
-}, {
-  name: '当前正在打开的文档3-20240728',
-}, {
-  name: '当前正在打开的文档3-20240728',
-}, {
-  name: '当前正在打开的文档3-20240728',
-}, {
-  id: 'setting',
-  name: '系统设置',
-}]);
-
+const dialogs = computed(() => useDialogStore().dialogs);
+// 鼠标悬浮的对话框索引
 const mouseOnIndex = ref(-1);
-
+/**
+ * 鼠标悬浮时修改对话框索引
+ */
 const mouseOver = (index: number) => {
   mouseOnIndex.value = index;
 };
-
+/**
+ * 鼠标离开时重置对话框索引
+ */
 const mouseLeave = (index: number) => {
   mouseOnIndex.value = -1;
 };
-
+/**
+ * 点击展开对话框
+ */
 const click = (index: number) => {
-  console.log('open dialog', dialogs.value[index].name);
+  console.log('click on dialog', dialogs.value[index].title);
+  dialogs.value[index].expand(null);
 };
 
 /**
  * 结合transition的钩子 在标题即将显示时 调整dom位置 避免超出边界
  */
-const titleShow = (index: number) => {
+const titleShow = (dialogIndex: number) => {
   // 等待200ms 避免transition动画未完成时获取到的dom位置不准确
   setTimeout(() => {
-    adjustTitlePos(index);
+    adjustTitlePos(dialogIndex);
   }, 200);
 }
 
-const adjustTitlePos = (index: number) => {
+/**
+ * 调整标题位置
+ */
+const adjustTitlePos = (dialogIndex: number) => {
   // 获取dialog-div dom
-  const dialogElement = document.querySelectorAll('.dock-dialog')[index] as HTMLElement;
+  const dialogElement = document.querySelectorAll('.dock-dialog')[dialogIndex] as HTMLElement;
   // 获取标题dom 按样式设置标题dom会与dialog-div中线对齐
-  const titleElement = document.querySelectorAll('.dock-dialog-hover-title')[index] as HTMLElement;
+  const titleElement = document.querySelectorAll('.dock-dialog-hover-title')[dialogIndex] as HTMLElement;
   if (dialogElement && titleElement) {
     // 获取dialog-div的中线位置
     const dialogCenter = dialogElement.offsetLeft + dialogElement.offsetWidth / 2;
@@ -116,18 +87,18 @@ const adjustTitlePos = (index: number) => {
     <div v-for="(dialog,index) in dialogs" :key="index"
          :class="{'dock-dialog':true,'dock-dialog-hover':index===mouseOnIndex}" @mouseover="mouseOver(index)"
          @mouseleave="mouseLeave(index)" @click="click(index)">
-      <!-- 对特殊dialog显示对应的icon  -->
+      <!-- 缩略图 对特殊弹框显示对应的icon 对普通弹框显示标题或缩略图  -->
       <div v-if="dialog.id==='setting'">
         <icon name="system-setting"></icon>
       </div>
-      <!-- 普通dialog todo 使用缩略图 -->
+      <!-- todo 使用缩略图 -->
       <span v-else>
-        {{ dialog.name }}
+        {{ dialog.title }}
       </span>
       <!-- 悬浮标题 -->
       <transition name="hover-title" @enter="titleShow(index)">
         <div class="dock-dialog-hover-title" v-show="index===mouseOnIndex">
-          {{ dialog.name }}
+          {{ dialog.title }}
         </div>
       </transition>
     </div>

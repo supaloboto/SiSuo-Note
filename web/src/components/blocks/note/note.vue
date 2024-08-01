@@ -8,7 +8,7 @@
 // 定义组件属性
 import {Note, NoteAction} from "@/components/blocks/note/note";
 import {computed, ref} from "vue";
-import Editor from "@/components/blocks/note/editor/editor.vue";
+import Editor from "@/components/blocks/note/editor/NoteEditorDialog.vue";
 import {useComponentStore} from "@/stores/component";
 
 const props = defineProps({

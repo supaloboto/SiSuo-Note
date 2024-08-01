@@ -4,12 +4,12 @@
  * @author 刘志栋
  * @since 2024/07/10
  */
-import {markRaw} from 'vue'
+import {markRaw, ref, watch} from 'vue'
 // 引入组件
 import Note from "./blocks/note/note.vue";
 
 // 注册组件
-export const compRegis = {
+export const compRegis = ref({
     // 笔记
     note: {
         name: 'note',
@@ -28,4 +28,4 @@ export const compRegis = {
         icon: 'component-chart',
         raw: markRaw(Note),
     },
-}
+});

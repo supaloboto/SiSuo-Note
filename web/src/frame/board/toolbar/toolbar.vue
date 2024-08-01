@@ -15,8 +15,8 @@ const $t = i18n.global.t;
 // 获取组件注册信息
 const compRegisList = computed(() => {
   const list = [];
-  for (const key in compRegis) {
-    list.push(compRegis[key]);
+  for (const key in compRegis.value) {
+    list.push(compRegis.value[key]);
   }
   return list;
 });
@@ -34,7 +34,7 @@ const addComp = (compName: string) => {
          @click="addComp(comp.name)">
       <!-- 组件图标 -->
       <div class="toolbar-item-icon">
-        <Icon :name="`component-${comp.name}`"></Icon>
+        <Icon :name="comp.icon"></Icon>
       </div>
       <!-- 组件名称 -->
       <div class="toolbar-item-name">

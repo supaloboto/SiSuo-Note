@@ -13,6 +13,8 @@ import {createPinia} from 'pinia'
 // svg图标支持
 import 'virtual:svg-icons-register'
 import Icon from '@/frame/SvgIcon.vue'
+// 对话框组件
+import Dialog from "@/frame/dialog/dialog.vue";
 // 主题样式
 import '@/assets/css/theme-default.scss'
 import '@/assets/css/theme-dark.scss'
@@ -26,5 +28,7 @@ const app = createApp(App)
 app.config.globalProperties.$i18n = VueI18n;
 // 挂载icon组件
 app.component('Icon', Icon);
+// 挂载Dialog组件
+app.component('Dialog', Dialog);
 
 app.mount('#app')

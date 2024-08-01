@@ -5,9 +5,14 @@
  - @since 2024/07/25
  -->
 <script setup lang="ts">
+import {computed} from "vue";
+import {useDialogStore} from "@/stores/dialog";
 import Header from "@/frame/header/header.vue";
 import Board from "@/frame/board/board.vue";
 import Dock from "@/frame/dock/dock.vue";
+
+// 对话框列表
+const dialogs = computed(() => useDialogStore().dialogs);
 
 </script>
 
@@ -19,6 +24,8 @@ import Dock from "@/frame/dock/dock.vue";
     <Board id="board"></Board>
     <!-- dock -->
     <Dock id="dock"></Dock>
+    <!-- 对话框 -->
+    <component v-for="(dialog,index) in dialogs" :is="dialog.component" :id="dialog.id"></component>
   </div>
 </template>
 
