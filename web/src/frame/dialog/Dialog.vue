@@ -7,7 +7,7 @@
 <script setup lang="ts">
 import {computed, onMounted, ref, StyleValue, toRef} from "vue";
 import {useDialogStore} from "@/stores/dialog";
-import type {Dialog} from "@/dialog/dialog";
+import type {Dialog} from "@/frame/dialog/Dialog";
 
 const props = defineProps<{
   id: string;

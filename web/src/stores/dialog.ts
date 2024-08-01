@@ -6,7 +6,7 @@
  */
 import {defineStore} from "pinia";
 import {computed, ref} from "vue";
-import {Dialog} from "@/dialog/dialog";
+import {Dialog} from "@/frame/dialog/Dialog";
 import {NoteEditorDialog} from "@/components/blocks/note/editor/NoteEditorDialog";
 
 /**
