@@ -14,7 +14,7 @@ import {createPinia} from 'pinia'
 import 'virtual:svg-icons-register'
 import Icon from '@/frame/SvgIcon.vue'
 // 对话框组件
-import Dialog from "@/frame/dialog/dialog.vue";
+import Dialog from "@/frame/dialog/Dialog.vue";
 // 主题样式
 import '@/assets/css/theme-default.scss'
 import '@/assets/css/theme-dark.scss'

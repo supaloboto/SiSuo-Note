@@ -1,6 +1,6 @@
 import {markRaw} from 'vue'
-import {Dialog} from "@/frame/dialog/dialog";
-import type {Note} from "@/components/blocks/note/note";
+import {Dialog} from "@/frame/dialog/Dialog";
+import type {Note} from "@/components/blocks/note/Note";
 import NoteEditorDialogComp from "@/components/blocks/note/editor/NoteEditorDialog.vue";
 
 export class NoteEditorDialog extends Dialog<Note> {

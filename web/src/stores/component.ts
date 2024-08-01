@@ -6,7 +6,7 @@
  */
 import {defineStore, StoreDefinition} from "pinia";
 import {computed, ComputedRef, ref} from "vue";
-import {type Component, ComponentAction} from "@/components/component";
+import {type Component, ComponentAction} from "@/components/Component";
 
 export const useComponentStore = defineStore('component', () => {
     // 组件列表

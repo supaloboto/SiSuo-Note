@@ -6,7 +6,7 @@
  */
 import {markRaw, ref, watch} from 'vue'
 // 引入组件
-import Note from "./blocks/note/note.vue";
+import Note from "./blocks/note/Note.vue";
 
 // 注册组件
 export const compRegis = ref({

@@ -7,9 +7,9 @@
 <script setup lang="ts">
 import {computed} from "vue";
 import {useDialogStore} from "@/stores/dialog";
-import Header from "@/frame/header/header.vue";
-import Board from "@/frame/board/board.vue";
-import Dock from "@/frame/dock/dock.vue";
+import Header from "@/frame/header/Header.vue";
+import Board from "@/frame/board/Board.vue";
+import Dock from "@/frame/dock/Dock.vue";
 
 // 对话框列表
 const dialogs = computed(() => useDialogStore().dialogs);

@@ -1,4 +1,4 @@
-import {Component, ComponentAction} from "@/components/component";
+import {Component, ComponentAction} from "@/components/Component";
 
 /**
  * 块型组件的统一父类

@@ -6,7 +6,7 @@
  -->
 <script setup lang="ts">
 // 定义组件属性
-import {Note, NoteAction} from "@/components/blocks/note/note";
+import {Note, NoteAction} from "@/components/blocks/note/Note";
 import {computed, ref} from "vue";
 import Editor from "@/components/blocks/note/editor/NoteEditorDialog.vue";
 import {useComponentStore} from "@/stores/component";

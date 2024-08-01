@@ -8,7 +8,7 @@
 import {StyleValue, computed, getCurrentInstance, ref, toRef, watch, type ComputedRef} from "vue";
 import {useCanvasStore} from "@/stores/canvas";
 import i18n from "@/assets/lang";
-import {type Component, ComponentAction} from "@/components/component";
+import {type Component, ComponentAction} from "@/components/Component";
 import {useComponentStore} from "@/stores/component";
 import {compRegis} from "@/components/index";
 

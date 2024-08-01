@@ -9,8 +9,8 @@ import {computed} from "vue";
 import {useCanvasStore} from "@/stores/canvas";
 import {useComponentStore} from "@/stores/component";
 import {Hotkeys} from "@/frame/board/hotkeys";
-import Toolbar from "@/frame/board/toolbar/toolbar.vue";
-import SisuoComp from "@/components/sisuo-comp.vue";
+import Toolbar from "@/frame/board/toolbar/Toolbar.vue";
+import SisuoComp from "@/components/Component.vue";
 
 const canvasStore = useCanvasStore();
 const componentStore = useComponentStore();
