@@ -13,10 +13,14 @@ import {ref} from "vue";
 export class Pointer {
     // 用户
     user: string;
-    // x坐标
+    // 对于画布的x坐标
     x: number;
-    // y坐标
+    // 对于画布的y坐标
     y: number;
+    // 对于视窗的x坐标
+    clientX: number;
+    // 对于视窗的y坐标
+    clientY: number;
     // 选中的组件
     selected: string[] = [];
     // 状态

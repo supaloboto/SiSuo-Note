@@ -23,8 +23,11 @@ const mouseMove = (evt: MouseEvent) => {
   // 获取画布的上边距和左边距
   const canvas = document.getElementById("sisuo-canvas");
   const canvasRect = canvas.getBoundingClientRect();
+  // todo 计算画布缩放
   canvasStore.currentPointer.x = evt.clientX - canvasRect.left;
   canvasStore.currentPointer.y = evt.clientY - canvasRect.top;
+  canvasStore.currentPointer.clientX = evt.clientX - canvasRect.left;
+  canvasStore.currentPointer.clientY = evt.clientY - canvasRect.top;
 }
 
 // 点击空白处 取消选中

@@ -5,7 +5,7 @@
  - @since 2024/07/10
  -->
 <script setup lang="ts">
-import {StyleValue, computed, getCurrentInstance, ref, toRef, watch, type ComputedRef} from "vue";
+import {StyleValue, computed, ref, watch, type ComputedRef, onBeforeUnmount} from "vue";
 import {useCanvasStore} from "@/stores/canvas";
 import i18n from "@/assets/lang";
 import {type Component, ComponentAction} from "@/components/Component";
@@ -182,6 +182,14 @@ const resizeEnd = () => {
   // 移除document上的监听
   document.removeEventListener('mouseup', resizeEnd);
 }
+
+/**
+ * 组件移除时移除监听
+ */
+onBeforeUnmount(() => {
+  dragEnd();
+  resizeEnd();
+});
 
 </script>
 

@@ -1,9 +1,10 @@
 /* 统一管理z-index */
+/* dialog的z-index在200-299之间 */
 :root {
     /* header */
     --header-zindex: 100;
     /* 侧边栏 */
     --toolbar-zindex: 100;
     /* dock */
-    --dock-zindex: 110;
+    --dock-zindex: 300;
 }

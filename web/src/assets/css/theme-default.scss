@@ -1,7 +1,7 @@
 /**
  * 默认主题
  * @author 刘志栋
- * @since 2024-07-28
+ * @since 2024/07/28
  */
 :root[theme='default'] {
   --body-background-color: #ffffff;
@@ -34,4 +34,18 @@
   --component-border-color: #000;
   --component-resize-wrapper-border-color: #62bee6;
   --component-resize-wrapper-fill-color: #62bee6;
+  /* 对话框样式 */
+  --dialog-border-color: #b5b5b5;
+  --dialog-background-color: #ffffff;
+  --dialog-title-background-color: #f5f5f5;
+  --dialog-title-text-color: #000;
+  --dialog-title-border-color: #b5b5b5;
+  --dialog-btn-border-color: #b5b5b5;
+  --dialog-btn-icon-color: #656565;
+  --dialog-btn-close-color: #f3a6a6;
+  --dialog-btn-close-hover-color: #f4b5b5;
+  --dialog-btn-expand-color: #e8d4a3;
+  --dialog-btn-expand-hover-color: #ede3b9;
+  --dialog-btn-minimize-color: #a3e8c1;
+  --dialog-btn-minimize-hover-color: #b9edc2;
 }

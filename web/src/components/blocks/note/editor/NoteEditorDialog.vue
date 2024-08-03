@@ -26,10 +26,15 @@ onMounted(() => {
 
 <template>
   <Dialog :id="id">
-    <div id="vditor" style="margin-top:50px"></div>
+    <div :id="'vditor-'+id" class="vditor"></div>
   </Dialog>
 </template>
 
 <style scoped>
-
+.vditor {
+  width: 100%;
+  height: 100%;
+  background-color: #ffffff;
+  border: none;
+}
 </style>

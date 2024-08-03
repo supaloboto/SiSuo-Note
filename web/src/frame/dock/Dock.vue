@@ -30,7 +30,7 @@ const mouseLeave = (index: number) => {
  */
 const click = (index: number) => {
   console.log('click on dialog', dialogs.value[index].title);
-  dialogs.value[index].expand(null);
+  dialogs.value[index].open(null);
 };
 
 /**
@@ -138,6 +138,7 @@ const adjustTitlePos = (dialogIndex: number) => {
   color: var(--dock-item-font-color);
   /* 避免文字溢出 */
   overflow: hidden;
+  white-space: nowrap;
   text-overflow: ellipsis;
 
   svg {
@@ -159,6 +160,7 @@ const adjustTitlePos = (dialogIndex: number) => {
   font-size: 16px;
   /* 取消overflow-hidden以显示出悬浮标题 */
   overflow: visible;
+  white-space: normal;
 
   svg {
     width: 80px;

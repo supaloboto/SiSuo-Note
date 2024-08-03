@@ -15,21 +15,24 @@ import {NoteEditorDialog} from "@/components/blocks/note/editor/NoteEditorDialog
 export const useDialogStore = defineStore('dialog', () => {
     // 对话框列表
     const dialogs = ref<Dialog<any>[]>([
-        new NoteEditorDialog('setting', '系统设置', {x: 100, y: 100}, {
-            width: 400,
-            height: 300
+        new NoteEditorDialog('setting', '系统设置', {clientX: 100, clientY: 100}, {
+            width: 800,
+            height: 600
         }, null),
-        new NoteEditorDialog('1', '文档1', {x: 100, y: 100}, {
-            width: 400,
-            height: 300
+        new NoteEditorDialog('1', '文档1', {clientX: 200, clientY: 200}, {
+            width: 800,
+            height: 600
         }, null),
-        new NoteEditorDialog('2', '文档2', {x: 100, y: 100}, {
-            width: 400,
-            height: 300
+        new NoteEditorDialog('2', '文档2', {clientX: 300, clientY: 300}, {
+            width: 800,
+            height: 600
         }, null),
-        new NoteEditorDialog('3', '文档3', {x: 100, y: 100}, {
-            width: 400,
-            height: 300
+        new NoteEditorDialog('3', '文档3文档3文档3文档3文档文档3文档3文档3文档3文档3文档3文档3文档3文档3文档3文档3文档3文档3文档3文档3文档3文档3文档3文档3文档33', {
+            clientX: 400,
+            clientY: 400
+        }, {
+            width: 800,
+            height: 600
         }, null)
     ]);
 
