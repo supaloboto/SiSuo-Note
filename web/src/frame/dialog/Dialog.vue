@@ -5,34 +5,31 @@
  - @since 2024/07/31
  -->
 <script setup lang="ts">
-import {computed, onBeforeUnmount, ref, StyleValue, toRef, watch} from "vue";
-import {useCanvasStore} from "@/stores/canvas";
-import {useDialogStore} from "@/stores/dialog";
+import {
+  computed,
+  onBeforeUnmount,
+  ref,
+  StyleValue, toRef,
+} from "vue";
 import type {Dialog} from "@/frame/dialog/Dialog";
 
 const props = defineProps<{
-  id: string;
+  dialog: Dialog;
+  dialogIndex: number;
 }>();
-
-// 获取对话框数据
-const dialogStore = useDialogStore();
-const dialog = computed<Dialog<any>>(() => dialogStore.dialogs.find(d => d.id === props.id));
-const dialogIndex = computed<number>(() => dialogStore.dialogs.findIndex(d => d.id === props.id));
 
 // 对话框位置样式
 const posStyle = computed<StyleValue>(() => {
   return {
     position: 'absolute',
-    left: `${dialog.value.pos.clientX}px`,
-    top: `${dialog.value.pos.clientY}px`,
-    'z-index': 200 + dialogIndex.value,
-    width: `${dialog.value.rect.width}px`,
-    height: `${dialog.value.rect.height}px`,
+    left: `${props.dialog.pos.clientX}px`,
+    top: `${props.dialog.pos.clientY}px`,
+    'z-index': 200 + props.dialogIndex,
+    width: `${props.dialog.rect.width}px`,
+    height: `${props.dialog.rect.height}px`,
+    opacity: props.dialog.animation.opacity,
   }
 });
-
-// 对话框是否可见
-const visible = toRef(dialog.value, 'visible');
 
 /*------ 对话框拖拽逻辑 ------*/
 const dragStartPos = ref(null);
@@ -58,8 +55,8 @@ const drag = (evt: MouseEvent) => {
   }
   // 计算运动距离 添加至对话框位置
   // 此处的evt.movementX和evt.movementY会固定为0 所以需要手动根据记录的位置来计算
-  dialog.value.pos.clientX += evt.clientX - dragStartPos.value.clientX;
-  dialog.value.pos.clientY += evt.clientY - dragStartPos.value.clientY;
+  props.dialog.pos.clientX += evt.clientX - dragStartPos.value.clientX;
+  props.dialog.pos.clientY += evt.clientY - dragStartPos.value.clientY;
   dragStartPos.value = {
     clientX: evt.clientX,
     clientY: evt.clientY,
@@ -85,7 +82,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="dialog-div" :class="{moving:!!dragStartPos}" :style="posStyle" v-show="visible">
+  <div class="dialog-div" :class="{moving:!!dragStartPos}" :style="posStyle" v-show="dialog.visible">
     <div class="dialog-title" draggable="true" @dragstart.stop.prevent="dragStart">
       <div class="dialog-title-text">{{ dialog.title }}</div>
       <button class="dialog-btn close" @click="dialog.close">
@@ -95,11 +92,11 @@ onBeforeUnmount(() => {
         <icon v-if="!dialog.maximized" name="system-expand"/>
         <icon v-else name="system-shrink"/>
       </button>
-      <button class="dialog-btn minimize" @click="dialog.minimize">
+      <button class="dialog-btn minimize" @click="dialog.minimize(null)">
         <icon name="system-minimize"/>
       </button>
     </div>
-    <div class="dialog-content">
+    <div class="dialog-content" v-show="!dialog.animation.animating">
       <slot></slot>
     </div>
   </div>
@@ -114,7 +111,7 @@ $dialog-title-height: 29px;
   border-radius: 5px;
   background-color: var(--dialog-background-color);
   // 动画效果
-  transition: top 0.2s, left 0.2s, width 0.2s, height 0.2s;
+  transition: top 0.2s, left 0.2s, width 0.2s, height 0.2s, opacity 0.2s;
 }
 
 // 拖动时取消动画效果

@@ -29,8 +29,13 @@ const mouseLeave = (index: number) => {
  * 点击展开对话框
  */
 const click = (index: number) => {
-  console.log('click on dialog', dialogs.value[index].title);
-  dialogs.value[index].open(null);
+  // 获取对话框对象 以调用开关方法
+  const dialog = dialogs.value[index];
+  if (dialog.visible) {
+    dialog.minimize(null);
+  } else {
+    dialog.open(null);
+  }
 };
 
 /**
@@ -85,7 +90,9 @@ const adjustTitlePos = (dialogIndex: number) => {
 <template>
   <div class="dock-div">
     <div v-for="(dialog,index) in dialogs" :key="index"
-         :class="{'dock-dialog':true,'dock-dialog-hover':index===mouseOnIndex}" @mouseover="mouseOver(index)"
+         :id="dialog.id"
+         :class="{'dock-dialog':true,'dock-dialog-hover':index===mouseOnIndex}"
+         @mouseover="mouseOver(index)"
          @mouseleave="mouseLeave(index)" @click="click(index)">
       <!-- 缩略图 对特殊弹框显示对应的icon 对普通弹框显示标题或缩略图  -->
       <div v-if="dialog.id==='setting'">

@@ -25,7 +25,8 @@ const dialogs = computed(() => useDialogStore().dialogs);
     <!-- dock -->
     <Dock id="dock"></Dock>
     <!-- 对话框 -->
-    <component v-for="(dialog,index) in dialogs" :is="dialog.component" :id="dialog.id"></component>
+    <component v-for="(dialog,index) in dialogs" :is="dialog.component" :key="dialog.id" :dialog="dialog"
+               :dialogIndex="index"></component>
   </div>
 </template>
 
