@@ -124,7 +124,7 @@ const contextMenu = (evt: MouseEvent) => {
 }
 
 /*------ 四角边框 ------*/
-const wrappers = ref<string[]>(['nw', 'ne', 'sw', 'se']);
+const wrappers = ref<string[]>(['n', 'e', 'w', 's', 'nw', 'ne', 'sw', 'se']);
 const resizeWatch = ref(null);
 /**
  * 开始调整大小
@@ -139,22 +139,26 @@ const resizeStart = (evt: MouseEvent, wrapper: string) => {
       width: wrapper.includes('w') ? (pos.x + rect.width - mousePos.value.x) : (mousePos.value.x - pos.x),
       height: wrapper.includes('n') ? (pos.y + rect.height - mousePos.value.y) : (mousePos.value.y - pos.y),
     };
-    // 以10px为最小宽度 调整组件宽度
-    const widthOffset = currentRect.width - rect.width;
-    if (rect.width + widthOffset > 10) {
-      rect.width += widthOffset;
-      // 如果是调整了左边的两个点 则需要调整位置
-      if (wrapper.includes('w')) {
-        pos.x -= widthOffset;
+    if (wrapper.includes('w') || wrapper.includes('e')) {
+      // 以10px为最小宽度 调整组件宽度
+      const widthOffset = currentRect.width - rect.width;
+      if (rect.width + widthOffset > 10) {
+        rect.width += widthOffset;
+        // 如果是调整了左边的两个点 则需要调整位置
+        if (wrapper.includes('w')) {
+          pos.x -= widthOffset;
+        }
       }
     }
     // 以10px为最小高度 调整组件高度
-    const heightOffset = currentRect.height - rect.height;
-    if (rect.height + heightOffset > 10) {
-      rect.height += heightOffset;
-      // 如果是调整了上边的两个点 则需要调整位置
-      if (wrapper.includes('n')) {
-        pos.y -= heightOffset;
+    if (wrapper.includes('n') || wrapper.includes('s')) {
+      const heightOffset = currentRect.height - rect.height;
+      if (rect.height + heightOffset > 10) {
+        rect.height += heightOffset;
+        // 如果是调整了上边的两个点 则需要调整位置
+        if (wrapper.includes('n')) {
+          pos.y -= heightOffset;
+        }
       }
     }
   }
@@ -235,10 +239,48 @@ onBeforeUnmount(() => {
   border: 1px solid var(--component-resize-wrapper-border-color) !important;
 }
 
+/* 四角定位点样式 */
 .resize-wrapper {
   position: absolute;
   width: 8px;
   height: 8px;
+}
+
+.n, .s {
+  width: calc(100% - 12px);
+  transform: translateX(-50%);
+}
+
+.n {
+  top: -4px;
+  left: 50%;
+  cursor: n-resize;
+}
+
+.s {
+  bottom: -4px;
+  left: 50%;
+  cursor: s-resize;
+}
+
+.e, .w {
+  height: calc(100% - 12px);
+  transform: translateY(-50%);
+}
+
+.e {
+  top: 50%;
+  right: -4px;
+  cursor: e-resize;
+}
+
+.w {
+  top: 50%;
+  left: -4px;
+  cursor: w-resize;
+}
+
+.nw, .ne, .sw, .se {
   background-color: var(--component-resize-wrapper-fill-color);
 }
 
