@@ -18,15 +18,18 @@ const props = defineProps<{
   dialogIndex: number;
 }>();
 
+const pos = toRef(props.dialog, 'pos');
+const rect = toRef(props.dialog, 'rect');
+
 // 对话框位置样式
 const posStyle = computed<StyleValue>(() => {
   return {
     position: 'absolute',
-    left: `${props.dialog.pos.clientX}px`,
-    top: `${props.dialog.pos.clientY}px`,
+    left: `${pos.value.clientX}px`,
+    top: `${pos.value.clientY}px`,
     'z-index': 200 + props.dialogIndex,
-    width: `${props.dialog.rect.width}px`,
-    height: `${props.dialog.rect.height}px`,
+    width: `${rect.value.width}px`,
+    height: `${rect.value.height}px`,
     opacity: props.dialog.animation.opacity,
   }
 });
@@ -55,8 +58,8 @@ const drag = (evt: MouseEvent) => {
   }
   // 计算运动距离 添加至对话框位置
   // 此处的evt.movementX和evt.movementY会固定为0 所以需要手动根据记录的位置来计算
-  props.dialog.pos.clientX += evt.clientX - dragStartPos.value.clientX;
-  props.dialog.pos.clientY += evt.clientY - dragStartPos.value.clientY;
+  pos.value.clientX += evt.clientX - dragStartPos.value.clientX;
+  pos.value.clientY += evt.clientY - dragStartPos.value.clientY;
   dragStartPos.value = {
     clientX: evt.clientX,
     clientY: evt.clientY,

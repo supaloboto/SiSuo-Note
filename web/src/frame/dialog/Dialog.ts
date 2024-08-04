@@ -17,7 +17,7 @@ export class Dialog {
     // 对话框类型
     type: string;
     // 位置
-    pos: { clientX: number, clientY: number };
+    pos: Ref<{ clientX: number, clientY: number }>;
     // 大小
     rect: Ref<{ width: number, height: number }>;
     // 是否显示
@@ -42,7 +42,7 @@ export class Dialog {
         this.id = id;
         this.title = title;
         this.type = type;
-        this.pos = pos;
+        this.pos = ref(pos);
         this.rect = ref(rect);
         this.animation = new DialogAnimation(this);
     }

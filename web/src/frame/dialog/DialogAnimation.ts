@@ -35,8 +35,8 @@ export class DialogAnimation {
      * 更改对话框大小位置
      */
     applyRect = (rect: { clientX: number, clientY: number, width: number, height: number }) => {
-        this.dialog.pos.clientX = rect.clientX;
-        this.dialog.pos.clientY = rect.clientY;
+        this.dialog.pos.value.clientX = rect.clientX;
+        this.dialog.pos.value.clientY = rect.clientY;
         this.dialog.rect.value.width = rect.width;
         this.dialog.rect.value.height = rect.height;
     };
@@ -70,8 +70,8 @@ export class DialogAnimation {
             // 记录原本的位置
             if (!self.originRect) {
                 self.originRect = {
-                    clientX: self.dialog.pos.clientX,
-                    clientY: self.dialog.pos.clientY,
+                    clientX: self.dialog.pos.value.clientX,
+                    clientY: self.dialog.pos.value.clientY,
                     width: self.dialog.rect.value.width,
                     height: self.dialog.rect.value.height,
                 };
@@ -123,8 +123,8 @@ export class DialogAnimation {
         // 记录原本的位置
         if (!this.originRect) {
             this.originRect = {
-                clientX: this.dialog.pos.clientX,
-                clientY: this.dialog.pos.clientY,
+                clientX: this.dialog.pos.value.clientX,
+                clientY: this.dialog.pos.value.clientY,
                 width: this.dialog.rect.value.width,
                 height: this.dialog.rect.value.height,
             };
@@ -150,8 +150,8 @@ export class DialogAnimation {
         // 借用最小化动画 将对话框进行收缩 然后隐藏
         // 整理收缩的结束位置
         const endRect = {
-            clientX: this.dialog.pos.clientX + this.dialog.rect.value.width * 0.1,
-            clientY: this.dialog.pos.clientY + this.dialog.rect.value.height * 0.1,
+            clientX: this.dialog.pos.value.clientX + this.dialog.rect.value.width * 0.1,
+            clientY: this.dialog.pos.value.clientY + this.dialog.rect.value.height * 0.1,
             width: this.dialog.rect.value.width * 0.8,
             height: this.dialog.rect.value.height * 0.8,
         };
