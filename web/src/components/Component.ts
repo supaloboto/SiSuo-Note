@@ -6,7 +6,7 @@ import {useCanvasStore} from "@/stores/canvas";
  * @author 刘志栋
  * @since 2024/07/24
  */
-export interface Component {
+export class Component {
     // 组件类型
     type: string;
     // 组件id
@@ -17,28 +17,13 @@ export interface Component {
     rect: { width: number, height: number };
     // 组件数据
     data: any;
-}
 
-/**
- * 组件的统一行为
- * @author 刘志栋
- * @since 2024/07/24
- */
-export abstract class ComponentAction {
-    props: Component;
-
-    constructor(props: Component) {
-        this.props = props;
-        // 记录在store中
-        const componentStore = useComponentStore();
-        componentStore.componentActionMap.set(props.id, this);
-    }
-
-    /**
-     * 获取组件属性 用于子类调用
-     */
-    getProps(): Component {
-        return this.props;
+    constructor({type, id, pos, rect, data}) {
+        this.type = type;
+        this.id = id;
+        this.pos = pos;
+        this.rect = rect;
+        this.data = data;
     }
 
     /**
@@ -67,7 +52,7 @@ export abstract class ComponentAction {
      */
     select(removeOthers: boolean = true, reverse: boolean = false): boolean {
         const canvasStore = useCanvasStore();
-        canvasStore.selectComponent(this.props.id, removeOthers, reverse);
+        canvasStore.selectComponent(this.id, removeOthers, reverse);
         return true;
     }
 
@@ -76,7 +61,7 @@ export abstract class ComponentAction {
      */
     unselect(): boolean {
         const canvasStore = useCanvasStore();
-        canvasStore.unSelectComponent(this.props.id);
+        canvasStore.unSelectComponent(this.id);
         return true;
     }
 
@@ -88,8 +73,7 @@ export abstract class ComponentAction {
         this.unselect();
         // 从组件列表中删除
         const componentStore = useComponentStore();
-        componentStore.components = componentStore.components.filter(item => item.id !== this.props.id);
-        componentStore.componentActionMap.delete(this.props.id);
+        componentStore.components = componentStore.components.filter(item => item.id !== this.id);
         return true;
     }
 

@@ -6,35 +6,23 @@
  -->
 <script setup lang="ts">
 // 定义组件属性
-import {Note, NoteAction} from "@/components/blocks/note/Note";
-import {computed, ref} from "vue";
-import Editor from "@/components/blocks/note/editor/NoteEditorDialog.vue";
-import {useComponentStore} from "@/stores/component";
+import {Note} from "@/components/blocks/note/Note";
+import {ref} from "vue";
+import NoteEditorDialog from "@/components/blocks/note/editor/NoteEditorDialog.vue";
 
 const props = defineProps({
-  id: String
+  compData: Note,
 });
-
-const componentStore = useComponentStore();
-
-// 获取组件属性
-const note = computed(() => componentStore.componentMap.get(props.id));
 
 // 控制编辑器显隐
 const showEditor = ref(false);
-
-// 组件行为初始化
-const action = new NoteAction({
-  props: note.value,
-  showEditor
-});
 
 </script>
 
 <template>
   <div class="note-div">
     <div v-if="showEditor">
-      <Editor :show="showEditor"/>
+      <NoteEditorDialog :show="showEditor"/>
     </div>
   </div>
 </template>

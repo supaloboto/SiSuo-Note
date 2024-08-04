@@ -1,5 +1,6 @@
 import {useCanvasStore} from "@/stores/canvas";
 import {useComponentStore} from "@/stores/component";
+import {deepCopy} from "@/assets/utils/copy";
 
 /**
  * 快捷键
@@ -36,7 +37,7 @@ export class Hotkeys {
     static selectAll() {
         const componentStore = useComponentStore();
         componentStore.components.forEach(comp => {
-            componentStore.componentActionMap.get(comp.id)?.select(false);
+            comp?.select(false);
         })
     }
 
@@ -47,10 +48,10 @@ export class Hotkeys {
         const componentStore = useComponentStore();
         const canvasStore = useCanvasStore();
         // 获取选中组件的ID 拷贝以保证遍历过程中删除不会出错
-        const selected: string[] = JSON.parse(JSON.stringify(canvasStore.currentPointer.selected));
+        const selected: string[] = deepCopy(canvasStore.currentPointer.selected);
         // 删除选中组件
         selected.forEach(id => {
-            componentStore.componentActionMap.get(id)?.delete();
+            componentStore.components.find(comp => comp.id === id)?.delete();
         });
     }
 }

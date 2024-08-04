@@ -8,12 +8,11 @@
 import {StyleValue, computed, ref, watch, type ComputedRef, onBeforeUnmount} from "vue";
 import {useCanvasStore} from "@/stores/canvas";
 import i18n from "@/assets/lang";
-import {type Component, ComponentAction} from "@/components/Component";
-import {useComponentStore} from "@/stores/component";
+import {Component} from "@/components/Component";
 import {compRegis} from "@/components/index";
 
 const props = defineProps({
-  id: String,
+  compData: {type: Component, required: true},
 });
 
 // 使用$t获取国际化文本
@@ -24,22 +23,18 @@ const compRef = ref(null);
 
 // 获取store
 const canvasStore = useCanvasStore();
-const componentStore = useComponentStore();
 
-// 获取组件数据和组件行为对象
-const compData: ComputedRef<Component> = computed(() => componentStore.componentMap.get(props.id));
-const compAction: ComputedRef<ComponentAction> = computed(() => componentStore.componentActionMap.get(props.id));
 // 获取组件选中状态
-const selected: ComputedRef<boolean> = computed(() => canvasStore.currentPointer.selected.includes(props.id));
+const selected: ComputedRef<boolean> = computed(() => canvasStore.currentPointer.selected.includes(props.compData.id));
 
 // 组件位置样式
 const compDivStyle = computed<StyleValue>(() => {
   return {
     position: 'absolute',
-    width: `${compData.value.rect.width}px`,
-    height: `${compData.value.rect.height}px`,
-    marginTop: `${compData.value.pos.y}px`,
-    marginLeft: `${compData.value.pos.x}px`,
+    width: `${props.compData.rect.width}px`,
+    height: `${props.compData.rect.height}px`,
+    marginTop: `${props.compData.pos.y}px`,
+    marginLeft: `${props.compData.pos.x}px`,
   }
 });
 
@@ -54,20 +49,20 @@ const dragWatch = ref(null);
 const dragStart = () => {
   // 如果当前选中了多个组件则一起移动 选中了一个组件则改为选中当前组件
   if (canvasStore.currentPointer.selected.length > 1) {
-    compAction.value.select(false);
+    props.compData.select(false);
     // todo 多个组件一起移动
   } else {
-    compAction.value.select(true);
+    props.compData.select(true);
   }
   // 拖拽开始 计算鼠标偏移量
   const dragMouseOffset = {
-    x: mousePos.value.x - compData.value.pos.x,
-    y: mousePos.value.y - compData.value.pos.y,
+    x: mousePos.value.x - props.compData.pos.x,
+    y: mousePos.value.y - props.compData.pos.y,
   };
   // 建立监听 在拖拽中移动组件
   dragWatch.value = watch(mousePos, (pos) => {
-    compData.value.pos.x = pos.x - dragMouseOffset.x;
-    compData.value.pos.y = pos.y - dragMouseOffset.y;
+    props.compData.pos.x = pos.x - dragMouseOffset.x;
+    props.compData.pos.y = pos.y - dragMouseOffset.y;
   }, {deep: true});
   // 因为有时候鼠标移动太快会导致监听不到mouseup事件 所以在document上建立监听
   document.addEventListener('mouseup', dragEnd);
@@ -88,16 +83,16 @@ const dragEnd = () => {
  * 点击事件
  */
 const click = (evt: MouseEvent) => {
+  // 如果按下ctrl键则多选
+  if (evt.ctrlKey) {
+    props.compData.select(false, true);
+    return;
+  }
   // 因为拖拽动作也会触发click 因此这里添加判断 如果当前组件已经被选中则不做动作 避免此时触发click而将多选取消
   if (selected.value) {
     return;
   }
-  // 如果按下ctrl键则多选
-  if (evt.ctrlKey) {
-    compAction.value.select(false, true);
-  } else {
-    compAction.value.select(true);
-  }
+  props.compData.select(true);
 }
 
 /**
@@ -114,7 +109,7 @@ const mouseUp = (evt: MouseEvent) => {
  * @param evt
  */
 const dblclick = (evt: MouseEvent) => {
-  compAction.value.dblclick();
+  props.compData.dblclick();
 }
 
 /**
@@ -123,9 +118,9 @@ const dblclick = (evt: MouseEvent) => {
  */
 const contextMenu = (evt: MouseEvent) => {
   // 触发选中事件
-  compAction.value.select(true, false);
+  props.compData.select(true, false);
   // 触发右键事件
-  compAction.value.contextMenu();
+  props.compData.contextMenu();
 }
 
 /*------ 四角边框 ------*/
@@ -137,8 +132,8 @@ const resizeWatch = ref(null);
 const resizeStart = (evt: MouseEvent, wrapper: string) => {
   // 组件大小调整方法
   const resizeComp = () => {
-    const pos = compData.value.pos;
-    const rect = compData.value.rect;
+    const pos = props.compData.pos;
+    const rect = props.compData.rect;
     // 获取当前由[选中定位点的对角点]与[鼠标位置]构成的矩阵宽高
     const currentRect = {
       width: wrapper.includes('w') ? (pos.x + rect.width - mousePos.value.x) : (mousePos.value.x - pos.x),
