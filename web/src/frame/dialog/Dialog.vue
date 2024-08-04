@@ -9,7 +9,7 @@ import {
   computed,
   onBeforeUnmount,
   ref,
-  StyleValue, toRef,
+  StyleValue, toRef, watch,
 } from "vue";
 import type {Dialog} from "@/frame/dialog/Dialog";
 
@@ -82,12 +82,78 @@ onBeforeUnmount(() => {
   dragEnd();
 });
 
+/*------ 对话框尺寸拖动逻辑 ------*/
+const wrappers = ref<string[]>(['n', 'e', 'w', 's', 'nw', 'ne', 'sw', 'se']);
+const resizingWrapper = ref(null);
+/**
+ * 开始调整大小
+ */
+const resizeStart = (evt: MouseEvent, wrapper: string) => {
+  resizingWrapper.value = wrapper;
+  // 因为@dragstart会在鼠标已经做了一定位移之后才触发 所以这里先手动调用一次 避免出现鼠标移动较快时定位点不跟手的情况
+  resizeComp(evt);
+  // 建立监听
+  document.addEventListener('mousemove', resizeComp);
+  document.addEventListener('mouseup', resizeEnd);
+}
+
+/**
+ * 组件大小调整方法
+ */
+const resizeComp = (evt: MouseEvent) => {
+  const wrapper = resizingWrapper.value;
+  if (!wrapper) {
+    return;
+  }
+  // 获取当前由[选中定位点的对角点]与[鼠标位置]构成的矩阵宽高
+  const currentRect = {
+    width: wrapper.includes('w') ? (pos.value.clientX + rect.value.width - evt.clientX) : (evt.clientX - pos.value.clientX),
+    height: wrapper.includes('n') ? (pos.value.clientY + rect.value.height - evt.clientY) : (evt.clientY - pos.value.clientY),
+  };
+  if (wrapper.includes('w') || wrapper.includes('e')) {
+    // 以50px为最小宽度 调整组件宽度
+    const widthOffset = currentRect.width - rect.value.width;
+    if (rect.value.width + widthOffset > 50) {
+      rect.value.width += widthOffset;
+      // 如果是调整了左边的两个点 则需要调整位置
+      if (wrapper.includes('w')) {
+        pos.value.clientX -= widthOffset;
+      }
+    }
+  }
+  if (wrapper.includes('n') || wrapper.includes('s')) {
+    // 以50px为最小高度 调整组件高度
+    const heightOffset = currentRect.height - rect.value.height;
+    if (rect.value.height + heightOffset > 50) {
+      rect.value.height += heightOffset;
+      // 如果是调整了上边的两个点 则需要调整位置
+      if (wrapper.includes('n')) {
+        pos.value.clientY -= heightOffset;
+      }
+    }
+  }
+}
+
+/**
+ * 结束调整大小
+ */
+const resizeEnd = () => {
+  resizingWrapper.value = null;
+  // 移除document上的监听
+  document.removeEventListener('mousemove', resizeComp);
+  document.removeEventListener('mouseup', resizeEnd);
+}
+
 </script>
 
 <template>
-  <div class="dialog-div" :class="{moving:!!dragStartPos}" :style="posStyle" v-show="dialog.visible">
+  <div class="dialog-div" :class="{moving:!!dragStartPos || !!resizingWrapper}" :style="posStyle"
+       v-show="dialog.visible">
+    <!-- 标题栏 -->
     <div class="dialog-title" draggable="true" @dragstart.stop.prevent="dragStart">
+      <!-- 标题文字 -->
       <div class="dialog-title-text">{{ dialog.title }}</div>
+      <!-- 按钮 -->
       <button class="dialog-btn close" @click="dialog.close">
         <icon name="system-close"/>
       </button>
@@ -99,9 +165,16 @@ onBeforeUnmount(() => {
         <icon name="system-minimize"/>
       </button>
     </div>
+    <!-- 内容 -->
     <div class="dialog-content" v-show="!dialog.animation.animating">
       <slot></slot>
     </div>
+    <!-- 四角定位 -->
+    <div v-for="wrapper in wrappers" :key="wrapper"
+         :class="`resize-wrapper ${wrapper}`"
+         draggable="true"
+         @dragstart.stop.prevent="resizeStart($event,wrapper)"
+    ></div>
   </div>
 </template>
 
@@ -195,4 +268,68 @@ $dialog-title-height: 29px;
     background-color: var(--dialog-btn-minimize-hover-color);
   }
 }
+
+// 四角定位样式
+.resize-wrapper {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+}
+
+.n {
+  width: calc(100% - 16px);
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: n-resize;
+}
+
+.e {
+  height: calc(100% - 16px);
+  top: 50%;
+  right: -5px;
+  transform: translateY(-50%);
+  cursor: e-resize;
+}
+
+.w {
+  height: calc(100% - 16px);
+  top: 50%;
+  left: -5px;
+  transform: translateY(-50%);
+  cursor: w-resize;
+}
+
+.s {
+  width: calc(100% - 16px);
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: s-resize;
+}
+
+.nw {
+  top: -5px;
+  left: -5px;
+  cursor: nw-resize;
+}
+
+.ne {
+  top: -5px;
+  right: -5px;
+  cursor: ne-resize;
+}
+
+.sw {
+  bottom: -5px;
+  left: -5px;
+  cursor: sw-resize;
+}
+
+.se {
+  bottom: -5px;
+  right: -5px;
+  cursor: se-resize;
+}
+
 </style>
