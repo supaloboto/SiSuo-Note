@@ -12,14 +12,20 @@ import {
   StyleValue, toRef, watch,
 } from "vue";
 import type {Dialog} from "@/frame/dialog/Dialog";
+import {useDialogStore} from "@/stores/dialog";
+
+const dialogStore = useDialogStore();
 
 const props = defineProps<{
   dialog: Dialog;
   dialogIndex: number;
 }>();
 
+// 对话框位置和尺寸
 const pos = toRef(props.dialog, 'pos');
 const rect = toRef(props.dialog, 'rect');
+// 对话框堆叠索引 越小越靠上
+const dialogStackIndex = computed(() => dialogStore.dialogStack.indexOf(props.dialog.id));
 
 // 对话框位置样式
 const posStyle = computed<StyleValue>(() => {
@@ -27,7 +33,8 @@ const posStyle = computed<StyleValue>(() => {
     position: 'absolute',
     left: `${pos.value.clientX}px`,
     top: `${pos.value.clientY}px`,
-    'z-index': 200 + props.dialogIndex,
+    // 预留的z-index为200-299 (dialogStackIndex越小越靠上 可能为-1)
+    'z-index': 298 - dialogStackIndex.value,
     width: `${rect.value.width}px`,
     height: `${rect.value.height}px`,
     opacity: props.dialog.animation.opacity,
@@ -147,8 +154,9 @@ const resizeEnd = () => {
 </script>
 
 <template>
-  <div class="dialog-div" :class="{moving:!!dragStartPos || !!resizingWrapper}" :style="posStyle"
-       v-show="dialog.visible">
+  <div class="dialog-div" :class="{focus:dialogStackIndex===0, moving:!!dragStartPos || !!resizingWrapper}"
+       :style="posStyle"
+       v-show="dialog.visible" @click="dialog.focus()">
     <!-- 标题栏 -->
     <div class="dialog-title" draggable="true" @dragstart.stop.prevent="dragStart">
       <!-- 标题文字 -->
@@ -186,8 +194,19 @@ $dialog-title-height: 29px;
   border: 1px solid var(--dialog-border-color);
   border-radius: 5px;
   background-color: var(--dialog-background-color);
+  box-shadow: 0 0 15px 5px var(--dialog-shadow-color);;
   // 动画效果
   transition: top 0.2s, left 0.2s, width 0.2s, height 0.2s, opacity 0.2s;
+}
+
+// 聚焦效果
+.dialog-div.focus {
+  border-color: var(--dialog-focus-border-color);
+
+  .dialog-title {
+    background-color: var(--dialog-focus-title-background-color);
+    border-bottom-color: var(--dialog-focus-border-color);
+  }
 }
 
 // 拖动时取消动画效果
@@ -202,7 +221,7 @@ $dialog-title-height: 29px;
   align-content: center;
   user-select: none;
   background-color: var(--dialog-title-background-color);
-  border-bottom: 1px solid var(--dialog-title-border-color);
+  border-bottom: 1px solid var(--dialog-border-color);
   border-radius: 5px 5px 0 0;
 
   .dialog-title-text {

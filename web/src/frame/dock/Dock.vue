@@ -5,14 +5,24 @@
  - @since 2024/07/28
  -->
 <script setup lang="ts">
-import {computed, ref} from "vue";
+import {computed, onMounted, ref} from "vue";
 import {useDialogStore} from "@/stores/dialog";
-import {compRegis} from "@/components";
+import type {Dialog} from "@/frame/dialog/Dialog";
+import {NoteEditorDialog} from "@/components/blocks/note/editor/NoteEditorDialog";
 
+const dialogStore = useDialogStore();
 // 对话框列表
-const dialogs = computed(() => useDialogStore().dialogs);
+const dialogs = computed<Dialog[]>(() => dialogStore.dialogs);
 // 鼠标悬浮的对话框索引
 const mouseOnIndex = ref(-1);
+// 当前焦点对话框
+const currentFocusDialog = computed(() => {
+  if (dialogStore.dialogStack.length === 0) {
+    return '';
+  }
+  return dialogStore.dialogStack[0];
+});
+
 /**
  * 鼠标悬浮时修改对话框索引
  */
@@ -31,10 +41,17 @@ const mouseLeave = (index: number) => {
 const click = (index: number) => {
   // 获取对话框对象 以调用开关方法
   const dialog = dialogs.value[index];
-  if (dialog.visible) {
-    dialog.minimize(null);
-  } else {
+  // 当对话框没有打开时打开
+  if (!dialog.visible) {
     dialog.open(null);
+    return;
+  }
+  // 如果当前没有聚焦在此对话框则聚焦
+  if (currentFocusDialog.value !== dialog.id) {
+    dialog.focus();
+  } else {
+    // 如果已经聚焦在此对话框则最小化
+    dialog.minimize(null);
   }
 };
 
@@ -85,30 +102,58 @@ const adjustTitlePos = (dialogIndex: number) => {
   }
 };
 
+// 测试数据
+onMounted(() => {
+  new NoteEditorDialog('setting', '系统设置', {clientX: 100, clientY: 100}, {
+    width: 800,
+    height: 600
+  }, null);
+  new NoteEditorDialog('1', '文档1', {clientX: 200, clientY: 200}, {
+    width: 800,
+    height: 600
+  }, null);
+  new NoteEditorDialog('2', '文档2', {clientX: 300, clientY: 300}, {
+    width: 800,
+    height: 600
+  }, null);
+  new NoteEditorDialog('3', '文档3文档3文档3文档3文档文档3文档3文档3文档3文档3文档3文档3文档3文档3文档3文档3文档3文档3文档3文档3文档3文档3文档3文档3文档33', {
+    clientX: 400,
+    clientY: 400
+  }, {
+    width: 800,
+    height: 600
+  }, null);
+});
+
 </script>
 
 <template>
   <div class="dock-div">
-    <div v-for="(dialog,index) in dialogs" :key="index"
-         :id="dialog.id"
-         :class="{'dock-dialog':true,'dock-dialog-hover':index===mouseOnIndex}"
-         @mouseover="mouseOver(index)"
-         @mouseleave="mouseLeave(index)" @click="click(index)">
-      <!-- 缩略图 对特殊弹框显示对应的icon 对普通弹框显示标题或缩略图  -->
-      <div v-if="dialog.id==='setting'">
-        <icon name="system-setting"></icon>
-      </div>
-      <!-- todo 使用缩略图 -->
-      <span v-else>
+    <TransitionGroup name="dock-fade">
+      <div v-for="(dialog,index) in dialogs" :key="dialog.id" :id="dialog.id"
+           :class="{'dock-dialog':true, 'dock-dialog-focus':currentFocusDialog===dialog.id, 'dock-dialog-hover':index===mouseOnIndex}"
+           @mouseover="mouseOver(index)"
+           @mouseleave="mouseLeave(index)" @click="click(index)">
+        <!-- 缩略图 对特殊弹框显示对应的icon 对普通弹框显示标题或缩略图  -->
+        <div v-if="dialog.id==='setting'">
+          <icon name="system-setting"></icon>
+        </div>
+        <!-- todo 使用缩略图 -->
+        <span v-else>
         {{ dialog.title }}
       </span>
-      <!-- 悬浮标题 -->
-      <transition name="hover-title" @enter="titleShow(index)">
-        <div class="dock-dialog-hover-title" v-show="index===mouseOnIndex">
-          {{ dialog.title }}
-        </div>
-      </transition>
-    </div>
+        <!-- 关闭按钮 -->
+        <button class="dialog-btn close" v-show="index===mouseOnIndex" @click.stop="dialog.close()">
+          <icon name="system-close"/>
+        </button>
+        <!-- 悬浮标题 -->
+        <transition name="hover-title" @enter="titleShow(index)">
+          <div class="dock-dialog-hover-title" v-show="index===mouseOnIndex">
+            {{ dialog.title }}
+          </div>
+        </transition>
+      </div>
+    </TransitionGroup>
   </div>
 </template>
 
@@ -155,6 +200,10 @@ const adjustTitlePos = (dialogIndex: number) => {
     height: 45px;
     --path-fill: var(--dock-item-font-color);
   }
+}
+
+.dock-dialog-focus {
+  border: 2px solid var(--dock-item-focus-border-color);
 }
 
 .dock-dialog-hover {
@@ -220,4 +269,54 @@ const adjustTitlePos = (dialogIndex: number) => {
 .hover-title-leave-from {
   display: none;
 }
+
+/* 关闭按钮 */
+.dialog-btn {
+  position: absolute;
+  border-radius: 15px;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  padding: 0;
+  border: none;
+  user-select: none;
+
+  svg {
+    margin-top: 2px;
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.close {
+  left: calc(100% - 15px);
+  top: -5px;
+  background-color: var(--dock-item-close-btn-color);
+
+  svg {
+    --path-fill: var(--dock-item-close-content-color);
+  }
+}
+
+.close:hover {
+  background-color: var(--dock-item-close-btn-hover-color);
+}
+
+/* 对话框进出时的动画 */
+.dock-fade-move,
+.dock-fade-enter-active,
+.dock-fade-leave-active {
+  transition: all 0.2s ease;
+}
+
+.dock-fade-enter-from,
+.dock-fade-leave-to {
+  opacity: 0;
+  transform: scaleY(0.8);
+}
+
+.dock-fade-leave-active {
+  position: absolute;
+}
+
 </style>

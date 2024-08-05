@@ -45,6 +45,8 @@ export class Dialog {
         this.pos = ref(pos);
         this.rect = ref(rect);
         this.animation = new DialogAnimation(this);
+        // 加入到对话框store
+        useDialogStore().dialogs.push(this);
     }
 
     /**
@@ -56,7 +58,23 @@ export class Dialog {
             if (this.onRectChange) {
                 this.onRectChange();
             }
+            // 插入到对话框堆叠顺序的最前面
+            const dialogStore = useDialogStore();
+            dialogStore.dialogStack.unshift(this.id);
         });
+    }
+
+    /**
+     * 聚焦
+     */
+    focus(): void {
+        // 插入到对话框堆叠顺序的最前面
+        const dialogStore = useDialogStore();
+        const dialogStackIndex = dialogStore.dialogStack.indexOf(this.id);
+        if (dialogStackIndex !== -1) {
+            dialogStore.dialogStack.splice(dialogStackIndex, 1);
+        }
+        dialogStore.dialogStack.unshift(this.id);
     }
 
     /**
@@ -64,6 +82,12 @@ export class Dialog {
      */
     minimize(endRect: { clientX: number, clientY: number, width: number, height: number }): void {
         this.animation.minimizeAnimation(endRect).then(() => {
+            // 从对话框堆叠顺序中移除
+            const dialogStore = useDialogStore();
+            const dialogStackIndex = dialogStore.dialogStack.indexOf(this.id);
+            if (dialogStackIndex !== -1) {
+                dialogStore.dialogStack.splice(dialogStackIndex, 1);
+            }
         });
     }
 
@@ -114,9 +138,15 @@ export class Dialog {
             this.visible = false;
             // 从store中移除
             const dialogStore = useDialogStore();
-            const index = dialogStore.dialogs.findIndex(dialog => dialog.id === this.id);
-            if (index > -1) {
-                dialogStore.dialogs.splice(index, 1);
+            // 从堆叠顺序中移除
+            const dialogStackIndex = dialogStore.dialogStack.indexOf(this.id);
+            if (dialogStackIndex !== -1) {
+                dialogStore.dialogStack.splice(dialogStackIndex, 1);
+            }
+            // 从对话框列表中移除
+            const dialogIndex = dialogStore.dialogs.indexOf(this);
+            if (dialogIndex !== -1) {
+                dialogStore.dialogs.splice(dialogIndex, 1);
             }
         });
     }

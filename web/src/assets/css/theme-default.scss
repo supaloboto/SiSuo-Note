@@ -24,12 +24,16 @@
   --toolbar-item-hover-color: #ffffff;
   /* Dock样式 */
   --dock-background-color: #fafafa;
-  --dock-border-color: #b5b5b5;
+  --dock-border-color: #d9d9d9;
   --dock-item-font-color: #636363;
   --dock-item-border-color: #b2b2b2;
   --dock-item-background-color: #f5f5f5;
   --dock-item-title-font-color: #737373;
   --dock-item-title-border-color: #cdcdcd;
+  --dock-item-focus-border-color: #62bee6;
+  --dock-item-close-btn-color: #b5b5b5;
+  --dock-item-close-btn-hover-color: #cdcdcd;
+  --dock-item-close-content-color: #f8f8f8;
   /* 组件样式 */
   --component-border-color: #000;
   --component-resize-wrapper-border-color: #62bee6;
@@ -37,9 +41,9 @@
   /* 对话框样式 */
   --dialog-border-color: #b5b5b5;
   --dialog-background-color: #ffffff;
+  --dialog-shadow-color: #d9d9d9;
   --dialog-title-background-color: #f5f5f5;
-  --dialog-title-text-color: #000;
-  --dialog-title-border-color: #b5b5b5;
+  --dialog-title-text-color: #494949;
   --dialog-btn-border-color: #b5b5b5;
   --dialog-btn-icon-color: #656565;
   --dialog-btn-close-color: #f3a6a6;
@@ -48,4 +52,7 @@
   --dialog-btn-expand-hover-color: #ede3b9;
   --dialog-btn-minimize-color: #a3e8c1;
   --dialog-btn-minimize-hover-color: #b9edc2;
+  /* 对话框聚焦样式 */
+  --dialog-focus-border-color: #aecfdd;
+  --dialog-focus-title-background-color: #cee7f3;
 }
