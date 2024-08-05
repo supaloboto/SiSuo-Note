@@ -3,6 +3,11 @@ import {Dialog} from "@/frame/dialog/Dialog";
 import type {Note} from "@/components/blocks/note/Note";
 import NoteEditorDialogComp from "@/components/blocks/note/editor/NoteEditorDialog.vue";
 
+/**
+ * 笔记编辑器对话框
+ * @author 刘志栋
+ * @since 2024/08/05
+ */
 export class NoteEditorDialog extends Dialog {
     type = 'noteEditor';
     component = markRaw(NoteEditorDialogComp);
@@ -11,8 +16,16 @@ export class NoteEditorDialog extends Dialog {
     constructor(id: string, title: string,
                 pos: { clientX: number, clientY: number },
                 rect: { width: number, height: number },
-                data: Note) {
+                note: Note) {
         super(id, title, 'noteEditor', pos, rect);
-        this.note = data;
+        this.note = note;
+    }
+
+    close() {
+        super.close();
+        // 关闭时解除绑定
+        if (this.note != null) {
+            this.note.editor = null;
+        }
     }
 }

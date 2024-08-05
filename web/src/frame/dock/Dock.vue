@@ -54,6 +54,17 @@ const click = (index: number) => {
     dialog.minimize(null);
   }
 };
+/**
+ * 鼠标按下时处理
+ * @param evt
+ * @param index
+ */
+const mouseDown = (evt: MouseEvent, index: number) => {
+  // 鼠标中间点击为关闭
+  if (evt.button === 1) {
+    dialogs.value[index].close();
+  }
+};
 
 /**
  * 结合transition的钩子 在标题即将显示时 调整dom位置 避免超出边界
@@ -133,7 +144,10 @@ onMounted(() => {
       <div v-for="(dialog,index) in dialogs" :key="dialog.id" :id="dialog.id"
            :class="{'dock-dialog':true, 'dock-dialog-focus':currentFocusDialog===dialog.id, 'dock-dialog-hover':index===mouseOnIndex}"
            @mouseover="mouseOver(index)"
-           @mouseleave="mouseLeave(index)" @click="click(index)">
+           @mouseleave="mouseLeave(index)"
+           @click="click(index)"
+           @mousedown="evt=>mouseDown(evt,index)"
+      >
         <!-- 缩略图 对特殊弹框显示对应的icon 对普通弹框显示标题或缩略图  -->
         <div v-if="dialog.id==='setting'">
           <icon name="system-setting"></icon>
@@ -312,7 +326,7 @@ onMounted(() => {
 .dock-fade-enter-from,
 .dock-fade-leave-to {
   opacity: 0;
-  transform: scaleY(0.8);
+  transform: scale(0.8) translateY(20px);
 }
 
 .dock-fade-leave-active {
