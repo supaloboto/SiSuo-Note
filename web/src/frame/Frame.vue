@@ -6,6 +6,7 @@
  -->
 <script setup lang="ts">
 import {computed} from "vue";
+import {useCanvasStore} from "@/stores/canvas";
 import {useDialogStore} from "@/stores/dialog";
 import Header from "@/frame/header/Header.vue";
 import Board from "@/frame/board/Board.vue";
@@ -13,20 +14,29 @@ import Dock from "@/frame/dock/Dock.vue";
 
 // 对话框列表
 const dialogs = computed(() => useDialogStore().dialogs);
+// 控制鼠标信息
+const pointer = computed(() => useCanvasStore().currentPointer);
+
+const clickInBoard = (evt: MouseEvent) => {
+  pointer.value.focusOnCanvas = true;
+}
+
+const clickOutBoard = (evt: MouseEvent) => {
+  pointer.value.focusOnCanvas = false;
+}
 
 </script>
 
 <template>
-  <div id="page-frame">
+  <div id="page-frame" @mousedown="clickOutBoard">
     <!-- header -->
     <Header id="header"></Header>
     <!-- 画布 -->
-    <Board id="board"></Board>
+    <Board @mousedown.stop="clickInBoard" id="board"></Board>
     <!-- dock -->
     <Dock id="dock"></Dock>
     <!-- 对话框 -->
-    <component v-for="(dialog,index) in dialogs" :is="dialog.component" :key="dialog.id" :dialog="dialog"
-               :dialogIndex="index"></component>
+    <component v-for="(dialog,index) in dialogs" :is="dialog.component" :key="dialog.id" :dialog="dialog"></component>
   </div>
 </template>
 

@@ -52,15 +52,18 @@ export class Dialog {
     /**
      * 展开对话框
      */
-    open(startRect: { clientX: number, clientY: number, width: number, height: number }): void {
-        // 播放展开动画
-        this.animation.openAnimation(startRect).then(() => {
-            if (this.onRectChange) {
-                this.onRectChange();
-            }
+    open(startRect: { clientX: number, clientY: number, width: number, height: number }): Promise<void> {
+        return new Promise((resolve, reject) => {
             // 插入到对话框堆叠顺序的最前面
             const dialogStore = useDialogStore();
             dialogStore.dialogStack.unshift(this.id);
+            // 播放展开动画
+            this.animation.openAnimation(startRect).then(() => {
+                if (this.onRectChange) {
+                    this.onRectChange();
+                }
+                resolve();
+            });
         });
     }
 
@@ -80,14 +83,17 @@ export class Dialog {
     /**
      * 最小化
      */
-    minimize(endRect: { clientX: number, clientY: number, width: number, height: number }): void {
-        this.animation.minimizeAnimation(endRect).then(() => {
-            // 从对话框堆叠顺序中移除
-            const dialogStore = useDialogStore();
-            const dialogStackIndex = dialogStore.dialogStack.indexOf(this.id);
-            if (dialogStackIndex !== -1) {
-                dialogStore.dialogStack.splice(dialogStackIndex, 1);
-            }
+    minimize(endRect: { clientX: number, clientY: number, width: number, height: number }): Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.animation.minimizeAnimation(endRect).then(() => {
+                // 从对话框堆叠顺序中移除
+                const dialogStore = useDialogStore();
+                const dialogStackIndex = dialogStore.dialogStack.indexOf(this.id);
+                if (dialogStackIndex !== -1) {
+                    dialogStore.dialogStack.splice(dialogStackIndex, 1);
+                }
+                resolve();
+            });
         });
     }
 
@@ -132,22 +138,25 @@ export class Dialog {
     /**
      * 关闭
      */
-    close(): void {
-        // 播放关闭动画
-        this.animation.closeAnimation().then(() => {
-            this.visible = false;
-            // 从store中移除
-            const dialogStore = useDialogStore();
-            // 从堆叠顺序中移除
-            const dialogStackIndex = dialogStore.dialogStack.indexOf(this.id);
-            if (dialogStackIndex !== -1) {
-                dialogStore.dialogStack.splice(dialogStackIndex, 1);
-            }
-            // 从对话框列表中移除
-            const dialogIndex = dialogStore.dialogs.indexOf(this);
-            if (dialogIndex !== -1) {
-                dialogStore.dialogs.splice(dialogIndex, 1);
-            }
+    close(): Promise<void> {
+        return new Promise((resolve, reject) => {
+            // 播放关闭动画
+            this.animation.closeAnimation().then(() => {
+                this.visible = false;
+                // 从store中移除
+                const dialogStore = useDialogStore();
+                // 从堆叠顺序中移除
+                const dialogStackIndex = dialogStore.dialogStack.indexOf(this.id);
+                if (dialogStackIndex !== -1) {
+                    dialogStore.dialogStack.splice(dialogStackIndex, 1);
+                }
+                // 从对话框列表中移除
+                const dialogIndex = dialogStore.dialogs.indexOf(this);
+                if (dialogIndex !== -1) {
+                    dialogStore.dialogs.splice(dialogIndex, 1);
+                }
+                resolve();
+            });
         });
     }
 

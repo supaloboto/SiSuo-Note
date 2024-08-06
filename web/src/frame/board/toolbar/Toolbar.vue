@@ -61,6 +61,7 @@ const addComp = (compName: string) => {
   border-radius: 5px;
   background-color: var(--toolbar-background-color);
   box-shadow: 0 0 2px 0 var(--toolbar-shadow-color);
+  user-select: none;
 }
 
 .toolbar-item {

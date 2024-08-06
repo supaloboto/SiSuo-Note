@@ -6,18 +6,20 @@
  -->
 <script setup lang="ts">
 import {computed, onMounted, ref} from "vue";
+import {useCanvasStore} from "@/stores/canvas";
 import {useDialogStore} from "@/stores/dialog";
 import type {Dialog} from "@/frame/dialog/Dialog";
 import {NoteEditorDialog} from "@/components/blocks/note/editor/NoteEditorDialog";
 
+const canvasStore = useCanvasStore();
 const dialogStore = useDialogStore();
 // 对话框列表
 const dialogs = computed<Dialog[]>(() => dialogStore.dialogs);
 // 鼠标悬浮的对话框索引
 const mouseOnIndex = ref(-1);
-// 当前焦点对话框
+// 当前焦点对话框 当聚焦在画布上时为空
 const currentFocusDialog = computed(() => {
-  if (dialogStore.dialogStack.length === 0) {
+  if (canvasStore.currentPointer.focusOnCanvas || dialogStore.dialogStack.length === 0) {
     return '';
   }
   return dialogStore.dialogStack[0];

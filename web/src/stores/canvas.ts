@@ -8,7 +8,7 @@ import {defineStore} from "pinia";
 import {ref} from "vue";
 
 /**
- * 指针状态
+ * 指针对象
  */
 export class Pointer {
     // 用户
@@ -23,6 +23,8 @@ export class Pointer {
     clientY: number;
     // 选中的组件
     selected: string[] = [];
+    // 是否聚焦在画布上 影响画布上的鼠标事件或快捷键是否触发
+    focusOnCanvas: boolean = true;
     // 状态
     state: string = 'pinter';
 }

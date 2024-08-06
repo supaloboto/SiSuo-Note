@@ -9,8 +9,6 @@ import type {Dialog} from "@/frame/dialog/Dialog";
 export class DialogAnimation {
     // 对话框对象
     dialog: Dialog;
-    // 动画播放过程标志 播放动画时不渲染插槽内容 避免宽度剧烈变化导致渲染问题 也避免动画播放过程中触发各种鼠标事件造成无法预料的问题
-    animating: boolean = false;
     // 记录原始位置和大小
     private originRect: { clientX: number, clientY: number, width: number, height: number };
     // 透明度
@@ -26,7 +24,6 @@ export class DialogAnimation {
      * 动画结束
      */
     endAnim = () => {
-        this.animating = false;
         this.originRect = null;
         this.animationTimer = null;
     };
@@ -46,49 +43,46 @@ export class DialogAnimation {
      * @param startRect
      */
     openAnimation = (startRect: { clientX: number, clientY: number, width: number, height: number }) => {
-        const self = this;
         // 如果有正在进行中的动画则中断并立即展开
-        if (self.animationTimer) {
-            clearTimeout(self.animationTimer);
+        if (this.animationTimer) {
+            clearTimeout(this.animationTimer);
         } else {
             // 如未传入起始位置 则尝试获取dock上的对话框dom位置 作为展开的起始位置
             // 如果dom未获取到 则以画面中心为准
             if (!startRect) {
-                const dialogElement = document.querySelector(`.dock-dialog[id="${self.dialog.id}"]`) as HTMLElement;
+                const dialogElement = document.querySelector(`.dock-dialog[id="${this.dialog.id}"]`) as HTMLElement;
                 startRect = dialogElement ? {
                     clientX: dialogElement.getBoundingClientRect().left,
                     clientY: dialogElement.getBoundingClientRect().top,
                     width: dialogElement.getBoundingClientRect().width,
                     height: dialogElement.getBoundingClientRect().height
                 } : {
-                    clientX: window.innerWidth / 2 - self.dialog.rect.value.width / 2,
-                    clientY: window.innerHeight / 2 - self.dialog.rect.value.height / 2,
+                    clientX: window.innerWidth / 2 - this.dialog.rect.value.width / 2,
+                    clientY: window.innerHeight / 2 - this.dialog.rect.value.height / 2,
                     width: 0,
                     height: 0,
                 };
             }
             // 记录原本的位置
-            if (!self.originRect) {
-                self.originRect = {
-                    clientX: self.dialog.pos.value.clientX,
-                    clientY: self.dialog.pos.value.clientY,
-                    width: self.dialog.rect.value.width,
-                    height: self.dialog.rect.value.height,
+            if (!this.originRect) {
+                this.originRect = {
+                    clientX: this.dialog.pos.value.clientX,
+                    clientY: this.dialog.pos.value.clientY,
+                    width: this.dialog.rect.value.width,
+                    height: this.dialog.rect.value.height,
                 };
             }
             // 设置开始位置和大小
-            self.applyRect(startRect);
+            this.applyRect(startRect);
         }
-        // 显示对话框并进入动画播放状态(动画效果由css样式具体控制)
-        self.animating = true;
-        self.dialog.visible = true;
+        this.dialog.visible = true;
         return new Promise<void>(resolve => {
             // 设置结束位置和大小 使用延时避免动画效果未生效
-            self.animationTimer = window.setTimeout(() => {
-                self.applyRect(self.originRect);
+            this.animationTimer = window.setTimeout(() => {
+                this.applyRect(this.originRect);
                 // 动画结束后解除动画播放状态
-                self.animationTimer = window.setTimeout(() => {
-                    self.endAnim();
+                this.animationTimer = window.setTimeout(() => {
+                    this.endAnim();
                     resolve();
                 }, 200);
             }, 10);
@@ -130,8 +124,6 @@ export class DialogAnimation {
             };
         }
         this.applyRect(endRect);
-        // 进入动画播放状态(动画效果由css样式具体控制)
-        this.animating = true;
         return new Promise<void>(resolve => {
             // 动画结束后解除动画播放状态
             this.animationTimer = window.setTimeout(() => {

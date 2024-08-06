@@ -70,6 +70,7 @@
     color: var(--header-title-color);
     font-size: 20px;
     font-weight: bold;
+    user-select: none;
   }
 }
 

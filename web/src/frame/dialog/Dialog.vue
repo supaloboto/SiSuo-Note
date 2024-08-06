@@ -5,20 +5,16 @@
  - @since 2024/07/31
  -->
 <script setup lang="ts">
-import {
-  computed,
-  onBeforeUnmount,
-  ref,
-  StyleValue, toRef, watch,
-} from "vue";
+import {computed, onBeforeUnmount, ref, StyleValue, toRef, watch} from "vue";
 import type {Dialog} from "@/frame/dialog/Dialog";
 import {useDialogStore} from "@/stores/dialog";
+import {useCanvasStore} from "@/stores/canvas";
 
 const dialogStore = useDialogStore();
+const canvasStore = useCanvasStore();
 
 const props = defineProps<{
   dialog: Dialog;
-  dialogIndex: number;
 }>();
 
 // 对话框位置和尺寸
@@ -140,7 +136,6 @@ const resizeComp = (evt: MouseEvent) => {
     }
   }
 }
-
 /**
  * 结束调整大小
  */
@@ -151,10 +146,14 @@ const resizeEnd = () => {
   document.removeEventListener('mouseup', resizeEnd);
 }
 
+// 聚焦状态
+const focus = computed(() => !canvasStore.currentPointer.focusOnCanvas && dialogStackIndex.value === 0);
+
 </script>
 
 <template>
-  <div class="dialog-div" :class="{focus:dialogStackIndex===0, moving:!!dragStartPos || !!resizingWrapper}"
+  <div class="dialog-div"
+       :class="{focus, moving:!!dragStartPos || !!resizingWrapper}"
        :style="posStyle"
        v-show="dialog.visible" @click="dialog.focus()">
     <!-- 标题栏 -->
@@ -174,7 +173,7 @@ const resizeEnd = () => {
       </button>
     </div>
     <!-- 内容 -->
-    <div class="dialog-content" v-show="!dialog.animation.animating">
+    <div class="dialog-content">
       <slot></slot>
     </div>
     <!-- 四角定位 -->
@@ -241,7 +240,7 @@ $dialog-title-height: 29px;
 // 对话框内容样式
 .dialog-content {
   // 高度为总高度减去标题栏高度和边框高度
-  height: calc(100% - #{$dialog-title-height} - 1);
+  height: calc(100% - #{$dialog-title-height} - 1px);
 }
 
 // 对话框按钮样式

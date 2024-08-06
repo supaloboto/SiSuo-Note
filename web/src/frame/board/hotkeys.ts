@@ -1,5 +1,6 @@
 import {useCanvasStore} from "@/stores/canvas";
 import {useComponentStore} from "@/stores/component";
+import {useDialogStore} from "@/stores/dialog";
 import {deepCopy} from "@/assets/utils/copy";
 
 /**
@@ -12,21 +13,39 @@ export class Hotkeys {
     static init() {
         // 注册快捷键
         document.addEventListener("keydown", (e) => {
+            // alt + d 隐藏/显示对话框
+            if (e.altKey && e.key === "d") {
+                e.preventDefault();
+                useDialogStore().collapseAll();
+            }
+            // 快捷键如果当前没有聚焦在画布上则不触发
+            if (!useCanvasStore().currentPointer.focusOnCanvas) {
+                return;
+            }
             // delete键删除组件
             if (e.key === "Delete" || e.key === "Backspace") {
+                e.preventDefault();
                 this.deleteComponent();
             }
             // ctrl + a 全选
             if (e.ctrlKey && e.key === "a") {
+                e.preventDefault();
                 this.selectAll();
             }
             // ctrl + c 复制
             if (e.ctrlKey && e.key === "c") {
+                e.preventDefault();
                 console.log("复制");
             }
             // ctrl + z 撤销
             if (e.ctrlKey && e.key === "z") {
+                e.preventDefault();
                 console.log("撤销");
+            }
+            // ctrl + y 重做
+            if (e.ctrlKey && e.key === "y") {
+                e.preventDefault();
+                console.log("重做");
             }
         });
     }
