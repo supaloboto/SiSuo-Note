@@ -58,7 +58,6 @@ export const useCanvasStore = defineStore('canvas', () => {
             currentPointer.value.selected.push(id);
         }
     };
-
     /**
      * 取消选中组件
      * @param id 组件id
@@ -73,5 +72,9 @@ export const useCanvasStore = defineStore('canvas', () => {
         }
     }
 
-    return {currentPointer, selectComponent, unSelectComponent, pointers};
+    // 缩放比例
+    const scale = ref(1);
+    // 当前画面中心点坐标
+
+    return {currentPointer, selectComponent, unSelectComponent, pointers, scale};
 });

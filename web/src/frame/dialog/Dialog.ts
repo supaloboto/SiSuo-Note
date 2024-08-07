@@ -2,6 +2,7 @@ import {type Raw, type Ref, ref} from "vue";
 import {deepCopy} from "@/assets/utils/copy";
 import {useDialogStore} from "@/stores/dialog";
 import {DialogAnimation} from "@/frame/dialog/DialogAnimation";
+import {useCanvasStore} from "@/stores/canvas";
 
 /**
  * 对话框信息类
@@ -78,6 +79,8 @@ export class Dialog {
             dialogStore.dialogStack.splice(dialogStackIndex, 1);
         }
         dialogStore.dialogStack.unshift(this.id);
+        // 更改鼠标聚焦状态
+        useCanvasStore().currentPointer.focusOnCanvas = false;
     }
 
     /**

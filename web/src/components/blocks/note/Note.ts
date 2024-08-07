@@ -42,13 +42,20 @@ export class Note extends BlockComponent {
                 this.data
             );
         }
-        // 打开编辑器
-        this.editor.open({
-            clientX: this.pos.x,
-            clientY: this.pos.y,
-            width: this.rect.width,
-            height: this.rect.height
-        });
+        // 如果编辑器不可见 则打开
+        if (!this.editor.visible) {
+            // 打开编辑器
+            this.editor.open({
+                clientX: this.pos.x,
+                clientY: this.pos.y,
+                width: this.rect.width,
+                height: this.rect.height
+            }).then(() => {
+                this.editor.focus();
+            });
+        } else {
+            this.editor.focus();
+        }
         return true;
     }
 

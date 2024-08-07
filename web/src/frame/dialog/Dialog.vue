@@ -43,6 +43,8 @@ const dragStartPos = ref(null);
  * 开始拖拽
  */
 const dragStart = (evt: MouseEvent) => {
+  // 聚焦
+  props.dialog.focus();
   // 记录鼠标位置 用于计算运动距离
   dragStartPos.value = {
     clientX: evt.clientX,
