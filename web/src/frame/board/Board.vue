@@ -11,6 +11,7 @@ import {useComponentStore} from "@/stores/component";
 import {Hotkeys} from "@/frame/board/hotkeys";
 import Toolbar from "@/frame/board/toolbar/Toolbar.vue";
 import SisuoComp from "@/components/Component.vue";
+import Scale from "@/frame/board/scale/Scale.vue";
 
 const canvasStore = useCanvasStore();
 const componentStore = useComponentStore();
@@ -48,15 +49,31 @@ Hotkeys.init();
     <div id="sisuo-canvas" @mousemove="mouseMove" @click="clickBlank">
       <sisuo-comp v-for="(comp,index) in components" :key="comp.id" :compData="comp"></sisuo-comp>
     </div>
+    <!-- 缩放工具 -->
+    <Scale></Scale>
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 #sisuo-canvas {
   position: absolute;
   height: 100%;
   width: 100%;
   overflow: hidden;
   background-color: var(--board-background-color);
+
+  // 简单辅助线网格背景
+  //background-image: linear-gradient(#dddddd 1px, transparent 0), linear-gradient(90deg, #dddddd 1px, transparent 0);
+  //background-size: 30px 30px;
+
+  // 细致辅助线网格背景
+  background-image: linear-gradient(#dddddd 1px, transparent 0), linear-gradient(90deg, #dddddd 1px, transparent 0),
+  linear-gradient(#ededed 1px, transparent 0), linear-gradient(90deg, #ededed 1px, transparent 0);
+  background-size: 75px 75px, 75px 75px, 15px 15px, 15px 15px;
+
+  // 点阵背景
+  //background-image: radial-gradient(circle, #dddddd 1px, transparent 0);
+  //background-size: 30px 30px;
+
 }
 </style>

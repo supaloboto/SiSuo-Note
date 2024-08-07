@@ -73,8 +73,49 @@ export const useCanvasStore = defineStore('canvas', () => {
     }
 
     // 缩放比例
-    const scale = ref(1);
-    // 当前画面中心点坐标
+    const scale = ref<number>(100);
+    // 缩放上限
+    const scaleMax = 200;
+    // 缩放下限
+    const scaleMin = 20;
+    /**
+     * 缩放
+     * @param step 缩放步长
+     * @param addStep 增加几步
+     */
+    const zoom = (step: number, addStep: number) => {
+        // 按当前的步长先将缩放值四舍五入到最接近的整数倍
+        let newScale = Math.round(scale.value / step) * step;
+        // 如果舍入方向与增加方向相同则直接使用舍入值 否则对舍入值做增加
+        const sameDirection = addStep > 0 ? newScale > scale.value : newScale < scale.value;
+        if (!sameDirection) {
+            newScale += addStep * step;
+        }
+        // 检查是否超出限制
+        if (newScale > scaleMax) {
+            scale.value = scaleMax;
+        } else if (newScale < scaleMin) {
+            scale.value = scaleMin;
+        } else {
+            scale.value = newScale;
+        }
+    }
 
-    return {currentPointer, selectComponent, unSelectComponent, pointers, scale};
+    // 当前画面中心点坐标
+    const canvasCenter = ref<{ x: number, y: number }>({x: 0, y: 0});
+
+    return {
+        // 指针
+        currentPointer,
+        selectComponent,
+        unSelectComponent,
+        pointers,
+        // 缩放
+        scale,
+        scaleMax,
+        scaleMin,
+        zoom,
+        // 视图
+        canvasCenter
+    };
 });

@@ -11,6 +11,22 @@ import {deepCopy} from "@/assets/utils/copy";
  */
 export class Hotkeys {
     static init() {
+        // 注册鼠标滚轮事件
+        document.addEventListener("wheel", (e) => {
+            const canvasStore = useCanvasStore();
+            // 如果当前没有聚焦在画布上则不触发
+            if (!canvasStore.currentPointer.focusOnCanvas) {
+                return;
+            }
+            e.preventDefault();
+            // 缩放
+            const step = e.ctrlKey ? 1 : 10;
+            if (e.deltaY < 0) {
+                canvasStore.zoom(step, 1);
+            } else {
+                canvasStore.zoom(step, -1);
+            }
+        }, {passive: false});
         // 注册快捷键
         document.addEventListener("keydown", (e) => {
             // alt + d 隐藏/显示对话框
