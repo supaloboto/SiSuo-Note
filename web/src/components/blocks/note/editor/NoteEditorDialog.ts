@@ -22,10 +22,11 @@ export class NoteEditorDialog extends Dialog {
     }
 
     close() {
-        super.close();
-        // 关闭时解除绑定
-        if (this.note != null) {
-            this.note.editor = null;
-        }
+        super.close().then(() => {
+            // 关闭时解除绑定
+            if (this.note != null) {
+                this.note.editor = null;
+            }
+        });
     }
 }

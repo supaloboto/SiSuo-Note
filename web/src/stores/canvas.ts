@@ -101,8 +101,13 @@ export const useCanvasStore = defineStore('canvas', () => {
         }
     }
 
-    // 当前画面中心点坐标
-    const canvasCenter = ref<{ x: number, y: number }>({x: 0, y: 0});
+    // 当前视图大小和位置 坐标为中心点坐标
+    const currentViewRect = ref<{ x: number, y: number, width: number, height: number }>({
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0
+    });
 
     return {
         // 指针
@@ -116,6 +121,6 @@ export const useCanvasStore = defineStore('canvas', () => {
         scaleMin,
         zoom,
         // 视图
-        canvasCenter
+        currentViewRect
     };
 });

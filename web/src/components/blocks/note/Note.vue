@@ -15,7 +15,7 @@ const props = defineProps({
 </script>
 
 <template>
-  <div class="note-div">
+  <div :id="`sisuo-comp-note-${compData.id}`" class="note-div">
   </div>
 </template>
 

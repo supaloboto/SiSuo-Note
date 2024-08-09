@@ -27,14 +27,30 @@ const canvasStore = useCanvasStore();
 // 获取组件选中状态
 const selected: ComputedRef<boolean> = computed(() => canvasStore.currentPointer.selected.includes(props.compData.id));
 
+// 获取视图
+const viewRect = computed(() => canvasStore.currentViewRect);
+// 获取缩放比例
+const scale = computed(() => canvasStore.scale / 100);
 // 组件位置样式
 const compDivStyle = computed<StyleValue>(() => {
+  // 计算组件大小和位置
+  const rect = {
+    x: (viewRect.value.x + props.compData.pos.x) * scale.value,
+    y: (viewRect.value.y + props.compData.pos.y) * scale.value,
+    width: props.compData.rect.width * scale.value,
+    height: props.compData.rect.height * scale.value,
+  }
+  // 修约至小数点后三位 以抹去js浮点数计算精度问题导致的误差
+  rect.x = Math.round(rect.x * 1000) / 1000;
+  rect.y = Math.round(rect.y * 1000) / 1000;
+  rect.width = Math.round(rect.width * 1000) / 1000;
+  rect.height = Math.round(rect.height * 1000) / 1000;
   return {
     position: 'absolute',
-    width: `${props.compData.rect.width}px`,
-    height: `${props.compData.rect.height}px`,
-    marginTop: `${props.compData.pos.y}px`,
-    marginLeft: `${props.compData.pos.x}px`,
+    width: `${rect.width}px`,
+    height: `${rect.height}px`,
+    marginTop: `${rect.y}px`,
+    marginLeft: `${rect.x}px`,
   }
 });
 
@@ -213,7 +229,7 @@ onBeforeUnmount(() => {
          draggable="true"
     ></div>
     <!-- 组件 -->
-    <component :is="compRegis[compData.type].raw" :id="compData.id" ref="compRef"
+    <component :is="compRegis[compData.type].raw" :compData="compData" ref="compRef"
                class="component" :class="{selected}"></component>
   </div>
 </template>

@@ -20,15 +20,32 @@ const componentStore = useComponentStore();
 const components = computed(() => componentStore.components);
 
 // 监听鼠标位置 同步到store
+const scale = computed(() => canvasStore.scale / 100);
+const viewRect = computed(() => canvasStore.currentViewRect);
 const mouseMove = (evt: MouseEvent) => {
   // 获取画布的上边距和左边距
   const canvas = document.getElementById("sisuo-canvas");
   const canvasRect = canvas.getBoundingClientRect();
-  // todo 计算画布缩放
-  canvasStore.currentPointer.x = evt.clientX - canvasRect.left;
-  canvasStore.currentPointer.y = evt.clientY - canvasRect.top;
+  // 记录鼠标在视图中的位置
   canvasStore.currentPointer.clientX = evt.clientX - canvasRect.left;
   canvasStore.currentPointer.clientY = evt.clientY - canvasRect.top;
+  // 计算鼠标在画布上的坐标
+  // 求画布dom中心的客户端坐标
+  const clientCenter = {
+    clientX: canvasRect.left + canvasRect.width / 2,
+    clientY: canvasRect.top + canvasRect.height / 2,
+  }
+  // 求鼠标位置与此中心坐标的差 并除以缩放比例
+  const mousePosOffset = {
+    x: (evt.clientX - clientCenter.clientX) / scale.value,
+    y: (evt.clientY - clientCenter.clientY) / scale.value,
+  }
+  // 将差值修约至小数点后三位 以抹去js浮点数计算精度问题导致的误差
+  mousePosOffset.x = Math.round(mousePosOffset.x * 1000) / 1000;
+  mousePosOffset.y = Math.round(mousePosOffset.y * 1000) / 1000;
+  // 差值与当前画布中心点坐标叠加 求得鼠标在画布上的位置
+  canvasStore.currentPointer.x = viewRect.value.x + mousePosOffset.x;
+  canvasStore.currentPointer.y = viewRect.value.y + mousePosOffset.y;
 }
 
 // 点击空白处 取消选中
@@ -47,7 +64,10 @@ Hotkeys.init();
     <toolbar></toolbar>
     <!-- 组件 -->
     <div id="sisuo-canvas" @mousemove="mouseMove" @click="clickBlank">
-      <sisuo-comp v-for="(comp,index) in components" :key="comp.id" :compData="comp"></sisuo-comp>
+      <!-- 定位居中 -->
+      <div class="canvas-center">
+        <sisuo-comp v-for="(comp,index) in components" :key="comp.id" :compData="comp"></sisuo-comp>
+      </div>
     </div>
     <!-- 缩放工具 -->
     <Scale></Scale>
@@ -76,4 +96,12 @@ Hotkeys.init();
   //background-size: 30px 30px;
 
 }
+
+.canvas-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
 </style>

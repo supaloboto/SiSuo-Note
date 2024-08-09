@@ -25,10 +25,16 @@ export class Note extends BlockComponent {
     dblclick(): boolean {
         super.dblclick();
         const editorRect = {width: 800, height: 600};
-        // todo 获取编辑器的clientX和clientY
+        // 获取编辑器dom的位置 使窗口从组件上弹出
+        const editorDom = document.getElementById(`sisuo-comp-note-${this.id}`);
+        if (!editorDom) {
+            console.error("笔记组件未渲染");
+            return false;
+        }
+        const editorDomRect = editorDom.getBoundingClientRect();
         const editorPos = {
-            clientX: this.pos.x - (editorRect.width - this.rect.width) / 2,
-            clientY: this.pos.y + 40 - (editorRect.height - this.rect.height) / 2
+            clientX: editorDomRect.x - (editorRect.width - editorDomRect.width) / 2,
+            clientY: editorDomRect.y + 40 - (editorRect.height - editorDomRect.height) / 2
         };
         // 如果编辑器不存在或者已经关闭 则重新创建
         const dialogStore = useDialogStore();
@@ -46,10 +52,10 @@ export class Note extends BlockComponent {
         if (!this.editor.visible) {
             // 打开编辑器
             this.editor.open({
-                clientX: this.pos.x,
-                clientY: this.pos.y,
-                width: this.rect.width,
-                height: this.rect.height
+                clientX: editorDomRect.x,
+                clientY: editorDomRect.y,
+                width: editorDomRect.width,
+                height: editorDomRect.height
             }).then(() => {
                 this.editor.focus();
             });
