@@ -102,6 +102,7 @@ export const useCanvasStore = defineStore('canvas', () => {
     }
 
     // 当前视图大小和位置 坐标为中心点坐标
+    //todo 处理视图宽高数据
     const currentViewRect = ref<{ x: number, y: number, width: number, height: number }>({
         x: 0,
         y: 0,
