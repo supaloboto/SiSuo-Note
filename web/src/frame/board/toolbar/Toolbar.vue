@@ -5,12 +5,16 @@
  - @since 2024/07/27
  -->
 <script setup lang="ts">
-// 引入国际化
 import i18n from "@/assets/lang";
 import {compRegis} from "@/components";
-import {computed} from "vue";
+import {computed, watch} from "vue";
+import {getLongID} from "@/assets/utils/idworker";
+import {useComponentStore} from "@/stores/component";
+import {useCanvasStore} from "@/stores/canvas";
 
 const $t = i18n.global.t;
+const canvasStore = useCanvasStore();
+const compStore = useComponentStore();
 
 // 获取组件注册信息
 const compRegisList = computed(() => {
@@ -21,8 +25,47 @@ const compRegisList = computed(() => {
   return list;
 });
 
+/**
+ * 添加组件
+ * @param compName
+ */
 const addComp = (compName: string) => {
-  console.log('addComp,' + compName);
+  const compRegisInfo = compRegis.value[compName];
+  // 创建组件占位符信息 加入组件列表
+  const compId = getLongID();
+  const compPlaceholder = new compRegisInfo.class({
+    id: compId,
+    pos: {
+      x: canvasStore.currentPointer.x - compRegisInfo.defaultRect.width / 2,
+      y: canvasStore.currentPointer.y - compRegisInfo.defaultRect.height / 2,
+    },
+    rect: {
+      width: compRegisInfo.defaultRect.width,
+      height: compRegisInfo.defaultRect.height,
+    },
+  });
+  compStore.components.push(compPlaceholder);
+  // 更新store中的鼠标状态
+  // canvasStore.currentPointer.selected = [compId];
+  canvasStore.currentPointer.state = `creating-${compId}`;
+  // 设置添加组件的各项监听
+  const createCompWatch = watch(canvasStore.currentPointer, () => {
+    const comp = compStore.components.find(comp => comp.id === compId);
+    if (!comp) {
+      createCompWatch();
+      return;
+    }
+    comp.pos = {
+      x: canvasStore.currentPointer.x - comp.rect.width / 2,
+      y: canvasStore.currentPointer.y - comp.rect.height / 2,
+    };
+  }, {deep: true});
+  const dropComp = () => {
+    createCompWatch();
+    document.removeEventListener("mouseup", dropComp);
+    canvasStore.currentPointer.state = "pointer";
+  }
+  document.addEventListener("mouseup", dropComp);
 }
 
 </script>

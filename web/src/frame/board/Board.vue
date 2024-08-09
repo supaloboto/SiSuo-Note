@@ -100,14 +100,27 @@ const rightClickBlank = (evt: MouseEvent) => {
 // 监听键盘事件
 Hotkeys.init();
 
+// 鼠标是否处于组件创建状态
+const cursorCreatingMode = computed(() => canvasStore.currentPointer.state.startsWith('creating'));
+// 鼠标状态
+const cursorState = computed(() => {
+  if (viewDragging.value) {
+    return 'grabbing';
+  }
+  if (cursorCreatingMode.value) {
+    return 'creating';
+  }
+});
+
 </script>
 
 <template>
   <div class="board-div">
     <!-- 侧边栏 -->
-    <toolbar></toolbar>
+    <toolbar v-show="!cursorCreatingMode"></toolbar>
     <!-- 组件 -->
-    <div id="sisuo-canvas" :class="{dragging: viewDragging}"
+    <div id="sisuo-canvas"
+         :class="[cursorState]"
          @mousemove="mouseMove" @click="clickBlank" @mousedown="onMouseDown" @mouseup="onMouseUp"
          @contextmenu="rightClickBlank">
       <!-- 定位居中 -->
@@ -143,8 +156,12 @@ Hotkeys.init();
 
 }
 
-.dragging {
+.grabbing {
   cursor: grabbing;
+}
+
+.creating {
+  cursor: none !important;
 }
 
 .canvas-center {
