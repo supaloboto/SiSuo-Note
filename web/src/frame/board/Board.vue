@@ -31,8 +31,8 @@ const viewRect = computed(() => canvasStore.currentViewRect);
 const mouseMove = (evt: MouseEvent) => {
   // 当正在拖拽视图时 不更新鼠标位置 避免触发各种事件
   if (viewDragging.value) {
-    canvasStore.currentViewRect.x += evt.movementX / scale.value;
-    canvasStore.currentViewRect.y += evt.movementY / scale.value;
+    canvasStore.currentViewRect.x -= evt.movementX / scale.value;
+    canvasStore.currentViewRect.y -= evt.movementY / scale.value;
     return;
   }
   // 获取画布的上边距和左边距

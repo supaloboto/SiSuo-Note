@@ -35,8 +35,8 @@ const scale = computed(() => canvasStore.scale / 100);
 const compDivStyle = computed<StyleValue>(() => {
   // 计算组件大小和位置
   const rect = {
-    x: (viewRect.value.x + props.compData.pos.x) * scale.value,
-    y: (viewRect.value.y + props.compData.pos.y) * scale.value,
+    x: (props.compData.pos.x - viewRect.value.x) * scale.value,
+    y: (props.compData.pos.y - viewRect.value.y) * scale.value,
     width: props.compData.rect.width * scale.value,
     height: props.compData.rect.height * scale.value,
   }
