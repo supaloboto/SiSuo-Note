@@ -5,16 +5,18 @@
  - @since 2024/07/10
  -->
 <script setup lang="ts">
-import {computed, ref, watch} from "vue";
+import {computed, onBeforeUnmount, onMounted, ref, type StyleValue, watch} from "vue";
 import {useCanvasStore} from "@/stores/canvas";
 import {useComponentStore} from "@/stores/component";
 import {Hotkeys} from "@/frame/board/hotkeys";
 import Toolbar from "@/frame/board/toolbar/Toolbar.vue";
 import SisuoComp from "@/components/Component.vue";
 import Scale from "@/frame/board/scale/Scale.vue";
+import {useGlobalStore} from "@/stores/global";
 
 const canvasStore = useCanvasStore();
 const componentStore = useComponentStore();
+const globalStore = useGlobalStore();
 
 // 获取组件列表
 const components = computed(() => componentStore.components);
@@ -24,6 +26,24 @@ const viewDragging = ref<boolean>(false);
 // 获取当前视图参数
 const scale = computed(() => canvasStore.scale / 100);
 const viewRect = computed(() => canvasStore.currentViewRect);
+/**
+ * 记录视图宽高数据
+ */
+const updateRectSize = () => {
+  const rect = document.getElementById("sisuo-canvas").getBoundingClientRect();
+  canvasStore.currentViewRect.clientWidth = rect.width;
+  canvasStore.currentViewRect.clientHeight = rect.height;
+  canvasStore.currentViewRect.width = rect.width / scale.value;
+  canvasStore.currentViewRect.height = rect.height / scale.value;
+}
+onMounted(() => {
+  updateRectSize();
+  window.addEventListener('resize', updateRectSize);
+});
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateRectSize);
+});
+
 /**
  * 监听鼠标位置 同步到store
  * @param evt
@@ -112,6 +132,49 @@ const cursorState = computed(() => {
   }
 });
 
+// 背景类型
+const boardBgType = computed(() => globalStore.sysConfig.boardBgType);
+// 背景样式
+const boardBgStyle = computed<StyleValue>(() => {
+  if (boardBgType.value === 'none') {
+    return {};
+  }
+  // 背景类型
+  switch (boardBgType.value) {
+      // 简单辅助线网格背景
+    case 'lattice1':
+      const latticeSize = 60 * scale.value;
+      return {
+        backgroundImage: 'linear-gradient(#e1e1e1 2px, transparent 0), linear-gradient(90deg, #e1e1e1 1px, transparent 0)',
+        backgroundSize: `${latticeSize}px ${latticeSize}px`,
+      }
+      // 细致辅助线网格背景
+    case 'lattice2':
+      const latticeOuterSize = 150 * scale.value;
+      const latticeInnerSize = 30 * scale.value;
+      return {
+        backgroundImage: 'linear-gradient(#e1e1e1 2px, transparent 0), linear-gradient(90deg, #e1e1e1 1px, transparent 0), linear-gradient(#ededed 1px, transparent 0), linear-gradient(90deg, #ededed 1px, transparent 0)',
+        backgroundSize: `${latticeOuterSize}px ${latticeOuterSize}px, ${latticeOuterSize}px ${latticeOuterSize}px, ${latticeInnerSize}px ${latticeInnerSize}px, ${latticeInnerSize}px ${latticeInnerSize}px`,
+      }
+      // 点阵背景
+    case 'dot1':
+      const dotSize = 30 * scale.value;
+      return {
+        backgroundImage: 'radial-gradient(circle, #c1c1c1 1px, transparent 0)',
+        backgroundSize: `${dotSize}px ${dotSize}px`,
+      }
+  }
+});
+// 背景位置
+const boardBgPos = computed(() => {
+  // 因为背景位置定义的是背景的左上角 所以需要结合视图中心和大小计算背景位置
+  const x = viewRect.value.x * scale.value - viewRect.value.clientWidth / 2;
+  const y = viewRect.value.y * scale.value - viewRect.value.clientHeight / 2;
+  return {
+    backgroundPosition: `${-x}px ${-y}px`,
+  }
+});
+
 </script>
 
 <template>
@@ -121,6 +184,7 @@ const cursorState = computed(() => {
     <!-- 组件 -->
     <div id="sisuo-canvas"
          :class="[cursorState]"
+         :style="[boardBgStyle,boardBgPos]"
          @mousemove="mouseMove" @click="clickBlank" @mousedown="onMouseDown" @mouseup="onMouseUp"
          @contextmenu="rightClickBlank">
       <!-- 定位居中 -->
@@ -140,20 +204,6 @@ const cursorState = computed(() => {
   width: 100%;
   overflow: hidden;
   background-color: var(--board-background-color);
-
-  // 简单辅助线网格背景
-  //background-image: linear-gradient(#dddddd 1px, transparent 0), linear-gradient(90deg, #dddddd 1px, transparent 0);
-  //background-size: 30px 30px;
-
-  // 细致辅助线网格背景
-  background-image: linear-gradient(#dddddd 1px, transparent 0), linear-gradient(90deg, #dddddd 1px, transparent 0),
-  linear-gradient(#ededed 1px, transparent 0), linear-gradient(90deg, #ededed 1px, transparent 0);
-  background-size: 75px 75px, 75px 75px, 15px 15px, 15px 15px;
-
-  // 点阵背景
-  //background-image: radial-gradient(circle, #dddddd 1px, transparent 0);
-  //background-size: 30px 30px;
-
 }
 
 .grabbing {

@@ -10,7 +10,10 @@ export const useGlobalStore = defineStore('global', {
     state: () => ({
         // 系统设置
         sysConfig: {
-            theme: 'default'
+            // default/dark
+            theme: 'default',
+            // none/lattice1/lattice2/dot1
+            boardBgType: 'lattice2',
         },
         // 用户信息
         userInfo: {id: null, name: null, sessionId: null},
