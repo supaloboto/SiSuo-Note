@@ -1,6 +1,7 @@
 import {BlockComponent} from "@/components/blocks/BlockComponent";
 import {NoteEditorDialog} from "@/components/blocks/note/editor/NoteEditorDialog";
 import {useDialogStore} from "@/stores/dialog";
+import {Dialog} from "@/frame/dialog/Dialog";
 
 /**
  * 笔记组件
@@ -36,14 +37,15 @@ export class Note extends BlockComponent {
             return false;
         }
         const editorDomRect = editorDom.getBoundingClientRect();
-        const editorPos = {
-            clientX: editorDomRect.x - (editorRect.width - editorDomRect.width) / 2,
-            clientY: editorDomRect.y + 40 - (editorRect.height - editorDomRect.height) / 2
-        };
         // 如果编辑器不存在或者已经关闭 则重新创建
         const dialogStore = useDialogStore();
         if (!this.editor || dialogStore.dialogs.findIndex(dialog => dialog.id === this.id) === -1) {
-            // 显示编辑器
+            // 计算编辑器尺寸
+            const editorPos = Dialog.fixPos({
+                clientX: editorDomRect.x - (editorRect.width - editorDomRect.width) / 2,
+                clientY: editorDomRect.y + 40 - (editorRect.height - editorDomRect.height) / 2
+            }, editorRect);
+            // 创建编辑器
             this.editor = new NoteEditorDialog(
                 this.id,
                 // todo 国际化

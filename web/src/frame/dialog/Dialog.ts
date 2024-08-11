@@ -28,7 +28,7 @@ export class Dialog {
     // 是否最大化
     maximized: boolean = false;
     // 记录原本的位置和大小 用于最大化之后还原
-    private originPos: { x: number, y: number };
+    private originPos: { clientX: number, clientY: number };
     private originRect: { width: number, height: number };
     // 动画控制
     animation: DialogAnimation;
@@ -43,11 +43,41 @@ export class Dialog {
         this.id = id;
         this.title = title;
         this.type = type;
+        this.animation = new DialogAnimation(this);
         this.pos = ref(pos);
         this.rect = ref(rect);
-        this.animation = new DialogAnimation(this);
         // 加入到对话框store
         useDialogStore().dialogs.push(this);
+    }
+
+    /**
+     * 对对话框的位置做检查 如果超出边界 则调整位置
+     * @param pos 位置
+     * @param rect 对话框大小
+     * @return {{clientX: number, clientY: number}} 合理的打开位置
+     */
+    static fixPos(pos: { clientX: number, clientY: number }, rect: { width: number, height: number }): {
+        clientX: number,
+        clientY: number
+    } {
+        const result = {clientX: pos.clientX, clientY: pos.clientY};
+        const padding = 30;
+        // 获取当前可使用视图的大小
+        const viewWidth = window.innerWidth;
+        const viewHeight = window.innerHeight - document.getElementById('dock').clientHeight;
+        if (result.clientX + rect.width > viewWidth) {
+            result.clientX = viewWidth - rect.width - padding;
+        }
+        if (result.clientY + rect.height > viewHeight) {
+            result.clientY = viewHeight - rect.height - padding;
+        }
+        if (result.clientX < 0) {
+            result.clientX = padding;
+        }
+        if (result.clientY < 0) {
+            result.clientY = padding;
+        }
+        return result;
     }
 
     /**
@@ -75,7 +105,8 @@ export class Dialog {
         // 插入到对话框堆叠顺序的最前面
         const dialogStore = useDialogStore();
         const dialogStackIndex = dialogStore.dialogStack.indexOf(this.id);
-        if (dialogStackIndex !== -1) {
+        if (dialogStackIndex !== -1
+        ) {
             dialogStore.dialogStack.splice(dialogStackIndex, 1);
         }
         dialogStore.dialogStack.unshift(this.id);
