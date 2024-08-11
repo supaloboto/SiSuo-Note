@@ -29,6 +29,8 @@ onMounted(() => {
       const content = props.dialog.note?.data?.content;
       if (content) {
         vditor.setValue(content);
+      } else {
+        vditor.focus();
       }
     },
   });
