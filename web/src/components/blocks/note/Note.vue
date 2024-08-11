@@ -61,7 +61,7 @@ const scaleStyle = computed(() => {
 </script>
 
 <template>
-  <div :id="`sisuo-comp-note-${compData.id}`" class="note-div">
+  <div :id="`sisuo-comp-note-${compData.id}`" @wheel.stop class="note-div">
     <div class="note-content" ref="contentRef" :style="scaleStyle"></div>
   </div>
 </template>

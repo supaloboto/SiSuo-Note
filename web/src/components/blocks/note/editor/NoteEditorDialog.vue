@@ -51,5 +51,6 @@ onMounted(() => {
   height: 100%;
   background-color: #ffffff;
   border: none;
+  overflow: hidden;
 }
 </style>
