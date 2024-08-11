@@ -14,8 +14,8 @@ export const useComponentStore = defineStore('component', () => {
     const components = ref<Component[]>([
         new Note({
             id: 'test',
-            pos: {x: 0, y: 0},
-            rect: {width: 100, height: 100},
+            pos: {x: -200, y: -200},
+            rect: {width: 400, height: 400},
             data: {}
         }),
         new Note({

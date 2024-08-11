@@ -9,7 +9,8 @@ import {useDialogStore} from "@/stores/dialog";
  */
 export class Note extends BlockComponent {
     editor: NoteEditorDialog = null;
-    title: string;
+    // 覆盖父类的data对象
+    data: { title: string, content: string };
 
     /**
      * 构造函数
@@ -17,6 +18,9 @@ export class Note extends BlockComponent {
     constructor(props: { id, pos, rect, data }) {
         props.type = "note";
         super(props);
+        if (!this.data) {
+            this.data = {title: "", content: ""};
+        }
     }
 
     /**
@@ -42,10 +46,11 @@ export class Note extends BlockComponent {
             // 显示编辑器
             this.editor = new NoteEditorDialog(
                 this.id,
-                this.title ? this.title : "无标题",
+                // todo 国际化
+                this.data.title ? this.data.title : "笔记",
                 editorPos,
                 editorRect,
-                this.data
+                this
             );
         }
         // 如果编辑器不可见 则打开
@@ -70,6 +75,7 @@ export class Note extends BlockComponent {
      */
     contextMenu(): boolean {
         super.contextMenu();
+        // todo 右键菜单
         console.log("右键笔记:", this.id);
         return true;
     }

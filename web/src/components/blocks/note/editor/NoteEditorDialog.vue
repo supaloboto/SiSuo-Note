@@ -7,26 +7,32 @@
 <script setup lang="ts">
 import Vditor from "vditor";
 import 'vditor/dist/index.css'
-import {onMounted, ref} from "vue";
-import type {Dialog} from "@/frame/dialog/Dialog.js";
+import {onMounted} from "vue";
+import {NoteEditorDialog} from "@/components/blocks/note/editor/NoteEditorDialog";
 
 const props = defineProps<{
-  dialog: Dialog;
+  dialog: NoteEditorDialog;
 }>();
 
-const vditor = ref(null);
-
 onMounted(() => {
-  vditor.value = new Vditor(`vditor-${props.dialog.id}`, {
+  const vditor = new Vditor(`vditor-${props.dialog.id}`, {
     mode: 'wysiwyg',
     height: '100%',
     cache: {
       enable: false,
     },
-    after: () => {
-      // vditor.value.setValue('hello, Vditor + Vue!')
+    typewriterMode: true,
+    input: (value) => {
+      props.dialog.updateNoteContent();
     },
-  })
+    after: () => {
+      const content = props.dialog.note?.data?.content;
+      if (content) {
+        vditor.setValue(content);
+      }
+    },
+  });
+  props.dialog.editorInstance = vditor;
 });
 
 </script>
