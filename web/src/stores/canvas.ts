@@ -6,6 +6,7 @@
  */
 import {defineStore} from "pinia";
 import {ref} from "vue";
+import {roundOff} from "@/assets/utils/math";
 
 /**
  * 指针对象
@@ -84,13 +85,14 @@ export const useCanvasStore = defineStore('canvas', () => {
      * @param addStep 增加几步
      */
     const zoom = (step: number, addStep: number) => {
-        // 按当前的步长先将缩放值四舍五入到最接近的整数倍
-        let newScale = Math.round(scale.value / step) * step;
+        // 按当前的步长先将缩放值四舍五入到最接近的整数
+        let newScale = roundOff(roundOff(scale.value, step), 0);
         // 如果舍入方向与增加方向相同则直接使用舍入值 否则对舍入值做增加
         const sameDirection = addStep > 0 ? newScale > scale.value : newScale < scale.value;
         if (!sameDirection) {
             newScale += addStep * step;
         }
+        newScale = roundOff(newScale, 0);
         // 检查是否超出限制
         if (newScale > scaleMax) {
             scale.value = scaleMax;
