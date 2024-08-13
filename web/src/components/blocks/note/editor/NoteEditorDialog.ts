@@ -15,7 +15,7 @@ export class NoteEditorDialog extends Dialog {
     // 笔记数据
     note: Note;
     // 编辑器实例
-    editorInstance: Vditor = null;
+    editorInstance: Vditor = null as any;
 
     constructor(id: string, title: string,
                 pos: { clientX: number, clientY: number },
@@ -37,12 +37,11 @@ export class NoteEditorDialog extends Dialog {
     /**
      * 关闭编辑器弹窗
      */
-    close() {
-        super.close().then(() => {
-            // 关闭时解除绑定
-            if (this.note != null) {
-                this.note.editor = null;
-            }
-        });
+    async close(): Promise<void> {
+        await super.close();
+        // 关闭时解除绑定
+        if (this.note != null) {
+            this.note.editor = null as any;
+        }
     }
 }

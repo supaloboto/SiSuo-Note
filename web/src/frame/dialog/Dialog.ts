@@ -1,8 +1,8 @@
-import {type Raw, type Ref, ref} from "vue";
-import {deepCopy} from "@/assets/utils/copy";
-import {useDialogStore} from "@/stores/dialog";
-import {DialogAnimation} from "@/frame/dialog/DialogAnimation";
-import {useCanvasStore} from "@/stores/canvas";
+import { type Raw, type Ref, ref } from "vue";
+import { deepCopy } from "@/assets/utils/copy";
+import { useDialogStore } from "@/stores/dialog";
+import { DialogAnimation } from "@/frame/dialog/DialogAnimation";
+import { useCanvasStore } from "@/stores/canvas";
 
 /**
  * 对话框信息类
@@ -28,18 +28,18 @@ export class Dialog {
     // 是否最大化
     maximized: boolean = false;
     // 记录原本的位置和大小 用于最大化之后还原
-    private originPos: { clientX: number, clientY: number };
-    private originRect: { width: number, height: number };
+    private originPos: { clientX: number, clientY: number } = null as any;
+    private originRect: { width: number, height: number } = null as any;
     // 动画控制
     animation: DialogAnimation;
     // 尺寸变化时的钩子
-    onRectChange: () => void;
+    onRectChange: () => void = null as any;
 
     constructor(id: string,
-                title: string,
-                type: string,
-                pos: { clientX: number, clientY: number },
-                rect: { width: number, height: number }) {
+        title: string,
+        type: string,
+        pos: { clientX: number, clientY: number },
+        rect: { width: number, height: number }) {
         this.id = id;
         this.title = title;
         this.type = type;
@@ -47,7 +47,7 @@ export class Dialog {
         this.pos = ref(pos);
         this.rect = ref(rect);
         // 加入到对话框store
-        useDialogStore().dialogs.push(this);
+        useDialogStore().dialogs.push(this as any);
     }
 
     /**
@@ -60,11 +60,12 @@ export class Dialog {
         clientX: number,
         clientY: number
     } {
-        const result = {clientX: pos.clientX, clientY: pos.clientY};
+        const result = { clientX: pos.clientX, clientY: pos.clientY };
         const padding = 30;
         // 获取当前可使用视图的大小
         const viewWidth = window.innerWidth;
-        const viewHeight = window.innerHeight - document.getElementById('dock').clientHeight;
+        const dockClientHeight = document.getElementById('dock')?.clientHeight;
+        const viewHeight = window.innerHeight - (dockClientHeight ? dockClientHeight : 0);
         if (result.clientX + rect.width > viewWidth) {
             result.clientX = viewWidth - rect.width - padding;
         }
@@ -137,8 +138,8 @@ export class Dialog {
     fullscreen(): void {
         // 如果是最大化状态 则还原
         if (this.maximized) {
-            this.pos = deepCopy(this.originPos);
-            this.rect = deepCopy(this.originRect);
+            this.pos.value = deepCopy(this.originPos);
+            this.rect.value = deepCopy(this.originRect);
             if (this.onRectChange) {
                 this.onRectChange();
             }
@@ -156,16 +157,16 @@ export class Dialog {
             return;
         }
         // 记录原本的位置和大小
-        this.originPos = deepCopy(this.pos);
-        this.originRect = deepCopy(this.rect);
+        this.originPos = deepCopy(this.pos.value);
+        this.originRect = deepCopy(this.rect.value);
         // 设置最大化
-        this.rect.width = frameDiv.clientWidth;
-        this.rect.height = frameDiv.clientHeight - dockDiv.clientHeight;
+        this.rect.value.width = frameDiv.clientWidth;
+        this.rect.value.height = frameDiv.clientHeight - dockDiv.clientHeight;
         if (this.onRectChange) {
             this.onRectChange();
         }
-        this.pos.clientX = 0;
-        this.pos.clientY = 0;
+        this.pos.value.clientX = 0;
+        this.pos.value.clientY = 0;
         this.maximized = true;
     }
 
@@ -185,7 +186,7 @@ export class Dialog {
                     dialogStore.dialogStack.splice(dialogStackIndex, 1);
                 }
                 // 从对话框列表中移除
-                const dialogIndex = dialogStore.dialogs.indexOf(this);
+                const dialogIndex = dialogStore.dialogs.indexOf(this as any);
                 if (dialogIndex !== -1) {
                     dialogStore.dialogs.splice(dialogIndex, 1);
                 }

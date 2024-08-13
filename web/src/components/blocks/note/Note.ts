@@ -1,7 +1,7 @@
-import {BlockComponent} from "@/components/blocks/BlockComponent";
-import {NoteEditorDialog} from "@/components/blocks/note/editor/NoteEditorDialog";
-import {useDialogStore} from "@/stores/dialog";
-import {Dialog} from "@/frame/dialog/Dialog";
+import { BlockComponent } from "@/components/blocks/BlockComponent";
+import { NoteEditorDialog } from "@/components/blocks/note/editor/NoteEditorDialog";
+import { useDialogStore } from "@/stores/dialog";
+import { Dialog } from "@/frame/dialog/Dialog";
 
 /**
  * 笔记组件
@@ -9,18 +9,23 @@ import {Dialog} from "@/frame/dialog/Dialog";
  * @since 2024/07/24
  */
 export class Note extends BlockComponent {
-    editor: NoteEditorDialog = null;
+    editor: NoteEditorDialog = null as any;
     // 覆盖父类的data对象
-    data: { title: string, content: string };
+    data: { title: string, content: string } = null as any;
 
     /**
      * 构造函数
      */
-    constructor(props: { id, pos, rect, data }) {
-        props.type = "note";
-        super(props);
+    constructor(props: { id: string, pos: { x: number, y: number }, rect: { width: number, height: number }, data: any }) {
+        super({
+            type: "note",
+            id: props.id,
+            pos: props.pos,
+            rect: props.rect,
+            data: props.data
+        });
         if (!this.data) {
-            this.data = {title: "", content: ""};
+            this.data = { title: "", content: "" };
         }
     }
 
@@ -29,7 +34,7 @@ export class Note extends BlockComponent {
      */
     dblclick(): boolean {
         super.dblclick();
-        const editorRect = {width: 800, height: 600};
+        const editorRect = { width: 800, height: 600 };
         // 获取编辑器dom的位置 使窗口从组件上弹出
         const editorDom = document.getElementById(`sisuo-comp-note-${this.id}`);
         if (!editorDom) {

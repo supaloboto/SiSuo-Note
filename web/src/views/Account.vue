@@ -10,7 +10,6 @@ import * as accountApi from '@/assets/api/account'
 const login = () => {
   accountApi.login({
     account: 'admin',
-    username: 'adminUser',
     password: 'adminPasswd'
   }).then(res => {
     console.log(res)

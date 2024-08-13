@@ -5,16 +5,15 @@
  - @since 2024/07/28
  -->
 <script setup lang="ts">
-import {computed, onMounted, ref} from "vue";
-import {useCanvasStore} from "@/stores/canvas";
-import {useDialogStore} from "@/stores/dialog";
-import type {Dialog} from "@/frame/dialog/Dialog";
-import {NoteEditorDialog} from "@/components/blocks/note/editor/NoteEditorDialog";
+import { computed, onMounted, ref } from "vue";
+import { useCanvasStore } from "@/stores/canvas";
+import { useDialogStore } from "@/stores/dialog";
+import type { Dialog } from "@/frame/dialog/Dialog";
 
 const canvasStore = useCanvasStore();
 const dialogStore = useDialogStore();
 // 对话框列表
-const dialogs = computed<Dialog[]>(() => dialogStore.dialogs);
+const dialogs = computed<Dialog[]>(() => dialogStore.dialogs as any);
 // 鼠标悬浮的对话框索引
 const mouseOnIndex = ref(-1);
 // 当前焦点对话框 当聚焦在画布上时为空
@@ -120,28 +119,25 @@ const adjustTitlePos = (dialogIndex: number) => {
 <template>
   <div class="dock-div">
     <TransitionGroup name="dock-fade">
-      <div v-for="(dialog,index) in dialogs" :key="dialog.id" :id="dialog.id"
-           :class="{'dock-dialog':true, 'dock-dialog-focus':currentFocusDialog===dialog.id, 'dock-dialog-hover':index===mouseOnIndex}"
-           @mouseover="mouseOver(index)"
-           @mouseleave="mouseLeave(index)"
-           @click="click(index)"
-           @mousedown="evt=>mouseDown(evt,index)"
-      >
+      <div v-for="(dialog, index) in dialogs" :key="dialog.id" :id="dialog.id"
+        :class="{ 'dock-dialog': true, 'dock-dialog-focus': currentFocusDialog === dialog.id, 'dock-dialog-hover': index === mouseOnIndex }"
+        @mouseover="mouseOver(index)" @mouseleave="mouseLeave(index)" @click="click(index)"
+        @mousedown="evt => mouseDown(evt, index)">
         <!-- 缩略图 对特殊弹框显示对应的icon 对普通弹框显示标题或缩略图  -->
-        <div v-if="dialog.id==='setting'">
+        <div v-if="dialog.id === 'setting'">
           <icon name="system-setting"></icon>
         </div>
         <!-- todo 使用缩略图 -->
         <span v-else>
-        {{ dialog.title }}
-      </span>
+          {{ dialog.title }}
+        </span>
         <!-- 关闭按钮 -->
-        <button class="dialog-btn close" v-show="index===mouseOnIndex" @click.stop="dialog.close()">
-          <icon name="system-close"/>
+        <button class="dialog-btn close" v-show="index === mouseOnIndex" @click.stop="dialog.close()">
+          <icon name="system-close" />
         </button>
         <!-- 悬浮标题 -->
         <transition name="hover-title" @enter="titleShow(index)">
-          <div class="dock-dialog-hover-title" v-show="index===mouseOnIndex">
+          <div class="dock-dialog-hover-title" v-show="index === mouseOnIndex">
             {{ dialog.title }}
           </div>
         </transition>
@@ -250,9 +246,11 @@ const adjustTitlePos = (dialogIndex: number) => {
   0% {
     opacity: 0;
   }
+
   25% {
     opacity: 0;
   }
+
   100% {
     opacity: 1;
   }
@@ -311,5 +309,4 @@ const adjustTitlePos = (dialogIndex: number) => {
 .dock-fade-leave-active {
   position: absolute;
 }
-
 </style>

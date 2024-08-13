@@ -10,11 +10,11 @@ export class DialogAnimation {
     // 对话框对象
     dialog: Dialog;
     // 记录原始位置和大小
-    private originRect: { clientX: number, clientY: number, width: number, height: number };
+    private originRect!: { clientX: number; clientY: number; width: number; height: number; };
     // 透明度
     opacity: number = 1;
     // 动画播放计时器
-    private animationTimer: number = null;
+    private animationTimer: number = 0;
 
     constructor(dialog: Dialog) {
         this.dialog = dialog;
@@ -24,8 +24,8 @@ export class DialogAnimation {
      * 动画结束
      */
     endAnim = () => {
-        this.originRect = null;
-        this.animationTimer = null;
+        this.originRect = null as any;
+        this.animationTimer = 0;
     };
 
     /**

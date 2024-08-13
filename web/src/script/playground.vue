@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import Codemirror from "codemirror-editor-vue3";
 import {javascript} from "@codemirror/lang-javascript";
 import {computed, ref, watch} from "vue";

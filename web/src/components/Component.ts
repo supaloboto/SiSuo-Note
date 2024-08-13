@@ -1,5 +1,5 @@
-import {useComponentStore} from "@/stores/component";
-import {useCanvasStore} from "@/stores/canvas";
+import { useComponentStore } from "@/stores/component";
+import { useCanvasStore } from "@/stores/canvas";
 
 /**
  * 组件的统一父类
@@ -18,12 +18,12 @@ export class Component {
     // 组件数据
     data: any;
 
-    constructor({type, id, pos, rect, data}) {
-        this.type = type;
-        this.id = id;
-        this.pos = pos;
-        this.rect = rect;
-        this.data = data;
+    constructor(props: { type: string, id: string, pos: { x: number, y: number }, rect: { width: number, height: number }, data: any }) {
+        this.type = props.type;
+        this.id = props.id;
+        this.pos = props.pos;
+        this.rect = props.rect;
+        this.data = props.data;
     }
 
     /**

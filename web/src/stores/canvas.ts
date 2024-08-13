@@ -13,15 +13,15 @@ import {roundOff} from "@/assets/utils/math";
  */
 export class Pointer {
     // 用户
-    user: string;
+    user!: string;
     // 对于画布的x坐标
-    x: number;
+    x!: number;
     // 对于画布的y坐标
-    y: number;
+    y!: number;
     // 对于视窗的x坐标
-    clientX: number;
+    clientX!: number;
     // 对于视窗的y坐标
-    clientY: number;
+    clientY!: number;
     // 选中的组件
     selected: string[] = [];
     // 是否聚焦在画布上 影响画布上的鼠标事件或快捷键是否触发
