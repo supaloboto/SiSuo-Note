@@ -1,10 +1,11 @@
 package http
 
 import (
+	"io"
+
 	"github.com/bytedance/sonic"
 	"github.com/bytedance/sonic/ast"
 	"github.com/gin-gonic/gin"
-	"io"
 )
 
 func BindJson(c *gin.Context, i interface{}) {
@@ -13,16 +14,13 @@ func BindJson(c *gin.Context, i interface{}) {
 	if bodyReadErr != nil {
 		// todo 更换错误码机制
 		panic("bodyReadError")
-		return
 	}
 	// 解析请求体为JSON对象
 	jsonParseErr := sonic.Unmarshal(body, &i)
 	if jsonParseErr != nil {
 		// todo 更换错误码机制
 		panic("bodyReadError")
-		return
 	}
-	return
 }
 
 func GetBodyJson(c *gin.Context) ast.Node {
