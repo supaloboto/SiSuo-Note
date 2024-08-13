@@ -8,11 +8,11 @@ import (
 
 func SetupRouter(router *gin.Engine) {
 	// 注册接口
-	router.POST("/register", register)
+	router.POST("/account/register", register)
 	// 登录接口
-	router.POST("/login", login)
+	router.POST("/account/login", login)
 	// 登出接口 需要认证用户信息
-	router.POST("/logout", logout)
+	router.POST("/account/logout", logout)
 }
 
 // User 用户数据 结构体
@@ -22,7 +22,7 @@ type User struct {
 	// 用户名
 	UserName string
 	// 密码
-	Passwd string
+	Password string
 }
 
 // Users 当前登录用户列表
@@ -32,12 +32,15 @@ var Users = make(map[string]interface{})
  * 注册接口
  */
 func register(c *gin.Context) {
-	// 账户
-	account := c.Request.FormValue("Account")
-	userName := c.Request.FormValue("UserName")
-	passwd := c.Request.FormValue("Passwd")
+	// 解析参数
+	var json struct {
+		Account  string `json:"account" binding:"required"`
+		UserName string `json:"userName" binding:"required"`
+		Password string `json:"password" binding:"required"`
+	}
+	http.BindJson(c, &json)
 	// 打印用户信息
-	fmt.Println("Registering Account:", account, " UserName:", userName, " Passwd:", passwd)
+	fmt.Println("Registering Account:", json.Account, " UserName:", json.UserName, " Password:", json.Password)
 	// todo 验证用户信息是否合规
 	// todo 判断用户是否存在
 	userExist := false
@@ -64,8 +67,9 @@ func login(c *gin.Context) {
 	}()
 	// 解析参数
 	var json struct {
-		Account string `json:"Account" binding:"required"`
-		Passwd  string `json:"Passwd" binding:"required"`
+		Account  string `json:"account" binding:"required"`
+		UserName string `json:"userName" binding:"required"`
+		Password string `json:"password" binding:"required"`
 	}
 	http.BindJson(c, &json)
 	// todo 查询用户信息
@@ -73,7 +77,7 @@ func login(c *gin.Context) {
 	user := User{
 		Account:  json.Account,
 		UserName: json.Account, // fixme 临时使用账户名
-		Passwd:   json.Passwd,
+		Password: json.Password,
 	}
 	// 检查用户信息
 	authorize := authorize(user)
