@@ -229,7 +229,7 @@ onBeforeUnmount(() => {
          draggable="true"
     ></div>
     <!-- 组件 -->
-    <component :is="compRegis[compData.type].raw" :compData="compData" ref="compRef"
+    <component :is="compRegis[compData.compType].raw" :compData="compData" ref="compRef"
                class="component" :class="{selected}"></component>
   </div>
 </template>

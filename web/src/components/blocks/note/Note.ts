@@ -8,17 +8,15 @@ import { Dialog } from "@/frame/dialog/Dialog";
  * @author 刘志栋
  * @since 2024/07/24
  */
-export class Note extends BlockComponent {
+export class Note extends BlockComponent<{ title: string, content: string }> {
     editor: NoteEditorDialog = null as any;
-    // 覆盖父类的data对象
-    data: { title: string, content: string } = null as any;
 
     /**
      * 构造函数
      */
     constructor(props: { id: string, pos: { x: number, y: number }, rect: { width: number, height: number }, data: any }) {
         super({
-            type: "note",
+            compType: "note",
             id: props.id,
             pos: props.pos,
             rect: props.rect,

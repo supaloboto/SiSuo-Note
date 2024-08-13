@@ -12,7 +12,7 @@ const login = () => {
     account: 'admin',
     password: 'adminPasswd'
   }).then(res => {
-    console.log(res)
+    console.log('login success', res)
   })
 }
 </script>

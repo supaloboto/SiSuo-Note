@@ -6,9 +6,9 @@ import { useCanvasStore } from "@/stores/canvas";
  * @author 刘志栋
  * @since 2024/07/24
  */
-export class Component {
+export class Component<T> {
     // 组件类型
-    type: string;
+    compType: string;
     // 组件id
     id: string;
     // 组件位置
@@ -16,10 +16,10 @@ export class Component {
     // 组件形状
     rect: { width: number, height: number };
     // 组件数据
-    data: any;
+    data: T;
 
-    constructor(props: { type: string, id: string, pos: { x: number, y: number }, rect: { width: number, height: number }, data: any }) {
-        this.type = props.type;
+    constructor(props: { compType: string, id: string, pos: { x: number, y: number }, rect: { width: number, height: number }, data: any }) {
+        this.compType = props.compType;
         this.id = props.id;
         this.pos = props.pos;
         this.rect = props.rect;
@@ -73,7 +73,7 @@ export class Component {
         this.unselect();
         // 从组件列表中删除
         const componentStore = useComponentStore();
-        componentStore.components = componentStore.components.filter(item => item.id !== this.id);
+        componentStore.components = componentStore.components.filter((item: { id: string; }) => item.id !== this.id);
         return true;
     }
 
