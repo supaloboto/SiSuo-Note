@@ -8,6 +8,10 @@ const router = createRouter({
             component: () => import('@/views/BoardView.vue'),
         },
         {
+            path: '/account',
+            component: () => import('@/views/Account.vue'),
+        },
+        {
             path: '/script',
             component: () => import('@/script/playground.vue'),
         }

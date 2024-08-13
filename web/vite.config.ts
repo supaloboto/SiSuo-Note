@@ -26,6 +26,17 @@ export default defineConfig({
         host: true,
         // 端口
         port: 8098,
+        // 设置反向代理 用于开发环境
+        proxy: {
+            '/api': {
+                //代理地址
+                target: 'http://localhost:8088',
+                // 开启websocket支持
+                ws: true,
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/api/, '')
+            },
+        },
     },
     resolve: {
         alias: {
