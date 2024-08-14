@@ -5,21 +5,21 @@
  - @since 2024/07/10
  -->
 <script setup lang="ts">
-import {computed, onBeforeUnmount, onMounted, ref, type StyleValue, watch} from "vue";
-import {useCanvasStore} from "@/stores/canvas";
-import {useComponentStore} from "@/stores/component";
-import {Hotkeys} from "@/frame/board/hotkeys";
+import { computed, onBeforeUnmount, onMounted, ref, type StyleValue, watch } from "vue";
+import { useCanvasStore } from "@/stores/canvas";
+import { useKanbanStore } from "@/stores/kanban";
+import { Hotkeys } from "@/frame/board/hotkeys";
 import Toolbar from "@/frame/board/toolbar/Toolbar.vue";
 import SisuoComp from "@/components/Component.vue";
 import Scale from "@/frame/board/scale/Scale.vue";
-import {useGlobalStore} from "@/stores/global";
+import { useGlobalStore } from "@/stores/global";
 
 const canvasStore = useCanvasStore();
-const componentStore = useComponentStore();
+const kanbanStore = useKanbanStore();
 const globalStore = useGlobalStore();
 
 // 获取组件列表
-const components = computed(() => componentStore.components);
+const components = computed(() => kanbanStore.components);
 
 // 鼠标拖拽移动开关
 const viewDragging = ref<boolean>(false);
@@ -141,14 +141,14 @@ const boardBgStyle = computed<StyleValue>(() => {
   }
   // 背景类型
   switch (boardBgType.value) {
-      // 简单辅助线网格背景
+    // 简单辅助线网格背景
     case 'lattice1':
       const latticeSize = 60 * scale.value;
       return {
         backgroundImage: 'linear-gradient(#e1e1e1 2px, transparent 0), linear-gradient(90deg, #e1e1e1 1px, transparent 0)',
         backgroundSize: `${latticeSize}px ${latticeSize}px`,
       }
-      // 细致辅助线网格背景
+    // 细致辅助线网格背景
     case 'lattice2':
       const latticeOuterSize = 150 * scale.value;
       const latticeInnerSize = 30 * scale.value;
@@ -156,7 +156,7 @@ const boardBgStyle = computed<StyleValue>(() => {
         backgroundImage: 'linear-gradient(#e1e1e1 2px, transparent 0), linear-gradient(90deg, #e1e1e1 1px, transparent 0), linear-gradient(#ededed 1px, transparent 0), linear-gradient(90deg, #ededed 1px, transparent 0)',
         backgroundSize: `${latticeOuterSize}px ${latticeOuterSize}px, ${latticeOuterSize}px ${latticeOuterSize}px, ${latticeInnerSize}px ${latticeInnerSize}px, ${latticeInnerSize}px ${latticeInnerSize}px`,
       }
-      // 点阵背景
+    // 点阵背景
     case 'dot1':
       const dotSize = 30 * scale.value;
       return {
@@ -182,14 +182,11 @@ const boardBgPos = computed(() => {
     <!-- 侧边栏 -->
     <toolbar v-show="!cursorCreatingMode"></toolbar>
     <!-- 组件 -->
-    <div id="sisuo-canvas"
-         :class="[cursorState]"
-         :style="[boardBgStyle,boardBgPos]"
-         @mousemove="mouseMove" @click="clickBlank" @mousedown="onMouseDown" @mouseup="onMouseUp"
-         @contextmenu="rightClickBlank">
+    <div id="sisuo-canvas" :class="[cursorState]" :style="[boardBgStyle, boardBgPos]" @mousemove="mouseMove"
+      @click="clickBlank" @mousedown="onMouseDown" @mouseup="onMouseUp" @contextmenu="rightClickBlank">
       <!-- 定位居中 -->
       <div class="canvas-center">
-        <sisuo-comp v-for="(comp,index) in components" :key="comp.id" :compData="comp"></sisuo-comp>
+        <sisuo-comp v-for="(comp, index) in components" :key="comp.id" :compData="comp"></sisuo-comp>
       </div>
     </div>
     <!-- 缩放工具 -->
@@ -220,5 +217,4 @@ const boardBgPos = computed(() => {
   left: 50%;
   transform: translate(-50%, -50%);
 }
-
 </style>

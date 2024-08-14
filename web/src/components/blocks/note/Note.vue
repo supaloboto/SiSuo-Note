@@ -6,9 +6,9 @@
  -->
 <script setup lang="ts">
 // 定义组件属性
-import {Note} from "@/components/blocks/note/Note";
-import {computed, onMounted, ref, watch} from "vue";
-import {useCanvasStore} from "@/stores/canvas";
+import { Note } from "@/components/blocks/note/Note";
+import { computed, onMounted, ref, watch } from "vue";
+import { useCanvasStore } from "@/stores/canvas";
 import VditorPreview from "vditor/dist/method.min";
 
 const props = defineProps({

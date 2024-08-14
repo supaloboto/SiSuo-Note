@@ -6,15 +6,15 @@
  -->
 <script setup lang="ts">
 import i18n from "@/assets/lang";
-import {compRegis} from "@/components";
-import {computed, watch} from "vue";
-import {getLongID} from "@/assets/utils/idworker";
-import {useComponentStore} from "@/stores/component";
-import {useCanvasStore} from "@/stores/canvas";
+import { compRegis } from "@/components";
+import { computed, watch } from "vue";
+import { getLongID } from "@/assets/utils/idworker";
+import { useKanbanStore } from "@/stores/kanban";
+import { useCanvasStore } from "@/stores/canvas";
 
 const $t = i18n.global.t;
 const canvasStore = useCanvasStore();
-const compStore = useComponentStore();
+const kanbanStore = useKanbanStore();
 
 // 获取组件注册信息
 const compRegisList = computed(() => {
@@ -44,13 +44,13 @@ const addComp = (compName: string) => {
       height: compRegisInfo.defaultRect.height,
     },
   });
-  compStore.components.push(compPlaceholder);
+  kanbanStore.components.push(compPlaceholder);
   // 更新store中的鼠标状态
   // canvasStore.currentPointer.selected = [compId];
   canvasStore.currentPointer.state = `creating-${compId}`;
   // 设置添加组件的各项监听
   const createCompWatch = watch(canvasStore.currentPointer, () => {
-    const comp = compStore.components.find(comp => comp.id === compId);
+    const comp = kanbanStore.components.find(comp => comp.id === compId);
     if (!comp) {
       createCompWatch();
       return;
@@ -59,7 +59,7 @@ const addComp = (compName: string) => {
       x: canvasStore.currentPointer.x - comp.rect.width / 2,
       y: canvasStore.currentPointer.y - comp.rect.height / 2,
     };
-  }, {deep: true});
+  }, { deep: true });
   const dropComp = () => {
     createCompWatch();
     document.removeEventListener("mouseup", dropComp);
@@ -73,8 +73,7 @@ const addComp = (compName: string) => {
 <template>
   <div id="toolbar">
     <!-- 组件列表 -->
-    <div v-for="(comp,index) in compRegisList" class="toolbar-item" :key="comp.name"
-         @click="addComp(comp.name)">
+    <div v-for="(comp, index) in compRegisList" class="toolbar-item" :key="comp.name" @click="addComp(comp.name)">
       <!-- 组件图标 -->
       <div class="toolbar-item-icon">
         <Icon :name="comp.icon"></Icon>
@@ -146,5 +145,4 @@ const addComp = (compName: string) => {
     color: var(--toolbar-item-hover-color);
   }
 }
-
 </style>

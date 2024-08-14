@@ -8,9 +8,11 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import { type Component } from "@/components/Component";
 
-export const useComponentStore = defineStore('component', () => {
+export const useKanbanStore = defineStore('kanban', () => {
+    // 看板id
+    const kanbanId = ref('kanban1');
     // 组件列表
     const components = ref<Component<any>[]>([]);
 
-    return { components };
+    return { kanbanId, components };
 });

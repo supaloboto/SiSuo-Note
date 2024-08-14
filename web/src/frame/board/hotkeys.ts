@@ -1,7 +1,7 @@
-import {useCanvasStore} from "@/stores/canvas";
-import {useComponentStore} from "@/stores/component";
-import {useDialogStore} from "@/stores/dialog";
-import {deepCopy} from "@/assets/utils/copy";
+import { useCanvasStore } from "@/stores/canvas";
+import { useKanbanStore } from "@/stores/kanban";
+import { useDialogStore } from "@/stores/dialog";
+import { deepCopy } from "@/assets/utils/copy";
 
 /**
  * 快捷键
@@ -26,7 +26,7 @@ export class Hotkeys {
             } else {
                 canvasStore.zoom(step, -1);
             }
-        }, {passive: false});
+        }, { passive: false });
         // 注册快捷键
         document.addEventListener("keydown", (e) => {
             // alt + d 隐藏/显示对话框
@@ -70,8 +70,7 @@ export class Hotkeys {
      * 全选
      */
     static selectAll() {
-        const componentStore = useComponentStore();
-        componentStore.components.forEach(comp => {
+        useKanbanStore().components.forEach(comp => {
             comp?.select(false);
         })
     }
@@ -80,13 +79,13 @@ export class Hotkeys {
      * 删除组件
      */
     static deleteComponent() {
-        const componentStore = useComponentStore();
+        const kanbanStore = useKanbanStore();
         const canvasStore = useCanvasStore();
         // 获取选中组件的ID 拷贝以保证遍历过程中删除不会出错
         const selected: string[] = deepCopy(canvasStore.currentPointer.selected);
         // 删除选中组件
         selected.forEach(id => {
-            componentStore.components.find(comp => comp.id === id)?.delete();
+            kanbanStore.components.find(comp => comp.id === id)?.delete();
         });
     }
 }

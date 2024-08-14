@@ -1,12 +1,13 @@
-import { useComponentStore } from "@/stores/component";
+import { useKanbanStore } from "@/stores/kanban";
 import { useCanvasStore } from "@/stores/canvas";
+import { saveComponent } from "@/assets/api/kanban";
 
 /**
  * 组件的统一父类
  * @author 刘志栋
  * @since 2024/07/24
  */
-export class Component<T> {
+export class Component<T extends { [key: string]: any }> {
     // 组件类型
     compType: string;
     // 组件id
@@ -16,7 +17,7 @@ export class Component<T> {
     // 组件形状
     rect: { width: number, height: number };
     // 组件数据
-    data: T;
+    data: { [key: string]: any };
 
     constructor(props: { compType: string, id: string, pos: { x: number, y: number }, rect: { width: number, height: number }, data: any }) {
         this.compType = props.compType;
@@ -72,9 +73,22 @@ export class Component<T> {
         // 移除选中
         this.unselect();
         // 从组件列表中删除
-        const componentStore = useComponentStore();
-        componentStore.components = componentStore.components.filter((item: { id: string; }) => item.id !== this.id);
+        const kanbanStore = useKanbanStore();
+        kanbanStore.components = kanbanStore.components.filter((item: { id: string; }) => item.id !== this.id);
         return true;
+    }
+
+    save(): Promise<any> {
+        // 保存组件
+        return saveComponent({
+            compType: this.compType,
+            id: this.id,
+            pos: this.pos,
+            rect: this.rect,
+            data: this.data
+        } as Component<T>).then(() => {
+            console.log("组件保存成功");
+        });
     }
 
 }

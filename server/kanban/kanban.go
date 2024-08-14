@@ -1,9 +1,9 @@
 package kanban
 
 import (
-	"log"
 	"server/http"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,16 +26,16 @@ type Component struct {
 	Id string `json:"id"`
 	// 组件位置
 	Pos struct {
-		X int `json:"x"`
-		Y int `json:"y"`
+		X float32 `json:"x"`
+		Y float32 `json:"y"`
 	} `json:"pos"`
 	// 组件大小
 	Rect struct {
-		Width  int `json:"width"`
-		Height int `json:"height"`
+		Width  float32 `json:"width"`
+		Height float32 `json:"height"`
 	} `json:"rect"`
 	// 组件数据
-	Data interface{} `json:"data"`
+	Data map[string]any `json:"data"`
 }
 
 /**
@@ -48,15 +48,20 @@ type Kanban struct {
 	ComponentList []Component `json:"componentList"`
 }
 
+/**
+ * 获取看板列表
+ */
 func getKanbanList(c *gin.Context) {
 	// todo 获取看板列表
 }
 
+/**
+ * 获取看板数据
+ */
 func getKanban(c *gin.Context) {
-	// 获取看板数据
 	kanbanId := c.Param("kanbanId")
 	kanbanData := GetKanban(kanbanId)
-	// 返回看板数据
+	// 返回给客户端成功响应
 	http.Success(c, kanbanData)
 }
 
@@ -65,11 +70,13 @@ func getKanban(c *gin.Context) {
  */
 func saveComponent(c *gin.Context) {
 	param := http.GetBodyJson(c)
-	if raw, err := param.Raw(); err != nil {
-		// todo 处理错误
-		log.Panic(err)
-	} else {
-		// todo 保存组件信息
-		log.Println(raw)
-	}
+	kanbanId, _ := param.GetByPath("kanbanId").String()
+	component := Component{}
+	// 将组件信息转换为实体
+	componentString, _ := param.GetByPath("component").Raw()
+	sonic.UnmarshalString(componentString, &component)
+	// 保存组件信息
+	SaveComponent(kanbanId, component)
+	// 返回给客户端成功响应
+	http.Success(c, nil)
 }

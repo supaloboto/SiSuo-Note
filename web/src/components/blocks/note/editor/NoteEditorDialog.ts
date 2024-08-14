@@ -1,6 +1,6 @@
-import {markRaw} from 'vue'
-import {Dialog} from "@/frame/dialog/Dialog";
-import type {Note} from "@/components/blocks/note/Note";
+import { markRaw } from 'vue'
+import { Dialog } from "@/frame/dialog/Dialog";
+import type { Note } from "@/components/blocks/note/Note";
 import NoteEditorDialogComp from "@/components/blocks/note/editor/NoteEditorDialog.vue";
 import Vditor from "vditor";
 
@@ -18,9 +18,9 @@ export class NoteEditorDialog extends Dialog {
     editorInstance: Vditor = null as any;
 
     constructor(id: string, title: string,
-                pos: { clientX: number, clientY: number },
-                rect: { width: number, height: number },
-                note: Note) {
+        pos: { clientX: number, clientY: number },
+        rect: { width: number, height: number },
+        note: Note) {
         super(id, title, 'noteEditor', pos, rect);
         this.note = note;
     }
@@ -32,6 +32,9 @@ export class NoteEditorDialog extends Dialog {
         const markdown = this.editorInstance.getValue();
         this.note.data.title = markdown.split('\n')[0].replace(/[#\s]/g, '');
         this.note.data.content = markdown;
+        this.note.save().then(() => {
+            console.log('笔记保存成功');
+        });
     }
 
     /**
