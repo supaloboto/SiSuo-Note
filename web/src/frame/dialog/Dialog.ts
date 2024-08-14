@@ -1,4 +1,4 @@
-import { type Raw, type Ref, ref } from "vue";
+import { type Raw, type Ref, ref, toRef, toRefs } from "vue";
 import { deepCopy } from "@/assets/utils/copy";
 import { useDialogStore } from "@/stores/dialog";
 import { DialogAnimation } from "@/frame/dialog/DialogAnimation";
@@ -136,10 +136,13 @@ export class Dialog {
      * 全屏化
      */
     fullscreen(): void {
+        // 直接使用this.pos访问会导致无法触发响应式
+        const pos = toRef(this, 'pos');
+        const rect = toRef(this, 'rect');
         // 如果是最大化状态 则还原
         if (this.maximized) {
-            this.pos.value = deepCopy(this.originPos);
-            this.rect.value = deepCopy(this.originRect);
+            pos.value = deepCopy(this.originPos);
+            rect.value = deepCopy(this.originRect);
             if (this.onRectChange) {
                 this.onRectChange();
             }
@@ -157,16 +160,16 @@ export class Dialog {
             return;
         }
         // 记录原本的位置和大小
-        this.originPos = deepCopy(this.pos.value);
-        this.originRect = deepCopy(this.rect.value);
+        this.originPos = deepCopy(pos.value);
+        this.originRect = deepCopy(rect.value);
         // 设置最大化
-        this.rect.value.width = frameDiv.clientWidth;
-        this.rect.value.height = frameDiv.clientHeight - dockDiv.clientHeight;
+        rect.value.width = frameDiv.clientWidth;
+        rect.value.height = frameDiv.clientHeight - dockDiv.clientHeight;
         if (this.onRectChange) {
             this.onRectChange();
         }
-        this.pos.value.clientX = 0;
-        this.pos.value.clientY = 0;
+        pos.value.clientX = 0;
+        pos.value.clientY = 0;
         this.maximized = true;
     }
 
