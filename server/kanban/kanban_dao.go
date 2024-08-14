@@ -56,7 +56,18 @@ func GetKanban(kanbanId string) Kanban {
 	return kanbanData
 }
 
-func SaveComponent(kanbanId string, component Component) {
+func AddComponent(kanbanId string, component Component) {
+	// 根据KanbanId过滤看板文档
+	filter := bson.M{"kanbanId": kanbanId}
+	// 添加组件
+	update := bson.M{"$push": bson.M{"componentList": component}}
+	_, updateErr := mongo.UpdateDocument("kanban", filter, update)
+	if updateErr != nil {
+		// todo 错误处理
+	}
+}
+
+func UpdateComponent(kanbanId string, component Component) {
 	// 根据KanbanId过滤看板文档
 	filter := bson.M{"kanbanId": kanbanId}
 	// 更新组件列表中的指定组件
@@ -65,17 +76,19 @@ func SaveComponent(kanbanId string, component Component) {
 	updateOptions.SetArrayFilters(options.ArrayFilters{
 		Filters: []interface{}{bson.M{"elem.id": component.Id}},
 	})
-	updateResult, updateErr := mongo.UpdateDocument("kanban", filter, update, updateOptions)
+	_, updateErr := mongo.UpdateDocument("kanban", filter, update, updateOptions)
 	if updateErr != nil {
 		// todo 错误处理
 	}
-	// 如果更新失败
-	if updateResult.ModifiedCount == 0 {
-		// 添加新组件
-		update = bson.M{"$push": bson.M{"componentList": component}}
-		_, insertErr := mongo.UpdateDocument("kanban", filter, update)
-		if insertErr != nil {
-			// todo 错误处理
-		}
+}
+
+func DeleteComponent(kanbanId string, componentId string) {
+	// 根据KanbanId过滤看板文档
+	filter := bson.M{"kanbanId": kanbanId}
+	// 删除组件列表中的指定组件
+	update := bson.M{"$pull": bson.M{"componentList": bson.M{"id": componentId}}}
+	_, updateErr := mongo.UpdateDocument("kanban", filter, update)
+	if updateErr != nil {
+		// todo 错误处理
 	}
 }

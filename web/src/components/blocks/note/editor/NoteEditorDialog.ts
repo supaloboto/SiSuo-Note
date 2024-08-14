@@ -32,7 +32,7 @@ export class NoteEditorDialog extends Dialog {
         const markdown = this.editorInstance.getValue();
         this.note.data.title = markdown.split('\n')[0].replace(/[#\s]/g, '');
         this.note.data.content = markdown;
-        this.note.save().then(() => {
+        this.note.update().then(() => {
             console.log('笔记保存成功');
         });
     }

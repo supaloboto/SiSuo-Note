@@ -5,7 +5,7 @@
  - @since 2024/07/10
  -->
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, type StyleValue, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, type StyleValue } from "vue";
 import { useCanvasStore } from "@/stores/canvas";
 import { useKanbanStore } from "@/stores/kanban";
 import { Hotkeys } from "@/frame/board/hotkeys";
@@ -19,6 +19,7 @@ const kanbanStore = useKanbanStore();
 const globalStore = useGlobalStore();
 
 // 获取组件列表
+const tempComponent = computed(() => canvasStore.tempComponent);
 const components = computed(() => kanbanStore.components);
 
 // 鼠标拖拽移动开关
@@ -187,6 +188,7 @@ const boardBgPos = computed(() => {
       <!-- 定位居中 -->
       <div class="canvas-center">
         <sisuo-comp v-for="(comp, index) in components" :key="comp.id" :compData="comp"></sisuo-comp>
+        <sisuo-comp v-if="tempComponent" :key="tempComponent.id" :compData="tempComponent"></sisuo-comp>
       </div>
     </div>
     <!-- 缩放工具 -->

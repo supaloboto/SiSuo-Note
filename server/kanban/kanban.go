@@ -13,7 +13,9 @@ func SetupRouter(router *gin.Engine) {
 	// 获取看板接口
 	router.GET("/kanban/:kanbanId", getKanban)
 	// 组件保存接口
-	router.POST("/kanban/component/save", saveComponent)
+	router.POST("/kanban/component/add", addComponent)
+	router.POST("/kanban/component/update", updateComponent)
+	router.POST("/kanban/component/delete", deleteComponent)
 }
 
 /**
@@ -66,17 +68,45 @@ func getKanban(c *gin.Context) {
 }
 
 /**
- * 保存组件信息
+ * 添加组件
  */
-func saveComponent(c *gin.Context) {
+func addComponent(c *gin.Context) {
 	param := http.GetBodyJson(c)
 	kanbanId, _ := param.GetByPath("kanbanId").String()
 	component := Component{}
 	// 将组件信息转换为实体
 	componentString, _ := param.GetByPath("component").Raw()
 	sonic.UnmarshalString(componentString, &component)
-	// 保存组件信息
-	SaveComponent(kanbanId, component)
+	// 保存组件
+	AddComponent(kanbanId, component)
+	// 返回给客户端成功响应
+	http.Success(c, nil)
+}
+
+/**
+ * 更新组件
+ */
+func updateComponent(c *gin.Context) {
+	param := http.GetBodyJson(c)
+	kanbanId, _ := param.GetByPath("kanbanId").String()
+	component := Component{}
+	// 将组件信息转换为实体
+	componentString, _ := param.GetByPath("component").Raw()
+	sonic.UnmarshalString(componentString, &component)
+	// 保存组件
+	UpdateComponent(kanbanId, component)
+	// 返回给客户端成功响应
+	http.Success(c, nil)
+}
+
+/**
+ * 删除组件
+ */
+func deleteComponent(c *gin.Context) {
+	param := http.GetBodyJson(c)
+	kanbanId, _ := param.GetByPath("kanbanId").String()
+	componentId, _ := param.GetByPath("componentId").String()
+	DeleteComponent(kanbanId, componentId)
 	// 返回给客户端成功响应
 	http.Success(c, nil)
 }

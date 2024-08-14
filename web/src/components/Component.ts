@@ -1,6 +1,5 @@
 import { useKanbanStore } from "@/stores/kanban";
 import { useCanvasStore } from "@/stores/canvas";
-import { saveComponent } from "@/assets/api/kanban";
 
 /**
  * 组件的统一父类
@@ -73,22 +72,15 @@ export class Component<T extends { [key: string]: any }> {
         // 移除选中
         this.unselect();
         // 从组件列表中删除
-        const kanbanStore = useKanbanStore();
-        kanbanStore.components = kanbanStore.components.filter((item: { id: string; }) => item.id !== this.id);
+        useKanbanStore().deleteComponent(this.id);
         return true;
     }
 
-    save(): Promise<any> {
-        // 保存组件
-        return saveComponent({
-            compType: this.compType,
-            id: this.id,
-            pos: this.pos,
-            rect: this.rect,
-            data: this.data
-        } as Component<T>).then(() => {
-            console.log("组件保存成功");
-        });
+    /**
+     * 更新组件信息
+     */
+    update(): Promise<any> {
+        return useKanbanStore().updateComponent(this);
     }
 
 }

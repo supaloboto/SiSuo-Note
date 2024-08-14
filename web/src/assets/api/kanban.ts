@@ -10,10 +10,24 @@ export function getKanban(kanbanId: string): Promise<any> {
     return getRequest(`/kanban/${kanbanId}`, null as any);
 }
 
-export function saveComponent(component: Component<any>): Promise<any> {
-    const kanbanStore = useKanbanStore();
-    return postRequest('/kanban/component/save', {
-        kanbanId: kanbanStore.kanbanId,
+export function addComponent(component: Component<any>): Promise<any> {
+    return postRequest('/kanban/component/add', {
+        kanbanId: useKanbanStore().kanbanId,
         component,
+    });
+}
+
+export function updateComponent(component: Component<any>): Promise<any> {
+    return postRequest('/kanban/component/update', {
+        kanbanId: useKanbanStore().kanbanId,
+        component,
+    });
+}
+
+export function deleteComponent(componentId: string): Promise<any> {
+    const kanbanStore = useKanbanStore();
+    return postRequest('/kanban/component/delete', {
+        kanbanId: useKanbanStore().kanbanId,
+        componentId,
     });
 }

@@ -85,7 +85,8 @@ export class Hotkeys {
         const selected: string[] = deepCopy(canvasStore.currentPointer.selected);
         // 删除选中组件
         selected.forEach(id => {
-            kanbanStore.components.find(comp => comp.id === id)?.delete();
+            kanbanStore.deleteComponent(id);
         });
     }
+
 }

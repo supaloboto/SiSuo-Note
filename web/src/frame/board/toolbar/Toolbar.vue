@@ -31,7 +31,7 @@ const compRegisList = computed(() => {
  */
 const addComp = (compName: string) => {
   const compRegisInfo = compRegis.value[compName];
-  // 创建组件占位符信息 加入组件列表
+  // 创建组件占位符信息
   const compId = getLongID();
   const compPlaceholder = new compRegisInfo.class({
     id: compId,
@@ -44,28 +44,45 @@ const addComp = (compName: string) => {
       height: compRegisInfo.defaultRect.height,
     },
   });
-  kanbanStore.components.push(compPlaceholder);
+  canvasStore.tempComponent = compPlaceholder;
   // 更新store中的鼠标状态
   // canvasStore.currentPointer.selected = [compId];
   canvasStore.currentPointer.state = `creating-${compId}`;
-  // 设置添加组件的各项监听
-  const createCompWatch = watch(canvasStore.currentPointer, () => {
-    const comp = kanbanStore.components.find(comp => comp.id === compId);
-    if (!comp) {
-      createCompWatch();
+  // 设置鼠标拖动组件的监听
+  const stopCompWatch = watch(canvasStore.currentPointer, () => {
+    if (!canvasStore.tempComponent) {
+      stopCompWatch();
       return;
     }
-    comp.pos = {
-      x: canvasStore.currentPointer.x - comp.rect.width / 2,
-      y: canvasStore.currentPointer.y - comp.rect.height / 2,
+    canvasStore.tempComponent.pos = {
+      x: canvasStore.currentPointer.x - canvasStore.tempComponent.rect.width / 2,
+      y: canvasStore.currentPointer.y - canvasStore.tempComponent.rect.height / 2,
     };
   }, { deep: true });
-  const dropComp = () => {
-    createCompWatch();
+  // 状态还原方法
+  const resetState = () => {
+    stopCompWatch();
     document.removeEventListener("mouseup", dropComp);
+    document.removeEventListener("keydown", escEvt);
     canvasStore.currentPointer.state = "pointer";
+    canvasStore.tempComponent = null;
   }
+  // 构建添加组件的方法
+  const dropComp = () => {
+    // 添加组件
+    kanbanStore.addComponent(compPlaceholder);
+    // 重置状态
+    resetState();
+  }
+  // 监听鼠标抬起事件
   document.addEventListener("mouseup", dropComp);
+  // 监听键盘Esc按键事件
+  const escEvt = (evt: KeyboardEvent) => {
+    if (evt.key === "Escape") {
+      resetState();
+    }
+  };
+  document.addEventListener("keydown", escEvt);
 }
 
 </script>

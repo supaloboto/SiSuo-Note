@@ -4,9 +4,10 @@
  * @author 刘志栋
  * @since 2023/07/23
  */
-import {defineStore} from "pinia";
-import {ref} from "vue";
-import {roundOff} from "@/assets/utils/math";
+import { defineStore } from "pinia";
+import { ref } from "vue";
+import { roundOff } from "@/assets/utils/math";
+import type { Component } from "@/components/Component";
 
 /**
  * 指针对象
@@ -38,6 +39,8 @@ export const useCanvasStore = defineStore('canvas', () => {
     const currentPointer = ref<Pointer>(new Pointer());
     // 其他用户的指针位置
     const pointers = ref<Pointer[]>([]);
+    // 组件添加时的占位组件
+    const tempComponent = ref<Component<any>>(null as any);
 
     /**
      * 选中组件
@@ -126,6 +129,7 @@ export const useCanvasStore = defineStore('canvas', () => {
         selectComponent,
         unSelectComponent,
         pointers,
+        tempComponent,
         // 缩放
         scale,
         scaleMax,

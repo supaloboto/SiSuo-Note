@@ -5,14 +5,14 @@
  - @since 2024/07/10
  -->
 <script setup lang="ts">
-import {StyleValue, computed, ref, watch, type ComputedRef, onBeforeUnmount} from "vue";
-import {useCanvasStore} from "@/stores/canvas";
+import { StyleValue, computed, ref, watch, type ComputedRef, onBeforeUnmount } from "vue";
+import { useCanvasStore } from "@/stores/canvas";
 import i18n from "@/assets/lang";
-import {Component} from "@/components/Component";
-import {compRegis} from "@/components/index";
+import { Component } from "@/components/Component";
+import { compRegis } from "@/components/index";
 
 const props = defineProps({
-  compData: {type: Component, required: true},
+  compData: { type: Component, required: true },
 });
 
 // 使用$t获取国际化文本
@@ -79,7 +79,7 @@ const dragStart = () => {
   dragWatch.value = watch(mousePos, (pos) => {
     props.compData.pos.x = pos.x - dragMouseOffset.x;
     props.compData.pos.y = pos.y - dragMouseOffset.y;
-  }, {deep: true});
+  }, { deep: true });
   // 因为有时候鼠标移动太快会导致监听不到mouseup事件 所以在document上建立监听
   document.addEventListener('mouseup', dragEnd);
 }
@@ -92,6 +92,8 @@ const dragEnd = () => {
   dragWatch.value = null;
   // 移除document上的监听
   document.removeEventListener('mouseup', dragEnd);
+  // 更新组件数据
+  props.compData.update();
 }
 
 /*------ 鼠标动作交互 ------*/
@@ -183,7 +185,7 @@ const resizeStart = (evt: MouseEvent, wrapper: string) => {
   // 建立监听 在拖拽中调整组件大小
   resizeWatch.value = watch(mousePos, () => {
     resizeComp();
-  }, {deep: true});
+  }, { deep: true });
   // 因为有时候鼠标移动太快会导致监听不到mouseup事件 所以在document上建立监听
   document.addEventListener('mouseup', resizeEnd);
 }
@@ -194,6 +196,8 @@ const resizeStart = (evt: MouseEvent, wrapper: string) => {
 const resizeEnd = () => {
   resizeWatch.value && resizeWatch.value();
   resizeWatch.value = null;
+  // 更新组件数据
+  props.compData.update();
   // 移除document上的监听
   document.removeEventListener('mouseup', resizeEnd);
 }
@@ -202,35 +206,23 @@ const resizeEnd = () => {
  * 组件移除时移除监听
  */
 onBeforeUnmount(() => {
-  dragEnd();
-  resizeEnd();
+  document.removeEventListener('mouseup', dragEnd);
+  document.removeEventListener('mouseup', resizeEnd);
 });
 
 </script>
 
 <template>
   <!-- 外层容器 -->
-  <div class="comp-div"
-       :class="{moving:!!dragWatch}"
-       :style="compDivStyle"
-       @dragstart.stop.prevent="dragStart"
-       @click.stop="click"
-       @dblclick="dblclick"
-       @mouseup="mouseUp"
-       @contextmenu.stop.prevent="contextMenu"
-       draggable="true"
-  >
+  <div class="comp-div" :class="{ moving: !!dragWatch }" :style="compDivStyle" @dragstart.stop.prevent="dragStart"
+    @click.stop="click" @dblclick="dblclick" @mouseup="mouseUp" @contextmenu.stop.prevent="contextMenu"
+    draggable="true">
     <!-- 四角定位 -->
-    <div v-if="selected" v-for="wrapper in wrappers" :key="wrapper"
-         :class="`resize-wrapper ${wrapper}`"
-         @dragstart.stop.prevent="resizeStart($event,wrapper)"
-         @mouseup="resizeEnd"
-         @click.stop
-         draggable="true"
-    ></div>
+    <div v-if="selected" v-for="wrapper in wrappers" :key="wrapper" :class="`resize-wrapper ${wrapper}`"
+      @dragstart.stop.prevent="resizeStart($event, wrapper)" @mouseup="resizeEnd" @click.stop draggable="true"></div>
     <!-- 组件 -->
-    <component :is="compRegis[compData.compType].raw" :compData="compData" ref="compRef"
-               class="component" :class="{selected}"></component>
+    <component :is="compRegis[compData.compType].raw" :compData="compData" ref="compRef" class="component"
+      :class="{ selected }"></component>
   </div>
 </template>
 
@@ -262,7 +254,8 @@ onBeforeUnmount(() => {
   height: 8px;
 }
 
-.n, .s {
+.n,
+.s {
   width: calc(100% - 12px);
   transform: translateX(-50%);
 }
@@ -279,7 +272,8 @@ onBeforeUnmount(() => {
   cursor: s-resize;
 }
 
-.e, .w {
+.e,
+.w {
   height: calc(100% - 12px);
   transform: translateY(-50%);
 }
@@ -296,7 +290,10 @@ onBeforeUnmount(() => {
   cursor: w-resize;
 }
 
-.nw, .ne, .sw, .se {
+.nw,
+.ne,
+.sw,
+.se {
   background-color: var(--component-resize-wrapper-fill-color);
 }
 
@@ -323,5 +320,4 @@ onBeforeUnmount(() => {
   right: -4px;
   cursor: se-resize;
 }
-
 </style>
