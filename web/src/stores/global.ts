@@ -4,7 +4,7 @@
  * @author 刘志栋
  * @since 2023/05/23
  */
-import {defineStore} from "pinia";
+import { defineStore } from "pinia";
 
 export const useGlobalStore = defineStore('global', {
     state: () => ({
@@ -16,7 +16,7 @@ export const useGlobalStore = defineStore('global', {
             boardBgType: 'lattice2',
         },
         // 用户信息
-        user: {account: null, id: null, name: null, token: null, wsSession: null},
+        user: { id: null, account: null, name: null, token: null, wsSession: null },
         // 协议模式 http/https 协议影响到页面与系统剪切板的互动
         protocol: 'http',
     }),

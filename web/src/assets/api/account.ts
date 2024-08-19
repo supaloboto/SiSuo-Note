@@ -1,5 +1,4 @@
-import type {AxiosResponse} from "axios";
-import {postRequest} from '@/assets/api/api';
+import { postRequest } from '@/assets/api/api';
 
 export function register(param: { account: string, username: string, password: string }): Promise<any> {
     return postRequest('/account/register', param);

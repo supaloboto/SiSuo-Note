@@ -5,7 +5,14 @@
  - @since 2024/07/28
  -->
 <script setup lang="ts">
+import router from '@/router';
 
+/**
+ * 返回列表页
+ */
+const goBack = () => {
+  router.back();
+}
 </script>
 
 <template>
@@ -13,7 +20,7 @@
     <!-- 左边部分 -->
     <div class="header-left">
       <!-- 返回按钮 -->
-      <div class="header-btn back">
+      <div class="header-btn back" @click="goBack">
         <icon name="system-back"></icon>
       </div>
       <!-- 撤销按钮 -->
@@ -105,5 +112,4 @@
     --path-fill: var(--header-btn-hover-icon-color);
   }
 }
-
 </style>

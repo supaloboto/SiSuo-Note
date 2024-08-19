@@ -39,43 +39,45 @@ func connect() (*mongo.Client, error) {
 	return client, nil
 }
 
-// InsertDocument inserts a document into the specified collection in MongoDB.
+// 插入文档
 func InsertDocument(collectionName string, document interface{}) error {
-	// Access the specified collection
 	collection := getClient().Database("sisuo").Collection(collectionName)
-
-	// Insert the document
 	_, err := collection.InsertOne(context.TODO(), document)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
-func GetDocument(collectionName string, filter interface{}) (*mongo.SingleResult, error) {
-	// Access the specified collection
+// 获取文档列表
+func GetDocumentList(collectionName string, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error) {
 	collection := getClient().Database("sisuo").Collection(collectionName)
+	cursor, err := collection.Find(context.TODO(), filter, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return cursor, nil
+}
 
-	// Find the document
-	result := collection.FindOne(context.TODO(), filter)
+// 获取单个文档
+func GetDocument(collectionName string, filter interface{}, opts ...*options.FindOneOptions) (*mongo.SingleResult, error) {
+	collection := getClient().Database("sisuo").Collection(collectionName)
+	result := collection.FindOne(context.TODO(), filter, opts...)
 	if result.Err() != nil {
 		return nil, result.Err()
 	}
-
 	return result, nil
 }
 
+// 更新文档
 func UpdateDocument(collectionName string, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (*mongo.UpdateResult, error) {
 	collection := getClient().Database("sisuo").Collection(collectionName)
 	return collection.UpdateOne(context.TODO(), filter, update, opts...)
 }
 
+// 删除文档
 func DeleteDocument(collectionName string, filter interface{}) error {
-	// Access the specified collection
 	collection := getClient().Database("sisuo").Collection(collectionName)
-
-	// Delete the document
 	_, err := collection.DeleteOne(context.TODO(), filter)
 	if err != nil {
 		return err

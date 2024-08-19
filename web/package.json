@@ -19,6 +19,7 @@
     "@types/codemirror": "^5.60.15",
     "axios": "1.6.0",
     "codemirror-editor-vue3": "^2.7.0",
+    "js-md5": "^0.8.3",
     "pinia": "^2.1.7",
     "sass": "^1.77.8",
     "vditor": "^3.10.4",

@@ -1,9 +1,10 @@
 package account
 
 import (
-	"fmt"
+	"server/restful"
+
 	"github.com/gin-gonic/gin"
-	"server/http"
+	"github.com/google/uuid"
 )
 
 func SetupRouter(router *gin.Engine) {
@@ -17,12 +18,18 @@ func SetupRouter(router *gin.Engine) {
 
 // User 用户数据 结构体
 type User struct {
+	// 用户ID
+	UserId string `json:"userId"`
 	// 账户
-	Account string
+	Account string `json:"account"`
 	// 用户名
-	UserName string
+	Username string `json:"username"`
 	// 密码
-	Password string
+	Password string `json:"password"`
+	// token
+	Token string `json:"token"`
+	// ws-session
+	WsSession string `json:"wsSession"`
 }
 
 // Users 当前登录用户列表
@@ -35,23 +42,29 @@ func register(c *gin.Context) {
 	// 解析参数
 	var json struct {
 		Account  string `json:"account" binding:"required"`
-		UserName string `json:"userName" binding:"required"`
+		UserName string `json:"username" binding:"required"`
 		Password string `json:"password" binding:"required"`
 	}
-	http.BindJson(c, &json)
-	// 打印用户信息
-	fmt.Println("Registering Account:", json.Account, " UserName:", json.UserName, " Password:", json.Password)
-	// todo 验证用户信息是否合规
-	// todo 判断用户是否存在
-	userExist := false
-	if userExist {
+	restful.BindJson(c, &json)
+	// 用户信息
+	user := User{
+		Account:  json.Account,
+		Username: json.UserName,
+		Password: json.Password,
+	}
+	// 判断用户是否存在
+	existUser := GetUserByAccount(user.Account)
+	if existUser != (User{}) {
 		// 用户已存在
 		//c.String(http.StatusOK, "RegisAccountExist")
-		http.Error(c, 101, "RegisAccountExist")
+		restful.Error(c, 101, "RegisAccountExist")
 	} else {
-		// todo 保存用户信息到数据库
+		// 生成UUID
+		user.UserId = uuid.New().String()
+		// 保存用户信息到数据库
+		AddAccount(user)
 		// 返回
-		http.Success(c, "")
+		restful.Success(c, "")
 	}
 }
 
@@ -62,28 +75,26 @@ func login(c *gin.Context) {
 	// 账户验证异常时的错误处理
 	defer func() {
 		if r := recover(); r != nil {
-			http.Error(c, 102, r.(string))
+			restful.Error(c, 102, r.(string))
 		}
 	}()
 	// 解析参数
 	var json struct {
 		Account  string `json:"account" binding:"required"`
-		UserName string `json:"userName" binding:"required"`
 		Password string `json:"password" binding:"required"`
 	}
-	http.BindJson(c, &json)
-	// todo 查询用户信息
-	// 记录用户信息
-	user := User{
-		Account:  json.Account,
-		UserName: json.Account, // fixme 临时使用账户名
-		Password: json.Password,
-	}
+	restful.BindJson(c, &json)
+	// 查询用户信息
+	user := GetUserByAccount(json.Account)
 	// 检查用户信息
-	authorize := authorize(user)
-	if authorize {
-		Users[user.Account] = user
-		http.Success(c, user)
+	pass := user.Password == json.Password
+	if pass {
+		// todo 生成token
+		token := uuid.New().String()
+		user.Token = token
+		// 记录用户
+		Users[user.Token] = user
+		restful.Success(c, user)
 	} else {
 		panic("LoginFail2")
 	}
