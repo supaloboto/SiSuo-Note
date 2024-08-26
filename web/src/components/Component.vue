@@ -10,8 +10,9 @@ import { useCanvasStore } from "@/stores/canvas";
 import i18n from "@/assets/lang";
 import { Component } from "@/components/Component";
 import { compRegis } from "@/components/index";
-import Wrapper from "./plugins/wrapper/Wrapper.vue";
-import LinkLine from "./plugins/link/LinkLine.vue";
+import WrapperPlugin from "./plugins/wrapper/Wrapper.vue";
+import LinkLinePlugin from "./plugins/link/LinkLine.vue";
+import { LinkLine } from "./plugins/link/LinkLine";
 import LinkLineHandler from "./plugins/link/LinkLineHandler.vue";
 
 const props = defineProps({
@@ -151,6 +152,11 @@ onBeforeUnmount(() => {
   document.removeEventListener('mouseup', dragEnd);
 });
 
+// 连线
+const linkLineSet = ref<LinkLine[]>([
+  new LinkLine([{ x: -100, y: 100 }, { x: 200, y: 100 }, { x: 200, y: 200 }, { x: 100, y: 200 }]),
+]);
+
 </script>
 
 <template>
@@ -159,14 +165,15 @@ onBeforeUnmount(() => {
     @click.stop="click" @dblclick="dblclick" @mouseup="mouseUp" @contextmenu.stop.prevent="contextMenu"
     draggable="true">
     <!-- 四角定位 -->
-    <Wrapper v-if="selected" :compData="props.compData" />
-    <!-- 连线 -->
-    <LinkLine :compData="props.compData" />
+    <WrapperPlugin v-if="selected" :compData="props.compData" />
+    <!-- 连线触发点 -->
     <LinkLineHandler v-if="selected" :compData="props.compData" />
     <!-- 组件 -->
     <component :is="compRegis[compData.compType].raw" :compData="compData" ref="compRef" class="component"
       :class="{ selected }"></component>
   </div>
+  <!-- 连线 -->
+  <LinkLinePlugin v-for="(item, index) in linkLineSet" :lineData="item" />
 </template>
 
 <style scoped>

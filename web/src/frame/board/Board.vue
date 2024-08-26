@@ -6,13 +6,14 @@
  -->
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, type StyleValue } from "vue";
+import { useGlobalStore } from "@/stores/global";
 import { useCanvasStore } from "@/stores/canvas";
 import { useKanbanStore } from "@/stores/kanban";
 import { Hotkeys } from "@/frame/board/hotkeys";
 import Toolbar from "@/frame/board/toolbar/Toolbar.vue";
 import SisuoComp from "@/components/Component.vue";
 import Scale from "@/frame/board/scale/Scale.vue";
-import { useGlobalStore } from "@/stores/global";
+import BoardCanvas from "@/frame/board/boardcanvas/BoardCanvas.vue";
 
 const canvasStore = useCanvasStore();
 const kanbanStore = useKanbanStore();
@@ -181,18 +182,22 @@ const boardBgPos = computed(() => {
 <template>
   <div class="board-div">
     <!-- 侧边栏 -->
-    <toolbar v-show="!cursorCreatingMode"></toolbar>
+    <Toolbar v-show="!cursorCreatingMode"></Toolbar>
     <!-- 组件 -->
     <div id="sisuo-canvas" :class="[cursorState]" :style="[boardBgStyle, boardBgPos]" @mousemove="mouseMove"
       @click="clickBlank" @mousedown="onMouseDown" @mouseup="onMouseUp" @contextmenu="rightClickBlank">
-      <!-- 定位居中 -->
+      <!-- 定位居中 为了计算缩放方便 视图采用中心点为坐标原点的定位方式 因此需要让所有组件的渲染以窗口中心为原点 -->
       <div class="canvas-center">
+        <!-- 渲染组件 -->
         <sisuo-comp v-for="(comp, index) in components" :key="comp.id" :compData="comp"></sisuo-comp>
+        <!-- 渲染组件占位符 -->
         <sisuo-comp v-if="tempComponent" :key="tempComponent.id" :compData="tempComponent"></sisuo-comp>
       </div>
     </div>
     <!-- 缩放工具 -->
     <Scale></Scale>
+    <!-- 绘图工具 -->
+    <BoardCanvas></BoardCanvas>
   </div>
 </template>
 
@@ -217,6 +222,5 @@ const boardBgPos = computed(() => {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
 }
 </style>

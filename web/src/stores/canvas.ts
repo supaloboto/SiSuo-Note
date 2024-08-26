@@ -8,6 +8,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import { roundOff } from "@/assets/utils/math";
 import type { Component } from "@/components/Component";
+import type { BoardCanvasCommand } from "@/frame/board/boardcanvas/BoardCanvasShape";
 
 /**
  * 指针对象
@@ -123,6 +124,9 @@ export const useCanvasStore = defineStore('canvas', () => {
         clientHeight: 0
     });
 
+    // 画板上的图形渲染指令
+    const boardCanvasCmds = ref<BoardCanvasCommand[]>([]);
+
     return {
         // 指针
         currentPointer,
@@ -136,6 +140,8 @@ export const useCanvasStore = defineStore('canvas', () => {
         scaleMin,
         zoom,
         // 视图
-        currentViewRect
+        currentViewRect,
+        // 画图指令
+        boardCanvasCmds,
     };
 });
