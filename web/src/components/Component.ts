@@ -1,5 +1,6 @@
 import { useKanbanStore } from "@/stores/kanban";
 import { useCanvasStore } from "@/stores/canvas";
+import type { LinkLine } from "./plugins/link/LinkLine";
 
 /**
  * 组件的统一父类
@@ -17,6 +18,8 @@ export class Component<T extends { [key: string]: any }> {
     rect: { width: number, height: number };
     // 组件数据
     data: { [key: string]: any };
+    // 组件连线
+    links: LinkLine[] = [];
 
     constructor(props: { compType: string, id: string, pos: { x: number, y: number }, rect: { width: number, height: number }, data: any }) {
         this.compType = props.compType;

@@ -13,7 +13,8 @@ import { Hotkeys } from "@/frame/board/hotkeys";
 import Toolbar from "@/frame/board/toolbar/Toolbar.vue";
 import SisuoComp from "@/components/Component.vue";
 import Scale from "@/frame/board/scale/Scale.vue";
-import BoardCanvas from "@/frame/board/boardcanvas/BoardCanvas.vue";
+import BoardPainter from "@/frame/board/painter/BoardPainter.vue";
+import BoardShapeSvg from "@/frame/board/shape/BoardShapeSvg.vue";
 
 const canvasStore = useCanvasStore();
 const kanbanStore = useKanbanStore();
@@ -197,7 +198,9 @@ const boardBgPos = computed(() => {
     <!-- 缩放工具 -->
     <Scale></Scale>
     <!-- 绘图工具 -->
-    <BoardCanvas></BoardCanvas>
+    <BoardPainter></BoardPainter>
+    <!-- 形状绘制器 -->
+    <BoardShapeSvg></BoardShapeSvg>
   </div>
 </template>
 

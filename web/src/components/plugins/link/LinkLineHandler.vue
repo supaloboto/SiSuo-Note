@@ -6,11 +6,12 @@
  -->
 <script setup lang="ts">
 import { computed, ref, watch, onBeforeUnmount } from "vue";
-/*------ 四个触发点 ------*/
-const handlers = ref<string[]>(['n', 'e', 'w', 's']);
-const linkWatch = ref(null);
 import { Component } from "@/components/Component";
 import { useCanvasStore } from "@/stores/canvas";
+import { LinkLine } from "./LinkLine";
+
+/*------ 四个触发点 ------*/
+const handlers = ref<string[]>(['n', 'e', 'w', 's']);
 
 const props = defineProps({
     compData: { type: Component, required: true },
@@ -27,19 +28,51 @@ const clickHandler = () => {
     // todo 寻找最近的组件并连接 或创建新的组件
 }
 
+const currentLink = ref<LinkLine | null>(null);
+const linkWatch = ref(null);
+
 /**
  * 开始拖动连线
  */
 const linkStart = (evt: MouseEvent, handler: string) => {
-    // todo 生成连线
+    currentLink.value = new LinkLine([{ x: mousePos.value.x, y: mousePos.value.y }]);
+    // 生成连线
+    props.compData.links.push(currentLink.value);
     // todo 选中连线
+    // 监听鼠标移动
+    linkWatch.value = watch(mousePos, (newVal) => {
+        if (currentLink.value) {
+            currentLink.value.path[1] = { x: newVal.x, y: newVal.y };
+        }
+    }, { deep: true });
+    document.addEventListener('mouseup', linkEnd);
 }
+
+/**
+ * 结束拖动连线
+ */
+const linkEnd = () => {
+    if (currentLink.value) {
+        currentLink.value = null;
+    }
+    if (linkWatch.value) {
+        linkWatch.value();
+    }
+    document.removeEventListener('mouseup', linkEnd);
+}
+
+// 组件移除时移除监听
+onBeforeUnmount(() => {
+    document.removeEventListener('mouseup', linkEnd);
+});
 
 </script>
 
 <template>
-    <div v-for="handler in handlers" :key="handler" :class="`link-handler ${handler}`"
-        @dragstart.stop.prevent="linkStart($event, handler)" @click.stop="clickHandler" draggable="true"></div>
+    <div style="display: contents;">
+        <div v-for="handler in handlers" :key="handler" :class="`link-handler ${handler}`"
+            @dragstart.stop.prevent="linkStart($event, handler)" draggable="true"></div>
+    </div>
 </template>
 
 <style lang="scss" scoped>

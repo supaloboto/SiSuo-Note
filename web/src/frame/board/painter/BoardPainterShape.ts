@@ -1,13 +1,13 @@
 import { useCanvasStore } from "@/stores/canvas";
 
 /**
- * 画板图形渲染指令接口
+ * 画板手绘图形渲染指令接口
  * 
  * @author 刘志栋
  * @since 2024/08/26
  */
-export interface BoardCanvasCommand {
-    render(shape: BoardCanvasShape): void;
+export interface BoardPainterCommand {
+    render(shape: BoardPainterShape): void;
 }
 
 /**
@@ -16,7 +16,7 @@ export interface BoardCanvasCommand {
  * @author 刘志栋
  * @since 2024/08/26
  */
-export class BoardCanvasShape {
+export class BoardPainterShape {
     // canvas对象
     private ctx: CanvasRenderingContext2D;
     // 记录上个路径点 用于绘图指令拼接
@@ -45,7 +45,7 @@ export class BoardCanvasShape {
         };
     }
 
-    from(pos: { x: number, y: number }): BoardCanvasShape {
+    from(pos: { x: number, y: number }): BoardPainterShape {
         const clientPos = this.transPosToClientPos(pos);
         this.canvasCommands.push(() => {
             this.ctx?.beginPath();
@@ -55,7 +55,7 @@ export class BoardCanvasShape {
         return this;
     }
 
-    lineTo(pos: { x: number, y: number }): BoardCanvasShape {
+    lineTo(pos: { x: number, y: number }): BoardPainterShape {
         if (!this.lastPos) {
             return this.from(pos);
         }

@@ -1,4 +1,4 @@
-import type { BoardCanvasCommand, BoardCanvasShape } from "@/frame/board/boardcanvas/BoardCanvasShape";
+import { BoardShapeCommand, BoardShape } from "@/frame/board/shape/BoardShape";
 
 export class LinkLine {
     // 路径点
@@ -10,21 +10,28 @@ export class LinkLine {
 
 }
 
-export class LinkLinePrintCmd implements BoardCanvasCommand {
+export class LinkLineRenderCmd extends BoardShapeCommand {
     private linkLine: LinkLine;
 
     constructor(linkLine: LinkLine) {
+        super();
         this.linkLine = linkLine;
     }
 
-    render(shape: BoardCanvasShape): void {
+    getShape(): BoardShape {
+        // 如果路径点小于2个则不绘制
         if (this.linkLine.path.length < 2) {
-            return;
+            return null as any;
         }
+        const shape = new BoardShape();
+        // 从第一个点开始绘制
         shape.from(this.linkLine.path[0]);
+        // 所有路径点
         for (let i = 1; i < this.linkLine.path.length; i++) {
             shape.lineTo(this.linkLine.path[i]);
         }
-        shape.print();
+        // todo 绘制箭头
+        // 返回
+        return shape;
     }
 }

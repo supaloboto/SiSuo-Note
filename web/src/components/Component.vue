@@ -152,11 +152,6 @@ onBeforeUnmount(() => {
   document.removeEventListener('mouseup', dragEnd);
 });
 
-// 连线
-const linkLineSet = ref<LinkLine[]>([
-  new LinkLine([{ x: -100, y: 100 }, { x: 200, y: 100 }, { x: 200, y: 200 }, { x: 100, y: 200 }]),
-]);
-
 </script>
 
 <template>
@@ -165,15 +160,15 @@ const linkLineSet = ref<LinkLine[]>([
     @click.stop="click" @dblclick="dblclick" @mouseup="mouseUp" @contextmenu.stop.prevent="contextMenu"
     draggable="true">
     <!-- 四角定位 -->
-    <WrapperPlugin v-if="selected" :compData="props.compData" />
+    <WrapperPlugin v-show="selected" :compData="props.compData" />
     <!-- 连线触发点 -->
-    <LinkLineHandler v-if="selected" :compData="props.compData" />
+    <LinkLineHandler v-show="selected" :compData="props.compData" />
     <!-- 组件 -->
     <component :is="compRegis[compData.compType].raw" :compData="compData" ref="compRef" class="component"
       :class="{ selected }"></component>
   </div>
   <!-- 连线 -->
-  <LinkLinePlugin v-for="(item, index) in linkLineSet" :lineData="item" />
+  <LinkLinePlugin v-for="(item, index) in props.compData.links" :lineData="item" />
 </template>
 
 <style scoped>

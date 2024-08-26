@@ -88,8 +88,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div v-for="wrapper in wrappers" :key="wrapper" :class="`resize-wrapper ${wrapper}`"
-        @dragstart.stop.prevent="resizeStart($event, wrapper)" @mouseup="resizeEnd" @click.stop draggable="true"></div>
+    <div style="display: contents;">
+        <div v-for="wrapper in wrappers" :key="wrapper" :class="`resize-wrapper ${wrapper}`"
+            @dragstart.stop.prevent="resizeStart($event, wrapper)" @click.stop draggable="true"></div>
+    </div>
 </template>
 
 <style scoped>

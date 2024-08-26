@@ -8,7 +8,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import { roundOff } from "@/assets/utils/math";
 import type { Component } from "@/components/Component";
-import type { BoardCanvasCommand } from "@/frame/board/boardcanvas/BoardCanvasShape";
+import type { BoardShapeCommand } from "@/frame/board/shape/BoardShape";
 
 /**
  * 指针对象
@@ -29,7 +29,7 @@ export class Pointer {
     // 是否聚焦在画布上 影响画布上的鼠标事件或快捷键是否触发
     focusOnCanvas: boolean = true;
     // 状态
-    state: string = 'pinter';
+    state: string = 'pointer';
 }
 
 /**
@@ -125,7 +125,7 @@ export const useCanvasStore = defineStore('canvas', () => {
     });
 
     // 画板上的图形渲染指令
-    const boardCanvasCmds = ref<BoardCanvasCommand[]>([]);
+    const boardShapeCmds = ref<BoardShapeCommand[]>([]);
 
     return {
         // 指针
@@ -141,7 +141,7 @@ export const useCanvasStore = defineStore('canvas', () => {
         zoom,
         // 视图
         currentViewRect,
-        // 画图指令
-        boardCanvasCmds,
+        // 图形渲染
+        boardShapeCmds,
     };
 });

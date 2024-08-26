@@ -5,7 +5,7 @@
  - @since 2024/08/23
  -->
 <script setup lang="ts">
-import { LinkLine, LinkLinePrintCmd } from '@/components/plugins/link/LinkLine';
+import { LinkLine, LinkLineRenderCmd } from '@/components/plugins/link/LinkLine';
 import { useCanvasStore } from '@/stores/canvas';
 import { computed, onMounted, ref, watch } from 'vue';
 
@@ -16,11 +16,11 @@ const props = defineProps({
 const canvasStore = useCanvasStore();
 
 /**
- * 注册绘图指令方法
+ * 注册图形渲染指令
  */
 const addLineRenderCmd = () => {
-    const lineRenderCmd = new LinkLinePrintCmd(props.lineData);
-    canvasStore.boardCanvasCmds.push(lineRenderCmd);
+    const lineRenderCmd = new LinkLineRenderCmd(props.lineData);
+    canvasStore.boardShapeCmds.push(lineRenderCmd);
 }
 
 onMounted(() => {
