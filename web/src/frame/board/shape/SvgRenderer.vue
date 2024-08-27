@@ -1,22 +1,22 @@
 <!--
- - 看板图形绘制插件
+ - 看板图形绘制插件-SVG渲染
  -
  - @author 刘志栋
  - @since 2024/08/23
  -->
 <script setup lang="ts">
-import { BoardShape } from '@/frame/board/shape/BoardShape';
+import { BoardShape, BoardShapeSvg } from '@/frame/board/shape/BoardShape';
 import { useCanvasStore } from '@/stores/canvas';
 import { computed, onMounted, ref, watch } from 'vue';
 
 const canvasStore = useCanvasStore();
 
 // 图形绘制指令集合
-const canvasCmds = computed(() => canvasStore.boardShapeCmds);
+const canvasCmds = computed(() => canvasStore.boardShapeCmds.filter((cmd) => cmd.type === 'svg'));
 // svg列表
 const svgList = ref<{
     id: string,
-    shape: BoardShape,
+    shape: BoardShapeSvg,
 }[]>([]);
 
 /**
@@ -26,7 +26,7 @@ const drawShapes = () => {
     // 遍历执行绘图指令
     canvasCmds.value.forEach((cmd) => {
         // 获取图形数据
-        const shape = cmd.getShape();
+        const shape = cmd.doRender() as BoardShapeSvg;
         if (!shape) return;
         // 拼接svg数据
         const svg = {

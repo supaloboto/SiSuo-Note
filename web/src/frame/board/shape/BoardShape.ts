@@ -10,28 +10,77 @@ import { useCanvasStore } from "@/stores/canvas";
 export abstract class BoardShapeCommand {
     // ID
     private _id: string = '';
+    // svg/canvas
+    private _type: string = '';
+    // 图形
+    private _shape: BoardShape = null as any;
 
     constructor() {
         this._id = getLongID();
+        // 默认使用svg
+        this.useSvg();
     }
 
     get id(): string {
         return this._id;
     }
 
-    /**
-     * 计算需要渲染的图形
-     */
-    abstract getShape(): BoardShape;
+    get type(): string {
+        return this._type;
+    }
+
+    useSvg(): BoardShapeCommand {
+        this._type = 'svg';
+        this._shape = new BoardShapeSvg();
+        return this;
+    }
+
+    useCanvas(): BoardShapeCommand {
+        this._type = 'canvas';
+        this._shape = new BoardShapeCanvas();
+        return this;
+    }
+
+    abstract render(shape: BoardShape): void;
+
+    doRender(): BoardShape {
+        this.render(this._shape);
+        return this._shape;
+    }
+
 }
 
 /**
- * 画板图形类
+ * 画板图形接口
  * 
  * @author 刘志栋
  * @since 2024/08/26
  */
-export class BoardShape {
+export abstract class BoardShape {
+
+    constructor() {
+    }
+
+    /**
+    * 定义路径起始点
+    * @param pos 位置
+    */
+    abstract from(pos: { x: number, y: number }): BoardShape
+
+    /**
+     * 从上个点画直线到指定位置
+     * @param pos 位置
+     */
+    abstract lineTo(pos: { x: number, y: number }): BoardShape
+}
+
+/**
+ * 画板图形-使用SVG绘制
+ * 
+ * @author 刘志栋
+ * @since 2024/08/26
+ */
+export class BoardShapeSvg extends BoardShape {
     // 宽高
     private _width: number = 0;
     private _height: number = 0;
@@ -47,6 +96,7 @@ export class BoardShape {
     private bottomRight: { x: number, y: number } = { x: null as any, y: null as any };
 
     constructor() {
+        super();
     }
 
     get width(): number {
@@ -117,10 +167,6 @@ export class BoardShape {
         return clientPos;
     }
 
-    /**
-     * 定义路径起始点
-     * @param pos 位置
-     */
     from(pos: { x: number, y: number }): BoardShape {
         const clientPos = this.transPosToClientPos(pos);
         // 创建一个新的path对象
@@ -131,10 +177,6 @@ export class BoardShape {
         return this;
     }
 
-    /**
-     * 从上个点画直线到指定位置
-     * @param pos 位置
-     */
     lineTo(pos: { x: number, y: number }): BoardShape {
         const currentPath = this._paths[this._paths.length - 1];
         if (!currentPath) {
@@ -156,4 +198,75 @@ export class BoardShape {
         return this;
     }
 
+}
+
+
+
+/**
+ * 画板图形-使用Canvas绘制
+ * 
+ * @author 刘志栋
+ * @since 2024/08/26
+ */
+export class BoardShapeCanvas extends BoardShape {
+    // canvas对象
+    private ctx: CanvasRenderingContext2D | null = null;
+    // 记录上个路径点 用于绘图指令拼接
+    private lastPos: { x: number, y: number } = null as any;
+    // 绘图指令集合
+    private canvasCommands: Function[] = [];
+
+    constructor() {
+        super();
+    }
+
+    attachToCtx(ctx: CanvasRenderingContext2D): void {
+        this.ctx = ctx;
+    }
+
+    /**
+     * 将画布位置转换为视图位置
+     * @param pos 画布位置
+     * @returns 视图位置
+     */
+    private transPosToClientPos(pos: { x: number, y: number }): { x: number, y: number } {
+        // 获取画布信息
+        const canvasStore = useCanvasStore();
+        const viewRect = canvasStore.currentViewRect;
+        const scale = canvasStore.scale;
+        // 计算点在视图上的位置
+        return {
+            x: (pos.x - viewRect.x) * scale / 100 + viewRect.clientWidth / 2,
+            y: (pos.y - viewRect.y) * scale / 100 + viewRect.clientHeight / 2,
+        };
+    }
+
+    from(pos: { x: number, y: number }): BoardShapeCanvas {
+        const clientPos = this.transPosToClientPos(pos);
+        this.canvasCommands.push(() => {
+            this.ctx?.beginPath();
+            this.ctx?.moveTo(clientPos.x, clientPos.y);
+        });
+        this.lastPos = clientPos;
+        return this;
+    }
+
+    lineTo(pos: { x: number, y: number }): BoardShapeCanvas {
+        if (!this.lastPos) {
+            return this.from(pos);
+        }
+        const clientPos = this.transPosToClientPos(pos);
+        // 记录画线指令
+        this.canvasCommands.push(() => {
+            this.ctx?.lineTo(clientPos.x, clientPos.y);
+        });
+        this.lastPos = clientPos;
+        return this;
+    }
+
+    print(): void {
+        // 运行画线指令
+        this.canvasCommands.forEach(command => command());
+        this.ctx?.stroke();
+    }
 }

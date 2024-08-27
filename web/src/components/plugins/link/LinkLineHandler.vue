@@ -8,7 +8,8 @@
 import { computed, ref, watch, onBeforeUnmount } from "vue";
 import { Component } from "@/components/Component";
 import { useCanvasStore } from "@/stores/canvas";
-import { LinkLine } from "./LinkLine";
+import { LinkLine, LinkLineRenderCmd } from "./LinkLine";
+import { BoardShapeCommand } from "@/frame/board/shape/BoardShape";
 
 /*------ 四个触发点 ------*/
 const handlers = ref<string[]>(['n', 'e', 'w', 's']);
@@ -28,17 +29,18 @@ const clickHandler = () => {
     // todo 寻找最近的组件并连接 或创建新的组件
 }
 
+// 连线指令
+const shapeCmd = ref<BoardShapeCommand>(null);
 const currentLink = ref<LinkLine | null>(null);
 const linkWatch = ref(null);
-
 /**
  * 开始拖动连线
  */
 const linkStart = (evt: MouseEvent, handler: string) => {
+    // 生成当前连线
     currentLink.value = new LinkLine([{ x: mousePos.value.x, y: mousePos.value.y }]);
-    // 生成连线
-    props.compData.links.push(currentLink.value);
-    // todo 选中连线
+    shapeCmd.value = new LinkLineRenderCmd(currentLink.value).useCanvas();
+    canvasStore.boardShapeCmds.push(shapeCmd.value);
     // 监听鼠标移动
     linkWatch.value = watch(mousePos, (newVal) => {
         if (currentLink.value) {
@@ -58,6 +60,11 @@ const linkEnd = () => {
     if (linkWatch.value) {
         linkWatch.value();
     }
+    // 正式生成连线
+    canvasStore.boardShapeCmds = canvasStore.boardShapeCmds.filter((cmd) => cmd.id !== shapeCmd.value.id);
+    shapeCmd.value = null;
+    props.compData.links.push(currentLink.value);
+    // 移除监听
     document.removeEventListener('mouseup', linkEnd);
 }
 

@@ -18,12 +18,11 @@ export class LinkLineRenderCmd extends BoardShapeCommand {
         this.linkLine = linkLine;
     }
 
-    getShape(): BoardShape {
+    render(shape: BoardShape): void {
         // 如果路径点小于2个则不绘制
         if (this.linkLine.path.length < 2) {
             return null as any;
         }
-        const shape = new BoardShape();
         // 从第一个点开始绘制
         shape.from(this.linkLine.path[0]);
         // 所有路径点
@@ -31,7 +30,6 @@ export class LinkLineRenderCmd extends BoardShapeCommand {
             shape.lineTo(this.linkLine.path[i]);
         }
         // todo 绘制箭头
-        // 返回
-        return shape;
     }
+
 }

@@ -19,7 +19,7 @@ const canvasStore = useCanvasStore();
  * 注册图形渲染指令
  */
 const addLineRenderCmd = () => {
-    const lineRenderCmd = new LinkLineRenderCmd(props.lineData);
+    const lineRenderCmd = new LinkLineRenderCmd(props.lineData).useSvg();
     canvasStore.boardShapeCmds.push(lineRenderCmd);
 }
 
