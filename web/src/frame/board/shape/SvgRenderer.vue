@@ -60,12 +60,12 @@ watch(() => canvasCmds, () => {
     drawShapes();
 }, { deep: true });
 
-// 监听图形点击事件
+// 监听图形点击事件 选中图形
 const shapeClick = (target: {
     id: string,
     shape: BoardShape,
 }) => {
-    console.log(target);
+    canvasStore.selectComponent(target.id);
 }
 
 </script>
