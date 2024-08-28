@@ -11,7 +11,7 @@ import * as kanbanApi from "@/assets/api/kanban";
 
 export const useKanbanStore = defineStore('kanban', () => {
     // 看板id
-    const kanbanId = ref('kanban1');
+    const kanbanId = ref('');
 
     // 组件列表
     const components = ref<Component<any>[]>([]);
@@ -57,5 +57,15 @@ export const useKanbanStore = defineStore('kanban', () => {
         });
     }
 
-    return { kanbanId, components, addComponent, updateComponent, deleteComponent };
+    return {
+        // 看板信息
+        kanbanId,
+        // 组件列表
+        components, addComponent, updateComponent, deleteComponent,
+        // 重置方法
+        reset: () => {
+            kanbanId.value = '';
+            components.value = [];
+        }
+    };
 });

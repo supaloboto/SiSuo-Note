@@ -49,7 +49,7 @@ export const useCanvasStore = defineStore('canvas', () => {
      * @param removeOthers 是否移除其他选中
      * @param reverse 是否反选
      */
-    const selectComponent = (id: string, removeOthers: boolean, reverse: boolean) => {
+    const selectComponent = (id: string, removeOthers: boolean = true, reverse: boolean = false) => {
         if (removeOthers) {
             currentPointer.value.selected = [];
         }
@@ -143,5 +143,15 @@ export const useCanvasStore = defineStore('canvas', () => {
         currentViewRect,
         // 图形渲染
         boardShapeCmds,
+        // 重置方法
+        reset: () => {
+            currentPointer.value = new Pointer();
+            pointers.value = [];
+            tempComponent.value = null as any;
+            scale.value = 100;
+            currentViewRect.value.x = 0;
+            currentViewRect.value.y = 0;
+            boardShapeCmds.value = [];
+        }
     };
 });

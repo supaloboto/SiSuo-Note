@@ -48,5 +48,14 @@ export const useDialogStore = defineStore('dialog', () => {
         }
     };
 
-    return { dialogs, dialogStack, collapseAll };
+    return {
+        // 对话框控制
+        dialogs, dialogStack, collapseAll,
+        // 重置方法
+        reset: () => {
+            dialogs.value = [];
+            dialogStack.value = [];
+            dialogStackCopy = [];
+        }
+    };
 });
