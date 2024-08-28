@@ -11,6 +11,7 @@ export class LinkLine {
 }
 
 export class LinkLineRenderCmd extends BoardShapeCommand {
+    // 关联连线信息 并利用此对象触发渲染更新
     private linkLine: LinkLine;
 
     constructor(linkLine: LinkLine) {

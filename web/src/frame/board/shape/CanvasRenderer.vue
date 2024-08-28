@@ -51,6 +51,7 @@ watch([viewRect, scale], () => {
 }, { deep: true });
 
 // 监听图形数据变化 触发重绘
+// 调用者通过使BoardShapeCommand对象的render方法不断发生变化来触发重绘
 watch(() => canvasCmds, () => {
     drawShapes();
 }, { deep: true });

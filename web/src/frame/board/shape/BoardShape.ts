@@ -12,13 +12,11 @@ export abstract class BoardShapeCommand {
     private _id: string = '';
     // svg/canvas
     private _type: string = '';
-    // 图形
-    private _shape: BoardShape = null as any;
 
     constructor() {
         this._id = getLongID();
-        // 默认使用svg
-        this.useSvg();
+        // 添加进store
+        useCanvasStore().boardShapeCmds.push(this);
     }
 
     get id(): string {
@@ -26,26 +24,49 @@ export abstract class BoardShapeCommand {
     }
 
     get type(): string {
+        // 默认使用svg
+        if (!this._type) {
+            this.useSvg();
+        }
         return this._type;
     }
 
     useSvg(): BoardShapeCommand {
         this._type = 'svg';
-        this._shape = new BoardShapeSvg();
         return this;
     }
 
     useCanvas(): BoardShapeCommand {
         this._type = 'canvas';
-        this._shape = new BoardShapeCanvas();
         return this;
     }
 
+    /**
+     * 图形渲染逻辑 由子类实现
+     * @param shape 图形对象
+     */
     abstract render(shape: BoardShape): void;
 
+    /**
+     * 渲染图形
+     * @returns 图形对象 供画布渲染组件使用
+     */
     doRender(): BoardShape {
-        this.render(this._shape);
-        return this._shape;
+        const shape = this.type === 'svg' ? new BoardShapeSvg() : new BoardShapeCanvas();
+        this.render(shape);
+        return shape;
+    }
+
+    /**
+     * 擦除图形
+     */
+    erase(): void {
+        // 从store中删除
+        const canvasStore = useCanvasStore();
+        const index = canvasStore.boardShapeCmds.findIndex(cmd => cmd.id === this.id);
+        if (index >= 0) {
+            canvasStore.boardShapeCmds.splice(index, 1);
+        }
     }
 
 }

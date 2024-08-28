@@ -37,10 +37,9 @@ const linkWatch = ref(null);
  * 开始拖动连线
  */
 const linkStart = (evt: MouseEvent, handler: string) => {
-    // 生成当前连线
+    // 生成临时连线
     currentLink.value = new LinkLine([{ x: mousePos.value.x, y: mousePos.value.y }]);
     shapeCmd.value = new LinkLineRenderCmd(currentLink.value).useCanvas();
-    canvasStore.boardShapeCmds.push(shapeCmd.value);
     // 监听鼠标移动
     linkWatch.value = watch(mousePos, (newVal) => {
         if (currentLink.value) {
@@ -54,16 +53,15 @@ const linkStart = (evt: MouseEvent, handler: string) => {
  * 结束拖动连线
  */
 const linkEnd = () => {
-    if (currentLink.value) {
-        currentLink.value = null;
-    }
     if (linkWatch.value) {
         linkWatch.value();
     }
-    // 正式生成连线
-    canvasStore.boardShapeCmds = canvasStore.boardShapeCmds.filter((cmd) => cmd.id !== shapeCmd.value.id);
-    shapeCmd.value = null;
+    // 记录连线数据
     props.compData.links.push(currentLink.value);
+    // 移除临时连线
+    currentLink.value = null;
+    shapeCmd.value.erase();
+    shapeCmd.value = null;
     // 移除监听
     document.removeEventListener('mouseup', linkEnd);
 }
