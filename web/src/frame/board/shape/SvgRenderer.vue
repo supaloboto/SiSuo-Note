@@ -26,7 +26,8 @@ const drawShapes = () => {
     // 遍历执行绘图指令
     canvasCmds.value.forEach((cmd) => {
         // 获取图形数据
-        const shape = cmd.doRender() as BoardShapeSvg;
+        const shape: BoardShapeSvg = new BoardShapeSvg();
+        cmd.render(shape);
         if (!shape) return;
         // 拼接svg数据
         const svg = {

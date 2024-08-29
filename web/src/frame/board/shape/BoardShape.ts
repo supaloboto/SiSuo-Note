@@ -1,3 +1,4 @@
+import { deepCopy } from "@/assets/utils/copy";
 import { getLongID } from "@/assets/utils/idworker";
 import { useCanvasStore } from "@/stores/canvas";
 
@@ -49,12 +50,14 @@ export abstract class BoardShapeCommand {
 
     /**
      * 渲染图形
-     * @returns 图形对象 供画布渲染组件使用
      */
-    doRender(): BoardShape {
-        const shape = this.type === 'svg' ? new BoardShapeSvg() : new BoardShapeCanvas();
-        this.render(shape);
-        return shape;
+    draw(): void {
+        // 添加进store 使之生效
+        const canvasStore = useCanvasStore();
+        if (canvasStore.boardShapeCmds.includes(this)) {
+            return;
+        }
+        canvasStore.boardShapeCmds.push(this);
     }
 
     /**
@@ -72,6 +75,36 @@ export abstract class BoardShapeCommand {
 }
 
 /**
+ * 线条配置类
+ */
+export class LineStyle {
+    // 线宽
+    _lineWidth: number = 8;
+    // 线颜色
+    lineColor: string = 'var(--line-stroke)';
+    // 线样式 实线或虚线配置
+    lineDash: string = 'solid';
+    // 线头样式
+    lineCap: string = 'butt';
+    // 线连接样式
+    lineJoin: string = 'miter';
+    // 内部填充
+    fill: string = 'none';
+
+    set lineWidth(value: number) {
+        this._lineWidth = value;
+    }
+
+    get lineWidth(): number {
+        // 获取缩放比例
+        const canvasStore = useCanvasStore();
+        const scale = canvasStore.scale;
+        // 返回缩放后的线宽
+        return this._lineWidth * scale / 100;
+    }
+}
+
+/**
  * 画板图形接口
  * 
  * @author 刘志栋
@@ -86,7 +119,7 @@ export abstract class BoardShape {
     * 定义路径起始点
     * @param pos 位置
     */
-    abstract from(pos: { x: number, y: number }): BoardShape
+    abstract from(pos: { x: number, y: number }, lineStyle?: LineStyle): BoardShape
 
     /**
      * 从上个点画直线到指定位置
@@ -107,7 +140,8 @@ export class BoardShapeSvg extends BoardShape {
     private _height: number = 0;
     // svg路径集合
     private _paths: {
-        path: string,
+        // 路径
+        points: { command: string, pos: { x: number, y: number } }[],
         type?: string,
         attrs: { [key: string]: string | number },
     }[] = [];
@@ -115,31 +149,50 @@ export class BoardShapeSvg extends BoardShape {
     private topLeft: { x: number, y: number } = { x: null as any, y: null as any };
     // 图像右下角坐标
     private bottomRight: { x: number, y: number } = { x: null as any, y: null as any };
+    // 最大线宽
+    private maxLineWidth: number = 0;
 
     constructor() {
         super();
     }
 
     get width(): number {
-        return this._width;
+        // 如果宽过小则返回线段宽度作为最小宽度
+        let result = this._width;
+        if (!this._width || this._width < this.maxLineWidth) {
+            result = this.maxLineWidth;
+        }
+        // 返回宽度加上线段宽度的两倍 使Svg元素左右两侧有充分空间 避免图形边界被截断
+        return result + 2 * this.maxLineWidth;
     }
 
     get height(): number {
-        return this._height;
+        // 如果高过小则返回线段宽度作为最小高度
+        let result = this._height;
+        if (!this._height || this._height < this.maxLineWidth) {
+            result = this.maxLineWidth;
+        }
+        // 返回高度加上线段宽度的两倍 使Svg元素上下两侧有充分空间 避免图形边界被截断
+        return result + 2 * this.maxLineWidth;
     }
 
     get paths(): {
         path: string,
         attrs: { [key: string]: string | number },
     }[] {
-        return this._paths;
+        // 整理路径
+        return this._paths.map(path => {
+            const pathStr = path.points.map(point => `${point.command} ${point.pos.x - this.topLeft.x} ${point.pos.y - this.topLeft.y}`).join(' ');
+            return { path: pathStr, attrs: path.attrs };
+        });
     }
 
     /**
      * 获取视图框
      */
     get viewBox(): string {
-        return `${this.topLeft.x} ${this.topLeft.y} ${this._width} ${this._height}`;
+        // 视图框与图像宽高完全一致 使图形以1:1渲染
+        return `${-this.maxLineWidth} ${-this.maxLineWidth} ${this.width} ${this.height}`;
     }
 
     /**
@@ -149,9 +202,10 @@ export class BoardShapeSvg extends BoardShape {
         const canvasStore = useCanvasStore();
         const viewRect = canvasStore.currentViewRect;
         const scale = canvasStore.scale;
+        // 因为svg的宽高加上了线段宽度 所以是稍微大于实际图形宽高的 因此需要按线宽做一定的偏移
         return {
-            x: this.topLeft.x - viewRect.x * scale / 100 + viewRect.clientWidth / 2,
-            y: this.topLeft.y - viewRect.y * scale / 100 + viewRect.clientHeight / 2,
+            x: this.topLeft.x - viewRect.x * scale / 100 + viewRect.clientWidth / 2 - this.maxLineWidth,
+            y: this.topLeft.y - viewRect.y * scale / 100 + viewRect.clientHeight / 2 - this.maxLineWidth,
         };
     }
 
@@ -163,7 +217,6 @@ export class BoardShapeSvg extends BoardShape {
     private transPosToClientPos(pos: { x: number, y: number }): { x: number, y: number } {
         // 获取画布信息
         const canvasStore = useCanvasStore();
-        const viewRect = canvasStore.currentViewRect;
         const scale = canvasStore.scale;
         // 计算点在视图上的位置
         const clientPos = {
@@ -188,34 +241,40 @@ export class BoardShapeSvg extends BoardShape {
         return clientPos;
     }
 
-    from(pos: { x: number, y: number }): BoardShape {
-        const clientPos = this.transPosToClientPos(pos);
+    from(pos: { x: number, y: number }, lineStyle: LineStyle = new LineStyle()): BoardShape {
         // 创建一个新的path对象
         this._paths.push({
-            path: `M ${clientPos.x} ${clientPos.y}`,
-            attrs: {},
+            points: [{
+                command: 'M',
+                pos: this.transPosToClientPos(pos),
+            }],
+            // 设置线段属性
+            attrs: {
+                'stroke': lineStyle.lineColor,
+                'stroke-width': lineStyle.lineWidth,
+                'fill': lineStyle.fill,
+            },
         });
+        // 更新最大线宽
+        if (lineStyle.lineWidth > this.maxLineWidth) {
+            this.maxLineWidth = lineStyle.lineWidth;
+        }
         return this;
     }
 
     lineTo(pos: { x: number, y: number }): BoardShape {
         const currentPath = this._paths[this._paths.length - 1];
-        if (!currentPath) {
+        if (!currentPath || !currentPath.points || currentPath.points.length === 0) {
             return this.from(pos);
         }
-        const clientPos = this.transPosToClientPos(pos);
-        // 记录画线指令
-        currentPath.path += ` L ${clientPos.x} ${clientPos.y}`;
         // 将属性设置为线段
         // todo 如果此时检查到类型有冲突则新建path
         currentPath.type = 'line';
-        // todo 线段宽度和颜色
-        currentPath.attrs = {
-            ...currentPath.attrs,
-            'stroke': 'var(--line-stroke)',
-            'stroke-width': 8,
-            'fill': 'none',
-        };
+        // 记录点
+        currentPath.points.push({
+            command: 'L',
+            pos: this.transPosToClientPos(pos),
+        });
         return this;
     }
 
@@ -262,11 +321,17 @@ export class BoardShapeCanvas extends BoardShape {
         };
     }
 
-    from(pos: { x: number, y: number }): BoardShapeCanvas {
+    from(pos: { x: number, y: number }, lineStyle: LineStyle = new LineStyle(),): BoardShapeCanvas {
         const clientPos = this.transPosToClientPos(pos);
         this.canvasCommands.push(() => {
-            this.ctx?.beginPath();
-            this.ctx?.moveTo(clientPos.x, clientPos.y);
+            if (!this.ctx) {
+                return;
+            }
+            this.ctx.beginPath();
+            this.ctx.moveTo(clientPos.x, clientPos.y);
+            // 设置线段宽度
+            this.ctx.lineWidth = lineStyle.lineWidth;
+            // todo 设置线段颜色
         });
         this.lastPos = clientPos;
         return this;
@@ -279,7 +344,11 @@ export class BoardShapeCanvas extends BoardShape {
         const clientPos = this.transPosToClientPos(pos);
         // 记录画线指令
         this.canvasCommands.push(() => {
-            this.ctx?.lineTo(clientPos.x, clientPos.y);
+            if (!this.ctx) {
+                return;
+            }
+            this.ctx.lineWidth = 8;
+            this.ctx.lineTo(clientPos.x, clientPos.y);
         });
         this.lastPos = clientPos;
         return this;

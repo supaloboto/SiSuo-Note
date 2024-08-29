@@ -30,7 +30,9 @@ const drawShapes = () => {
     canvas.height = canvas.clientHeight;
     // 遍历执行绘图指令
     canvasCmds.value.forEach((cmd) => {
-        const shape: BoardShapeCanvas = cmd.doRender() as BoardShapeCanvas;
+        // 获取图形数据
+        const shape: BoardShapeCanvas = new BoardShapeCanvas();
+        cmd.render(shape);
         if (!shape) return;
         // 绘制图形
         shape.attachToCtx(ctx);

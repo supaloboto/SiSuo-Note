@@ -10,6 +10,7 @@ import { Component } from "@/components/Component";
 import { useCanvasStore } from "@/stores/canvas";
 import { LinkLine, LinkLineRenderCmd } from "./LinkLine";
 import { BoardShapeCommand } from "@/frame/board/shape/BoardShape";
+import { useKanbanStore } from "@/stores/kanban";
 
 /*------ 四个触发点 ------*/
 const handlers = ref<string[]>(['n', 'e', 'w', 's']);
@@ -29,62 +30,34 @@ const clickHandler = () => {
     // todo 寻找最近的组件并连接 或创建新的组件
 }
 
-// 连线指令
-const shapeCmd = ref<BoardShapeCommand>(null);
+/*------ 新建连线逻辑 ------*/
 const currentLink = ref<LinkLine | null>(null);
 const linkWatch = ref(null);
 /**
  * 开始拖动连线
  */
 const linkStart = (evt: MouseEvent, handler: string) => {
-    // 计算起始点位置
+    // 计算起始点位置 由于组件边框样式影响 需要根据handler位置稍微调整
     const compPos = props.compData.pos;
     const handlerPos = {
-        n: { x: compPos.x + props.compData.rect.width / 2, y: compPos.y },
-        e: { x: compPos.x + props.compData.rect.width, y: compPos.y + props.compData.rect.height / 2 },
-        w: { x: compPos.x, y: compPos.y + props.compData.rect.height / 2 },
-        s: { x: compPos.x + props.compData.rect.width / 2, y: compPos.y + props.compData.rect.height },
+        n: { x: compPos.x + props.compData.rect.width / 2, y: compPos.y + 1, direct: 'n' },
+        e: { x: compPos.x + props.compData.rect.width - 1, y: compPos.y + props.compData.rect.height / 2, direct: 'e' },
+        w: { x: compPos.x + 1, y: compPos.y + props.compData.rect.height / 2, direct: 'w' },
+        s: { x: compPos.x + props.compData.rect.width / 2, y: compPos.y + props.compData.rect.height + 1, direct: 's' },
     }[handler];
     // 生成临时连线
-    currentLink.value = new LinkLine([handlerPos]);
-    shapeCmd.value = new LinkLineRenderCmd(currentLink.value).useCanvas();
+    currentLink.value = new LinkLine(props.compData.id, '', handlerPos, null);
+    currentLink.value.active();
     // 监听鼠标移动
     linkWatch.value = watch(mousePos, (newVal) => {
-        if (currentLink.value) {
-            // 移除起始点外的点
-            currentLink.value.path.splice(1);
-            // 添加新的点
-            if (handler === 'w' || handler === 'e') {
-                // 如果是左右的handler 则从横向的中点切分为折线
-                const midX = (handlerPos.x + newVal.x) / 2;
-                // 当垂直距离小于5时，不切分为折线
-                if (Math.abs(handlerPos.y - newVal.y) < 5) {
-                    currentLink.value.path.push({ x: newVal.x, y: handlerPos.y });
-                    return;
-                }
-                // 添加中点和终点
-                currentLink.value.path.push(
-                    { x: midX, y: handlerPos.y },
-                    { x: midX, y: newVal.y },
-                    { x: newVal.x, y: newVal.y }
-                );
-            } else {
-                // 如果是上下的handler 则从纵向的中点切分为折线
-                const midY = (handlerPos.y + newVal.y) / 2;
-                // 当横向距离小于5时，不切分为折线
-                if (Math.abs(handlerPos.x - newVal.x) < 5) {
-                    currentLink.value.path.push({ x: handlerPos.x, y: newVal.y });
-                    return;
-                }
-                // 添加中点和终点
-                currentLink.value.path.push(
-                    { x: handlerPos.x, y: midY },
-                    { x: newVal.x, y: midY },
-                    { x: newVal.x, y: newVal.y }
-                );
-            }
+        if (!currentLink.value) {
+            return;
         }
+        currentLink.value.changeEndPos(newVal);
     }, { deep: true });
+    // 更改鼠标状态
+    canvasStore.currentPointer.state = 'linking';
+    // 监听鼠标抬起
     document.addEventListener('mouseup', linkEnd);
 }
 
@@ -97,11 +70,12 @@ const linkEnd = () => {
         linkWatch.value = null;
     }
     // 记录连线数据
-    props.compData.links.push(currentLink.value);
+    props.compData.links.push(new LinkLine(props.compData.id, currentLink.value.targetCompId, currentLink.value.startPos, currentLink.value.endPos));
     // 移除临时连线
+    currentLink.value.erase();
     currentLink.value = null;
-    shapeCmd.value.erase();
-    shapeCmd.value = null;
+    // 更改鼠标状态
+    canvasStore.currentPointer.state = 'pointer';
     // 移除监听
     document.removeEventListener('mouseup', linkEnd);
 }

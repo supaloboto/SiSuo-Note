@@ -5,15 +5,18 @@
  - @since 2024/07/10
  -->
 <script setup lang="ts">
+import i18n from "@/assets/lang";
 import { StyleValue, computed, ref, watch, type ComputedRef, onBeforeUnmount } from "vue";
 import { useCanvasStore } from "@/stores/canvas";
-import i18n from "@/assets/lang";
 import { Component } from "@/components/Component";
 import { compRegis } from "@/components/index";
 import WrapperPlugin from "./plugins/wrapper/Wrapper.vue";
 import LinkLinePlugin from "./plugins/link/LinkLine.vue";
-import { LinkLine } from "./plugins/link/LinkLine";
 import LinkLineHandler from "./plugins/link/LinkLineHandler.vue";
+import { useKanbanStore } from "@/stores/kanban";
+import { dir } from "console";
+import { Dirent } from "fs";
+import { deepCopy } from "@/assets/utils/copy";
 
 const props = defineProps({
   compData: { type: Component, required: true },
@@ -27,6 +30,7 @@ const compRef = ref(null);
 
 // 获取store
 const canvasStore = useCanvasStore();
+const kanbanStore = useKanbanStore();
 
 // 获取组件选中状态
 const selected: ComputedRef<boolean> = computed(() => canvasStore.currentPointer.selected.includes(props.compData.id));
@@ -43,7 +47,7 @@ const compDivStyle = computed<StyleValue>(() => {
     y: (props.compData.pos.y - viewRect.value.y) * scale.value,
     width: props.compData.rect.width * scale.value,
     height: props.compData.rect.height * scale.value,
-  }
+  };
   // 修约至小数点后三位 以抹去js浮点数计算精度问题导致的误差
   rect.x = Math.round(rect.x * 1000) / 1000;
   rect.y = Math.round(rect.y * 1000) / 1000;
@@ -55,7 +59,21 @@ const compDivStyle = computed<StyleValue>(() => {
     height: `${rect.height}px`,
     marginTop: `${rect.y}px`,
     marginLeft: `${rect.x}px`,
+  };
+});
+
+// 获取连接到此组件的连线
+const linksAttachedToThisComp = computed(() => {
+  const compList = kanbanStore.components;
+  const links = [];
+  for (const comp of compList) {
+    for (const link of comp.links) {
+      if (link.targetCompId === props.compData.id) {
+        links.push(link);
+      }
+    }
   }
+  return links;
 });
 
 /*------ 拖拽逻辑 ------*/
@@ -81,8 +99,26 @@ const dragStart = () => {
   };
   // 建立监听 在拖拽中移动组件
   dragWatch.value = watch(mousePos, (pos) => {
-    props.compData.pos.x = pos.x - dragMouseOffset.x;
-    props.compData.pos.y = pos.y - dragMouseOffset.y;
+    // 计算新位置
+    const originPos = deepCopy(props.compData.pos);
+    const newX = pos.x - dragMouseOffset.x;
+    const newY = pos.y - dragMouseOffset.y;
+    // 应用新位置
+    props.compData.pos.x = newX;
+    props.compData.pos.y = newY;
+    // 更新组件连线数据
+    const xMovement = newX - originPos.x;
+    const yMovement = newY - originPos.y;
+    props.compData.links.forEach((link) => {
+      link.startPos.x += xMovement;
+      link.startPos.y += yMovement;
+      link.refresh();
+    });
+    linksAttachedToThisComp.value.forEach((link) => {
+      link.endPos.x += xMovement;
+      link.endPos.y += yMovement;
+      link.refresh();
+    });
   }, { deep: true });
   // 因为有时候鼠标移动太快会导致监听不到mouseup事件 所以在document上建立监听
   document.addEventListener('mouseup', dragEnd);
