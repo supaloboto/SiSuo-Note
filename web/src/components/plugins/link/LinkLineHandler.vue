@@ -8,9 +8,8 @@
 import { computed, ref, watch, onBeforeUnmount } from "vue";
 import { Component } from "@/components/Component";
 import { useCanvasStore } from "@/stores/canvas";
-import { LinkLine, LinkLineRenderCmd } from "./LinkLine";
-import { BoardShapeCommand } from "@/frame/board/shape/BoardShape";
-import { useKanbanStore } from "@/stores/kanban";
+import { LinkLine } from "./LinkLine";
+import { deepCopy } from "@/assets/utils/copy";
 
 /*------ 四个触发点 ------*/
 const handlers = ref<string[]>(['n', 'e', 'w', 's']);
@@ -46,14 +45,20 @@ const linkStart = (evt: MouseEvent, handler: string) => {
         s: { x: compPos.x + props.compData.rect.width / 2, y: compPos.y + props.compData.rect.height + 1, direct: 's' },
     }[handler];
     // 生成临时连线
-    currentLink.value = new LinkLine(props.compData.id, '', handlerPos, null);
+    currentLink.value = new LinkLine({
+        compId: props.compData.id,
+        targetCompId: '',
+        startPos: handlerPos,
+        endPos: null
+    });
     currentLink.value.active();
     // 监听鼠标移动
     linkWatch.value = watch(mousePos, (newVal) => {
         if (!currentLink.value) {
             return;
         }
-        currentLink.value.changeEndPos(newVal);
+        // 拷贝值以避免坐标引用到响应式对象上 导致监听结束后线条会继续跟着鼠标位置变化
+        currentLink.value.changeEndPos(deepCopy(newVal));
     }, { deep: true });
     // 更改鼠标状态
     canvasStore.currentPointer.state = 'linking';
@@ -70,7 +75,12 @@ const linkEnd = () => {
         linkWatch.value = null;
     }
     // 记录连线数据
-    props.compData.links.push(new LinkLine(props.compData.id, currentLink.value.targetCompId, currentLink.value.startPos, currentLink.value.endPos));
+    props.compData.links.push(new LinkLine({
+        compId: props.compData.id,
+        targetCompId: currentLink.value.targetCompId,
+        startPos: currentLink.value.startPos,
+        endPos: currentLink.value.endPos
+    }));
     // 移除临时连线
     currentLink.value.erase();
     currentLink.value = null;

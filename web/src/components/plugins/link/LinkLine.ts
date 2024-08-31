@@ -4,6 +4,7 @@ import { useKanbanStore } from "@/stores/kanban";
 /**
  * 组件关联连线类
  * 
+ * @todo 继承此类 添加曲线连线
  * @author 刘志栋
  * @since 2024/08/26
  */
@@ -23,14 +24,25 @@ export class LinkLine {
     // 画线指令
     renderCommand: LinkLineRenderCmd;
 
-    constructor(compId: string, targetCompId: string, startPos: { x: number, y: number, direct?: string }, endPos: { x: number, y: number, direct?: string }) {
-        this.compId = compId;
-        this.targetCompId = targetCompId;
-        this.startPos = startPos;
-        this.endPos = endPos;
+    constructor(props: {
+        compId: string,
+        targetCompId: string,
+        startPos: { x: number, y: number, direct?: string },
+        endPos: { x: number, y: number, direct?: string },
+        path?: { x: number, y: number }[]
+    }) {
+        this.compId = props.compId;
+        this.targetCompId = props.targetCompId;
+        this.startPos = props.startPos;
+        this.endPos = props.endPos;
         this.renderCommand = new LinkLineRenderCmd(this);
-        // 执行一次渲染
-        this.refresh();
+        if (props.path) {
+            // 使用传入的路径点
+            this.path = props.path;
+        } else {
+            // 执行一次渲染 自动计算路径点
+            this.refresh();
+        }
     }
 
     draw() {
@@ -100,7 +112,13 @@ export class LinkLine {
             endPos.x = Math.abs(endPos.x - startPos.x) > 5 ? endPos.x : startPos.x;
             endPos.y = Math.abs(endPos.y - startPos.y) > 5 ? endPos.y : startPos.y;
             // 计算方向
-            endPos.direct = endPos.x > startPos.x ? 'e' : endPos.x < startPos.x ? 'w' : endPos.y > startPos.y ? 's' : 'n';
+            const gapX = endPos.x - startPos.x;
+            const gapY = endPos.y - startPos.y;
+            if (endPos.x > startPos.x) {
+                endPos.direct = Math.abs(gapX) > Math.abs(gapY) ? 'e' : (gapY > 0 ? 's' : 'n');
+            } else {
+                endPos.direct = Math.abs(gapX) > Math.abs(gapY) ? 'w' : (gapY > 0 ? 's' : 'n');
+            }
             // 清空组件连接
             this.targetCompId = '';
         }
@@ -125,17 +143,18 @@ export class LinkLine {
         }
         // 记录开始点
         this.path.push(startPos);
-        // 计算可使用的最小距离
+        // 如果开始结束点刚好呈垂直或水平 则直接连接
+        if ((startPos.x === endPos.x) || (startPos.y === endPos.y)) {
+            this.path.push(endPos);
+            return;
+        }
+        // 判断开始方向和结束方向之间的关系
+        const directConcat = (startPos.direct ?? '') + endPos.direct;
+        // 计算可使用的最小距离 最小是10 最大是40 若开始结束方向相反 则固定使用最大值
         const minDist = { x: 40, y: 40 };
-        // 如果开始点和结束点方向相同 则检查二者之间是否有足够的夹缝
-        if (startPos.direct === endPos.direct) {
-            if (startPos.direct === 'n' || startPos.direct === 's') {
-                const minY = Math.abs(startPos.y - endPos.y) / 2;
-                minDist.y = Math.min(minDist.y, minY);
-            } else if (startPos.direct === 'w' || startPos.direct === 'e') {
-                const minX = Math.abs(startPos.x - endPos.x) / 2;
-                minDist.x = Math.min(minDist.x, minX);
-            }
+        if (directConcat !== 'sn' && directConcat !== 'ns' && directConcat !== 'we' && directConcat !== 'ew') {
+            minDist.x = Math.min(Math.max(Math.abs(startPos.x - endPos.x) / 2, 10), 40);
+            minDist.y = Math.min(Math.max(Math.abs(startPos.y - endPos.y) / 2, 10), 40);
         }
         // 第一个点从开始点的位置 延方向出发到最小距离处
         const firstPos = {
@@ -149,14 +168,167 @@ export class LinkLine {
             y: endPos.y + (endPos.direct === 'n' ? minDist.y : endPos.direct === 's' ? -minDist.y : 0),
         };
         // 连接第一个点到最后一个点
-        const midPos = {
-            x: (firstPos.x + lastPos.x) / 2,
-            y: (firstPos.y + lastPos.y) / 2,
-        };
-        this.path.push(midPos);
+        switch (directConcat) {
+            case 'nn': case 'ss': case 'ww': case 'ee':
+                // 如果开始点和结束点方向相同
+                this.makeLineOfSameDirection(firstPos, lastPos, directConcat, minDist);
+                break;
+            case 'nw': case 'wn': case 'ne': case 'en':
+            case 'sw': case 'ws': case 'se': case 'en':
+                // 如果开始方向和结束方向呈90度夹角
+                this.makeLineOfVerticalDirection(firstPos, lastPos, directConcat, minDist);
+                break;
+            case 'sn': case 'ns': case 'we': case 'ew':
+                // 如果开始方向和结束方向相反
+                this.makeLineOfOppositeDirection(firstPos, lastPos, directConcat, minDist);
+                break;
+            default:
+                // 开始方向和结束方向有至少一个不存在 则直接使用中间点连接
+                this.path.push({
+                    x: (firstPos.x + lastPos.x) / 2,
+                    y: (firstPos.y + lastPos.y) / 2,
+                });
+                break;
+        }
         this.path.push(lastPos);
         // 记录结束点
         this.path.push(endPos);
+    }
+
+    /**
+     * 在同方向的端点之间创建连线
+     */
+    private makeLineOfSameDirection(startPos: { x: number, y: number }, endPos: { x: number, y: number }, cmdDirection: string, minDist: { x: number, y: number }): void {
+        // 如果二者之间有足够的夹缝(距离大于0) 则直接连接
+        // 如果二者之间没有足够的夹缝 则将中间点作为连接点 并额外创建两个过渡点
+        const midPos = {
+            x: (startPos.x + endPos.x) / 2,
+            y: (startPos.y + endPos.y) / 2,
+        };
+        if (cmdDirection[0] === 'n' || cmdDirection[0] === 's') {
+            const gap = cmdDirection[0] === 'n' ? (startPos.y - endPos.y) : (endPos.y - startPos.y);
+            // 如果两个点之间的距离大于0 则直接连接
+            if (gap > 0) {
+                // 这两个点一定会被加入到path中 直接修改开始和结束点的y坐标即可
+                startPos.y = midPos.y;
+                endPos.y = midPos.y;
+            } else {
+                this.path.push({ x: midPos.x, y: startPos.y });
+                this.path.push(midPos);
+                this.path.push({ x: midPos.x, y: endPos.y });
+            }
+        } else if (cmdDirection[0] === 'w' || cmdDirection[0] === 'e') {
+            const gap = cmdDirection[0] === 'w' ? (startPos.x - endPos.x) : (endPos.x - startPos.x);
+            if (gap > 0) {
+                startPos.x = midPos.x;
+                endPos.x = midPos.x;
+            } else {
+                this.path.push({ x: startPos.x, y: midPos.y });
+                this.path.push(midPos);
+                this.path.push({ x: endPos.x, y: midPos.y });
+            }
+        }
+    }
+
+    /**
+     * 在垂直方向的端点之间创建连线
+     */
+    private makeLineOfVerticalDirection(startPos: { x: number, y: number }, endPos: { x: number, y: number }, cmdDirection: string, minDist: { x: number, y: number }): void {
+        // 规范化方向字符串 保证第一个字符是垂直方向 第二个字符是水平方向
+        if (cmdDirection[0] === 'w' || cmdDirection[0] === 'e') {
+            cmdDirection = cmdDirection.split('').reverse().join('');
+        }
+        // 判断两个点的实际方向
+        const realDirection = [
+            startPos.y > endPos.y ? 'n' : 's',
+            startPos.x > endPos.x ? 'w' : 'e',
+        ].join('');
+        // 若方向与实际方向相同 则以延长线连接 借用相反方向端点之间连线的方法
+        if (cmdDirection === realDirection) {
+            this.makeLineOfOppositeDirection(startPos, endPos, cmdDirection, minDist);
+            return;
+        }
+        // 若方向与实际方向不同 则根据方向与实际方向是垂直还是相反来决定连接方式
+        const realDirectionOpposite = [
+            startPos.y > endPos.y ? 's' : 'n',
+            startPos.x > endPos.x ? 'e' : 'w',
+        ].join('');
+        if (cmdDirection === realDirectionOpposite) {
+            // 方向与实际方向相反时 将两个端点互换 并借用相反方向端点连线的方法完成连线
+            this.makeLineOfOppositeDirection(endPos, startPos, cmdDirection, minDist);
+            return;
+        } else {
+            // 方向与实际方向垂直时 对两个端点中方向错误的做一个虚拟的辅助点
+            const assistPos = { x: 0, y: 0 };
+            if (cmdDirection[0] !== realDirection[0]) {
+                // 开始点方向错误 则沿结束点的方向 从开始点的位置出发 给开始点加一个辅助点
+                const comp = useKanbanStore().components.find((item) => item.id === this.compId) as any;
+                const assistDirect = cmdDirection[1];
+                assistPos.x = assistDirect === 'w' ? (comp.pos.x - minDist.x) : assistDirect === 'e' ? (comp.pos.x + comp.rect.width + minDist.x) : startPos.x;
+                assistPos.y = assistDirect === 'n' ? (comp.pos.y - minDist.y) : assistDirect === 's' ? (comp.pos.y + comp.rect.height + minDist.y) : startPos.y;
+                // 开始点连接到辅助点
+                this.path.push(assistPos);
+                // 连接辅助点和结束点 两个点是同方向 所以借用同方向端点连线的方法进行连接 在此过程中修正辅助点的位置
+                this.makeLineOfSameDirection(assistPos, endPos, cmdDirection, minDist);
+            } else {
+                // 结束点方向错误 则沿开始点的方向 从组件位置出发 给结束点加一个辅助点
+                const comp = useKanbanStore().components.find((item) => item.id === this.targetCompId) as any;
+                const assistDirect = cmdDirection[0];
+                assistPos.x = assistDirect === 'e' ? (comp.pos.x - minDist.x) : assistDirect === 'w' ? (comp.pos.x + comp.rect.width + minDist.x) : endPos.x;
+                assistPos.y = assistDirect === 's' ? (comp.pos.y - minDist.y) : assistDirect === 'n' ? (comp.pos.y + comp.rect.height + minDist.y) : endPos.y;
+                // 连接开始点和辅助点 两个点是同方向 所以借用同方向端点连线的方法进行连接 在此过程中修正辅助点的位置
+                this.makeLineOfSameDirection(startPos, assistPos, cmdDirection, minDist);
+                this.path.push(assistPos);
+            }
+
+        }
+    }
+
+    /**
+    * 在相反方向的端点之间创建连线
+    */
+    private makeLineOfOppositeDirection(startPos: { x: number, y: number }, endPos: { x: number, y: number }, cmdDirection: string, minDist: { x: number, y: number }): void {
+        // 当两个点方向相反时 两条线的延长方向是一致的 所以需要将短的一条线延长到能与长的一条线相交的位置
+        const midPos = { x: 0, y: 0 };
+        switch (cmdDirection[0]) {
+            case 'n':
+                if (startPos.y > endPos.y) {
+                    midPos.x = startPos.x;
+                    midPos.y = endPos.y;
+                } else {
+                    midPos.x = endPos.x;
+                    midPos.y = startPos.y;
+                }
+                break;
+            case 's':
+                if (startPos.y < endPos.y) {
+                    midPos.x = startPos.x;
+                    midPos.y = endPos.y;
+                } else {
+                    midPos.x = endPos.x;
+                    midPos.y = startPos.y;
+                }
+                break;
+            case 'w':
+                if (startPos.x > endPos.x) {
+                    midPos.x = endPos.x;
+                    midPos.y = startPos.y;
+                } else {
+                    midPos.x = startPos.x;
+                    midPos.y = endPos.y;
+                }
+                break;
+            case 'e':
+                if (startPos.x < endPos.x) {
+                    midPos.x = endPos.x;
+                    midPos.y = startPos.y;
+                } else {
+                    midPos.x = startPos.x;
+                    midPos.y = endPos.y;
+                }
+                break;
+        }
+        this.path.push(midPos);
     }
 
 }
