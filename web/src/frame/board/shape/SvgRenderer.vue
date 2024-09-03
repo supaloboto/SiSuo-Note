@@ -5,69 +5,87 @@
  - @since 2024/08/23
  -->
 <script setup lang="ts">
-import { BoardShape, BoardShapeSvg } from '@/frame/board/shape/BoardShape';
-import { useCanvasStore } from '@/stores/canvas';
-import { computed, onMounted, ref, watch } from 'vue';
+    import { BoardShape, BoardShapeSvg } from '@/frame/board/shape/BoardShape';
+    import { useCanvasStore } from '@/stores/canvas';
+    import { computed, onMounted, ref, watch } from 'vue';
 
-const canvasStore = useCanvasStore();
+    const canvasStore = useCanvasStore();
 
-// 图形绘制指令集合
-const canvasCmds = computed(() => canvasStore.boardShapeCmds.filter((cmd) => cmd.type === 'svg'));
-// svg列表
-const svgList = ref<{
-    id: string,
-    shape: BoardShapeSvg,
-}[]>([]);
+    // 图形绘制指令集合
+    const canvasCmds = computed(() => canvasStore.boardShapeCmds.filter((cmd) => cmd.type === 'svg'));
+    // svg列表
+    const svgList = ref<{
+        id: string,
+        shape: BoardShapeSvg,
+    }[]>([]);
 
-/**
- * 图形绘制方法
- */
-const drawShapes = () => {
-    // 遍历执行绘图指令
-    canvasCmds.value.forEach((cmd) => {
-        // 获取图形数据
-        const shape: BoardShapeSvg = new BoardShapeSvg();
-        cmd.render(shape);
-        if (!shape) return;
-        // 拼接svg数据
-        const svg = {
-            id: cmd.id,
-            shape
-        };
-        // 检查是否已存在
-        const index = svgList.value.findIndex((item) => item.id === svg.id);
-        if (index === -1) {
-            svgList.value.push(svg);
-        } else {
-            svgList.value[index] = svg;
-        }
+    /**
+     * 图形绘制方法
+     */
+    const drawShapes = () => {
+        // 遍历执行绘图指令
+        canvasCmds.value.forEach((cmd) => {
+            // 获取图形数据
+            const shape: BoardShapeSvg = new BoardShapeSvg();
+            cmd.render(shape);
+            if (!shape) return;
+            // 拼接svg数据
+            const svg = {
+                id: cmd.id,
+                shape
+            };
+            // 检查是否已存在
+            const index = svgList.value.findIndex((item) => item.id === svg.id);
+            if (index === -1) {
+                svgList.value.push(svg);
+            } else {
+                svgList.value[index] = svg;
+            }
+        });
+    }
+
+    // 挂载时绘制图形
+    onMounted(() => {
+        drawShapes();
     });
-}
 
-// 挂载时绘制图形
-onMounted(() => {
-    drawShapes();
-});
+    // 监听视图窗口位置和缩放变化 触发重绘
+    const viewRect = computed(() => canvasStore.currentViewRect);
+    const scale = computed(() => canvasStore.scale);
+    watch([viewRect, scale], () => {
+        drawShapes();
+    }, { deep: true });
 
-// 监听视图窗口位置和缩放变化 触发重绘
-const viewRect = computed(() => canvasStore.currentViewRect);
-const scale = computed(() => canvasStore.scale);
-watch([viewRect, scale], () => {
-    drawShapes();
-}, { deep: true });
+    // 监听图形数据变化 触发重绘
+    watch(() => canvasCmds, () => {
+        drawShapes();
+    }, { deep: true });
 
-// 监听图形数据变化 触发重绘
-watch(() => canvasCmds, () => {
-    drawShapes();
-}, { deep: true });
-
-// 监听图形点击事件 选中图形
-const shapeClick = (target: {
-    id: string,
-    shape: BoardShape,
-}) => {
-    canvasStore.selectComponent(target.id);
-}
+    // 处理图形点击事件
+    const clickTimer = ref<number | null>(null);
+    // 监听图形点击事件
+    const shapeClick = (target: {
+        id: string,
+        shape: BoardShape,
+    }) => {
+        // 延时以区分单击和双击
+        if (clickTimer.value) {
+            clearTimeout(clickTimer.value);
+            clickTimer.value = null;
+            return;
+        }
+        clickTimer.value = setTimeout(() => {
+            canvasStore.boardShapeCmds.find((cmd) => cmd.id === target.id)?.click();
+            clickTimer.value = null;
+        }, 200) as unknown as number;
+    }
+    // 监听图形双击事件
+    const shapeDblclick = (target: {
+        id: string,
+        shape: BoardShape,
+    }) => {
+        canvasStore.boardShapeCmds.find((cmd) => cmd.id === target.id)?.dblclick();
+    }
 
 </script>
 
@@ -76,24 +94,24 @@ const shapeClick = (target: {
         class="board-shape-svg" :width="svg.shape.width" :height="svg.shape.height" :viewBox="svg.shape.viewBox"
         :style="{ left: svg.shape.clientPos.x + 'px', top: svg.shape.clientPos.y + 'px' }">
         <path v-for="path in svg.shape.paths" :key="path.path" :d="path.path" v-bind="path.attrs"
-            @click="shapeClick(svg as any)" />
+            @click="shapeClick(svg as any)" @dblclick="shapeDblclick(svg as any)" />
     </svg>
 </template>
 
 <style lang="scss" scoped>
-.board-shape-svg {
-    position: absolute;
-    --line-stroke: #3a3d3f81;
-    // 鼠标事件穿透
-    pointer-events: none;
+    .board-shape-svg {
+        position: absolute;
+        --line-stroke: #3a3d3f81;
+        // 鼠标事件穿透
+        pointer-events: none;
 
-    path {
-        pointer-events: painted;
-    }
+        path {
+            pointer-events: painted;
+        }
 
-    path:hover {
-        cursor: pointer;
-        stroke-width: 12;
+        path:hover {
+            cursor: pointer;
+            stroke-width: 12;
+        }
     }
-}
 </style>

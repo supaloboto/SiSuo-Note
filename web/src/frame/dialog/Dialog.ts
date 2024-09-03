@@ -84,7 +84,7 @@ export class Dialog {
     /**
      * 展开对话框
      */
-    open(startRect: { clientX: number, clientY: number, width: number, height: number }): Promise<void> {
+    open(startRect: { clientX: number, clientY: number, width: number, height: number }): Promise<Dialog> {
         return new Promise((resolve, reject) => {
             // 插入到对话框堆叠顺序的最前面
             const dialogStore = useDialogStore();
@@ -94,7 +94,7 @@ export class Dialog {
                 if (this.onRectChange) {
                     this.onRectChange();
                 }
-                resolve();
+                resolve(this);
             });
         });
     }

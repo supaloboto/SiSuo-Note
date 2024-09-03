@@ -1,5 +1,73 @@
 import { BoardShapeCommand, BoardShape } from "@/frame/board/shape/BoardShape";
+import { useCanvasStore } from "@/stores/canvas";
 import { useKanbanStore } from "@/stores/kanban";
+import { LinkEditorDialog } from "./LinkEditorDialog.js";
+import { useDialogStore } from "@/stores/dialog";
+import { getLongID } from "@/assets/utils/idworker";
+import { Dialog } from "@/frame/dialog/Dialog.js";
+
+/**
+ * 组件关联连线渲染指令
+ * 
+ * @author 刘志栋
+ * @since 2024/08/26
+ */
+export class LinkLineRenderCmd extends BoardShapeCommand {
+    // 关联连线信息 并利用此对象触发渲染更新
+    private linkLine: LinkLine;
+
+    constructor(linkLine: LinkLine) {
+        super();
+        this.linkLine = linkLine;
+    }
+
+    render(shape: BoardShape): void {
+        // 如果路径点小于2个则不绘制
+        if (this.linkLine.path.length < 2) {
+            return null as any;
+        }
+        // 从第一个点开始绘制
+        shape.from(this.linkLine.path[0]);
+        // 所有路径点
+        for (let i = 1; i < this.linkLine.path.length; i++) {
+            shape.lineTo(this.linkLine.path[i]);
+        }
+        // todo 绘制箭头
+    }
+
+    click(): void {
+        super.click();
+        // todo 点击连线时的操作
+    }
+
+    dblclick(): void {
+        super.dblclick();
+        // 检查是否已经存在此连线的编辑弹窗
+        let dialog: LinkEditorDialog = useDialogStore().dialogs.find((dialog) => {
+            return dialog instanceof LinkEditorDialog && dialog.id === this.linkLine.id;
+        }) as any;
+        if (!dialog) {
+            // 新建编辑弹窗
+            const pos = {
+                clientX: useCanvasStore().currentPointer.clientX - 430, clientY: useCanvasStore().currentPointer.clientY - 480
+            };
+            const rect = {
+                width: 860, height: 960
+            };
+            dialog = new LinkEditorDialog(
+                this.linkLine.id,
+                // todo 国际化
+                "连线编辑",
+                Dialog.fixPos(pos, rect),
+                rect,
+                this.linkLine
+            );
+        }
+        // 打开并聚焦编辑弹窗
+        dialog.openAndFocus();
+    }
+
+}
 
 /**
  * 组件关联连线类
@@ -9,6 +77,8 @@ import { useKanbanStore } from "@/stores/kanban";
  * @since 2024/08/26
  */
 export class LinkLine {
+    // 连线ID
+    id: string = '';
     // 所属组件
     compId: string = '';
     // 目标组件
@@ -31,6 +101,7 @@ export class LinkLine {
         endPos: { x: number, y: number, direct?: string },
         path?: { x: number, y: number }[]
     }) {
+        this.id = getLongID();
         this.compId = props.compId;
         this.targetCompId = props.targetCompId;
         this.startPos = props.startPos;
@@ -174,7 +245,7 @@ export class LinkLine {
                 this.makeLineOfSameDirection(firstPos, lastPos, directConcat, minDist);
                 break;
             case 'nw': case 'wn': case 'ne': case 'en':
-            case 'sw': case 'ws': case 'se': case 'en':
+            case 'sw': case 'ws': case 'se': case 'es':
                 // 如果开始方向和结束方向呈90度夹角
                 this.makeLineOfVerticalDirection(firstPos, lastPos, directConcat, minDist);
                 break;
@@ -329,37 +400,6 @@ export class LinkLine {
                 break;
         }
         this.path.push(midPos);
-    }
-
-}
-
-/**
- * 组件关联连线渲染指令
- * 
- * @author 刘志栋
- * @since 2024/08/26
- */
-export class LinkLineRenderCmd extends BoardShapeCommand {
-    // 关联连线信息 并利用此对象触发渲染更新
-    private linkLine: LinkLine;
-
-    constructor(linkLine: LinkLine) {
-        super();
-        this.linkLine = linkLine;
-    }
-
-    render(shape: BoardShape): void {
-        // 如果路径点小于2个则不绘制
-        if (this.linkLine.path.length < 2) {
-            return null as any;
-        }
-        // 从第一个点开始绘制
-        shape.from(this.linkLine.path[0]);
-        // 所有路径点
-        for (let i = 1; i < this.linkLine.path.length; i++) {
-            shape.lineTo(this.linkLine.path[i]);
-        }
-        // todo 绘制箭头
     }
 
 }

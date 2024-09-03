@@ -1,4 +1,3 @@
-import { deepCopy } from "@/assets/utils/copy";
 import { getLongID } from "@/assets/utils/idworker";
 import { useCanvasStore } from "@/stores/canvas";
 
@@ -70,6 +69,20 @@ export abstract class BoardShapeCommand {
         if (index >= 0) {
             canvasStore.boardShapeCmds.splice(index, 1);
         }
+    }
+
+    /**
+     * 点击事件
+     */
+    click(): void {
+        console.log("click", this.id)
+    }
+
+    /**
+     * 双击事件
+     */
+    dblclick(): void {
+        console.log("dblclick", this.id)
     }
 
 }

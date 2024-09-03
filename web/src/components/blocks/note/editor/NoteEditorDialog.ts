@@ -10,7 +10,6 @@ import Vditor from "vditor";
  * @since 2024/08/05
  */
 export class NoteEditorDialog extends Dialog {
-    type = 'noteEditor';
     component = markRaw(NoteEditorDialogComp);
     // 笔记数据
     note: Note;
