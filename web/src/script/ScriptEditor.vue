@@ -5,7 +5,7 @@
   import expressionSplit from "@/script/expressionSplit";
   import { analyseExpressionToAST, TreeNode, TreeNodeSet } from "@/script/ast";
   import { Constant, TreeRender, Variable } from "@/script/logicTree";
-  import { getOutputs } from "@/script/exec";
+  import { ExecutedVariable, getOutputs } from "@/script/exec";
 
   // 用户输入的脚本内容
   const scriptTextCodeMirror = ref<any>(null);
@@ -21,9 +21,9 @@
   const renderedTreeCodeMirror = ref<any>(null);
   const renderedTreeStr = ref<string>('');
   // 输入
-  const inputList = ref<Variable[]>([]);
+  const inputList = ref<ExecutedVariable[]>([]);
   // 输出
-  const outputList = ref<Variable[]>([]);
+  const outputList = ref<ExecutedVariable[]>([]);
 
   // 清理AST 删除节点上的父节点属性 避免序列化时循环引用
   const cleanAST = (node: TreeNode) => {
@@ -73,18 +73,12 @@
     renderedTreeStr.value = JSON.stringify(renderedTree.value, null, 2);
     // 从可执行树中获取变量声明 整理入参
     const { params } = renderedTree.value;
-    inputList.value = params.map((item: Variable): Variable => {
-      return new Variable(item.name, 'import', new Constant(''));
+    inputList.value = params.map((item: Variable): ExecutedVariable => {
+      return new ExecutedVariable(item.name, '');
     });
     // 整理输出物
-    outputList.value = getOutputs(renderedTree.value.defines as Variable[], inputList.value as Variable[]);
+    outputList.value = getOutputs(renderedTree.value.defines as Variable[], inputList.value as ExecutedVariable[]);
   }
-
-  // // 当用户输入时尝试解析脚本
-  // watch(scriptText, () => {
-  //   // 整理输出物
-  //   getOutput();
-  // }, { immediate: true });
 
 </script>
 
@@ -107,12 +101,12 @@
         <h4>输入</h4>
         <div v-for="item in inputList" :key="item.name">
           <span>{{ item.name }} : </span>
-          <input v-model="(item.value as Constant).value" type="text" />
+          <input v-model="item.value" type="text" />
         </div>
         <h4>输出</h4>
         <div v-for="item in outputList" :key="item.name">
           <span>{{ item.name }} : </span>
-          <input v-model="(item.value as Constant).value" type="text" />
+          <input v-model="item.value" type="text" />
         </div>
       </div>
       <h2>字符串分割结果</h2>

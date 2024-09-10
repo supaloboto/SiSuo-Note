@@ -1,4 +1,3 @@
-import { getShortID } from "@/assets/utils/idworker";
 import { TreeNodeSet, FormulaNode, TreeNode, VarNode } from "./ast";
 
 /**
@@ -12,27 +11,7 @@ import { TreeNodeSet, FormulaNode, TreeNode, VarNode } from "./ast";
  * 节点基类
  */
 export class LogicNode {
-    nodeType: string;
-
-    constructor(type: string) {
-        this.nodeType = type;
-    }
-}
-
-/**
- * 方法节点
- */
-export class Func extends LogicNode {
-    // 执行步骤
-    private _steps: LogicNode[];
-
     constructor() {
-        super('funcElement');
-        this._steps = [];
-    }
-
-    get steps() {
-        return this._steps;
     }
 }
 
@@ -46,7 +25,7 @@ export class Calc extends LogicNode {
     private _params: LogicNode[];
 
     constructor() {
-        super('calcElement');
+        super();
         this._func = '';
         this._params = [];
     }
@@ -72,7 +51,7 @@ export class Constant extends LogicNode {
     private _value: any;
 
     constructor(value: any) {
-        super('constantElement');
+        super();
         this._value = value;
     }
 
@@ -95,33 +74,12 @@ export class Variable extends LogicNode {
     private _value: LogicNode;
     // 变量类型
     private _type: 'ref' | 'var' | 'global' | 'import';
-    // 变量变化时触发的事件
-    private _onValueChange: { id: string, event: Function }[];
 
     constructor(name: string, type: 'ref' | 'var' | 'global' | 'import', value: LogicNode) {
-        super('variableElement');
+        super();
         this._name = name;
         this._value = value;
         this._type = type;
-        this._onValueChange = [];
-    }
-
-    addChangeEvt(event: Function): string {
-        const id = getShortID();
-        this._onValueChange.push({ id, event });
-        return id;
-    }
-
-    removeChangeEvt(evt: string | Function) {
-        if (typeof evt === 'string') {
-            this._onValueChange = this._onValueChange.filter(e => e.id !== evt);
-        } else {
-            this._onValueChange = this._onValueChange.filter(e => e.event !== evt);
-        }
-    }
-
-    triggerChangeEvt() {
-        this._onValueChange.forEach(e => e.event(this));
     }
 
     get name() {
@@ -138,7 +96,6 @@ export class Variable extends LogicNode {
 
     set value(value) {
         this._value = value;
-        this.triggerChangeEvt();
     }
 
     get type() {
@@ -148,7 +105,6 @@ export class Variable extends LogicNode {
     set type(value) {
         this._type = value;
     }
-
 }
 
 /**
@@ -187,17 +143,17 @@ export class TreeRender {
                 // 处理入参或常量节点
                 const variable = node.name;
                 if (variable.startsWith('@')) {
-                    // 生成变量节点 值先为空
+                    // 如果是要求外界输入的变量 则生成变量节点 值先为空
                     const refer = new Variable(variable, 'import', new Constant(null));
                     // 记录使用到了此参数
                     this._params.push(refer);
                     return refer;
                 } else if (this._defines.map(d => d.name).indexOf(variable) > -1) {
-                    // 如果是已定义的变量 则直接返回
+                    // 如果是由函数内部定义的变量 则直接返回
                     return this._defines.find(d => d.name === variable) as Variable;
                 } else {
                     // 常量
-                    return new Constant(node);
+                    return new Constant(node.name);
                 }
             }
             // 处理计算节点
