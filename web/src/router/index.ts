@@ -20,10 +20,6 @@ const router = createRouter({
         {
             path: '/kanban',
             component: () => import('@/views/BoardView.vue'),
-        },
-        {
-            path: '/script',
-            component: () => import('@/script/playground.vue'),
         }
     ],
 })

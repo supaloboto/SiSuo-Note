@@ -1,3 +1,4 @@
+import { getShortID } from "@/assets/utils/idworker";
 import { TreeNodeSet, FormulaNode, TreeNode, VarNode } from "./ast";
 
 /**
@@ -19,83 +20,19 @@ export class LogicNode {
 }
 
 /**
- * 语句执行节点
+ * 方法节点
  */
-export class ExecNode extends LogicNode {
+export class Func extends LogicNode {
     // 执行步骤
     private _steps: LogicNode[];
 
     constructor() {
-        super('execElement');
+        super('funcElement');
         this._steps = [];
     }
 
     get steps() {
         return this._steps;
-    }
-}
-
-/**
- * 变量
- */
-export class Variable extends LogicNode {
-    // 变量名
-    private _name: string;
-    // 变量值
-    private _value: any;
-    // 变量类型
-    private _type: string;
-
-    constructor() {
-        super('variableElement');
-        this._name = '';
-        this._value = null;
-        this._type = '';
-    }
-
-    get name() {
-        return this._name;
-    }
-
-    set name(value) {
-        this._name = value;
-    }
-
-    get value() {
-        return this._value;
-    }
-
-    set value(value) {
-        this._value = value;
-    }
-
-    get type() {
-        return this._type;
-    }
-
-    set type(value) {
-        this._type = value;
-    }
-}
-
-/**
- * 引用
- */
-export class Reference extends LogicNode {
-    // 引用变量名称
-    private _name: string;
-
-    constructor() {
-        super('paramElement');
-        this._name = '';
-    }
-
-    get name() {
-        return this._name;
-    }
-
-    set name(value) {
-        this._name = value;
     }
 }
 
@@ -134,9 +71,9 @@ export class Constant extends LogicNode {
     // 常量值
     private _value: any;
 
-    constructor() {
+    constructor(value: any) {
         super('constantElement');
-        this._value = null;
+        this._value = value;
     }
 
     get value() {
@@ -149,13 +86,79 @@ export class Constant extends LogicNode {
 }
 
 /**
+ * 变量节点
+ */
+export class Variable extends LogicNode {
+    // 变量名
+    private _name: string;
+    // 变量值
+    private _value: LogicNode;
+    // 变量类型
+    private _type: 'ref' | 'var' | 'global' | 'import';
+    // 变量变化时触发的事件
+    private _onValueChange: { id: string, event: Function }[];
+
+    constructor(name: string, type: 'ref' | 'var' | 'global' | 'import', value: LogicNode) {
+        super('variableElement');
+        this._name = name;
+        this._value = value;
+        this._type = type;
+        this._onValueChange = [];
+    }
+
+    addChangeEvt(event: Function): string {
+        const id = getShortID();
+        this._onValueChange.push({ id, event });
+        return id;
+    }
+
+    removeChangeEvt(evt: string | Function) {
+        if (typeof evt === 'string') {
+            this._onValueChange = this._onValueChange.filter(e => e.id !== evt);
+        } else {
+            this._onValueChange = this._onValueChange.filter(e => e.event !== evt);
+        }
+    }
+
+    triggerChangeEvt() {
+        this._onValueChange.forEach(e => e.event(this));
+    }
+
+    get name() {
+        return this._name;
+    }
+
+    set name(value) {
+        this._name = value;
+    }
+
+    get value() {
+        return this._value;
+    }
+
+    set value(value) {
+        this._value = value;
+        this.triggerChangeEvt();
+    }
+
+    get type() {
+        return this._type;
+    }
+
+    set type(value) {
+        this._type = value;
+    }
+
+}
+
+/**
  * 树节点整理类
  */
-class TreeRender {
+export class TreeRender {
     // 变量声明
     private _defines: Variable[] = [];
     // 用到的传入参数
-    private _params: Reference[] = [];
+    private _params: Variable[] = [];
     // 执行逻辑
     private _execNodes: LogicNode[] = [];
 
@@ -177,15 +180,15 @@ class TreeRender {
     /**
      * 渲染树节点 将AST树转换为可执行逻辑
      */
-    render(astTreeNode: TreeNode | TreeNodeSet | FormulaNode) {
+    render(astTreeNode: TreeNode) {
         // 处理单个节点的方法
         const transNode = (node: TreeNode): LogicNode => {
             if (node instanceof VarNode) {
                 // 处理入参或常量节点
                 const variable = node.name;
                 if (variable.startsWith('@')) {
-                    const refer = new Reference();
-                    refer.name = variable;
+                    // 生成变量节点 值先为空
+                    const refer = new Variable(variable, 'import', new Constant(null));
                     // 记录使用到了此参数
                     this._params.push(refer);
                     return refer;
@@ -194,9 +197,7 @@ class TreeRender {
                     return this._defines.find(d => d.name === variable) as Variable;
                 } else {
                     // 常量
-                    const constant = new Constant();
-                    constant.value = node;
-                    return constant;
+                    return new Constant(node);
                 }
             }
             // 处理计算节点
@@ -232,29 +233,15 @@ class TreeRender {
             return;
         } else if (astTreeNode.operator === 'var' || astTreeNode.operator === 'ref' || astTreeNode.operator === 'global') {
             // 处理变量声明节点
-            const variable = new Variable();
+            const variable = new Variable(
+                (astTreeNode.leftChild as VarNode).name,
+                astTreeNode.operator,
+                astTreeNode.rightChild ? transNode(astTreeNode.rightChild) : new Constant(null)
+            );
             this._defines.push(variable);
-            variable.name = (astTreeNode.leftChild as VarNode).name;
-            variable.type = astTreeNode.operator;
-            if (astTreeNode.rightChild) {
-                variable.value = transNode(astTreeNode.rightChild);
-            }
             return;
         }
         // 处理普通节点
         this._execNodes.push(transNode(astTreeNode));
     }
-}
-
-/**
- * 遍历AST 整理执行逻辑
- */
-export function getExecutableTree(astTreeNode: TreeNode | TreeNodeSet | FormulaNode) {
-    const treeRender = new TreeRender();
-    treeRender.render(astTreeNode);
-    return {
-        params: treeRender.params,
-        defines: treeRender.defines,
-        execNodes: treeRender.execNodes,
-    };
 }

@@ -349,6 +349,9 @@ function assembleCalcNode(expressionParts: ExpressionSplit, nodeList: string[]):
                 return null;
             }
             updateResultNode(siblingNode);
+        } else {
+            // 当前节点为变量或者常量
+            updateResultNode(new VarNode(node));
         }
     }
     // 当循环结束后 若此时树节点没有右节点和operator 则证明此节点为引用或者常量 将左节点取出并返回

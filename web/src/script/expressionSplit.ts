@@ -17,10 +17,8 @@ export class ExpressionSplit {
  * @param expressionStr
  */
 export default function splitExpressStr(expressionStr: string) {
-    console.log('expressionStr ', expressionStr);
     // 将表达式完全切割
     const splits = cutIntoPieces(expressionStr);
-    console.log('expressionStr split ', splits);
     // 整理括号 将括号配对 整理内容 提取为单独的子集 并整理最后的结果
     const result: ExpressionSplit = {
         root: { nodeList: [], type: 'root' },
@@ -59,7 +57,6 @@ export default function splitExpressStr(expressionStr: string) {
             result[key].type = 'element';
         }
     });
-    console.log('expressionStr split with brackets sorted ', result);
     return result;
 }
 

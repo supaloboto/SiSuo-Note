@@ -6,7 +6,7 @@
  -->
 <script setup lang="ts">
     import { LinkEditorDialog } from '@/components/plugins/link/LinkEditorDialog';
-    import Playground from '@/script/playground.vue';
+    import ScriptEditor from '@/script/ScriptEditor.vue';
 
     const props = defineProps<{
         dialog: LinkEditorDialog;
@@ -16,7 +16,7 @@
 
 <template>
     <Dialog :dialog="dialog">
-        <Playground />
+        <ScriptEditor />
     </Dialog>
 </template>
 
