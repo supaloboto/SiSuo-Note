@@ -5,6 +5,7 @@ import { LinkEditorDialog } from "./LinkEditorDialog.js";
 import { useDialogStore } from "@/stores/dialog";
 import { getLongID } from "@/assets/utils/idworker";
 import { Dialog } from "@/frame/dialog/Dialog.js";
+import { deepCopy } from "@/assets/utils/copy.js";
 
 /**
  * 组件关联连线渲染指令
@@ -26,13 +27,73 @@ export class LinkLineRenderCmd extends BoardShapeCommand {
         if (this.linkLine.path.length < 2) {
             return null as any;
         }
+        // 箭头宽高
+        const arrowWidth = 2;
+        const arrowHeight = 1;
+        // 箭头与线段终点的间距
+        const arrowGap = -6;
         // 从第一个点开始绘制
         shape.from(this.linkLine.path[0]);
         // 所有路径点
         for (let i = 1; i < this.linkLine.path.length; i++) {
-            shape.lineTo(this.linkLine.path[i]);
+            // 最后一个点回退一点给箭头留位置
+            if (i < this.linkLine.path.length - 1) {
+                shape.lineTo(this.linkLine.path[i]);
+            } else {
+                const lastPos = deepCopy(this.linkLine.path[i]);
+                const lastDirect = this.linkLine.endPos.direct;
+                switch (lastDirect) {
+                    case 'n':
+                        lastPos.y += arrowHeight - arrowGap + 2;
+                        break;
+                    case 's':
+                        lastPos.y -= arrowHeight - arrowGap + 2;
+                        break;
+                    case 'w':
+                        lastPos.x += arrowHeight - arrowGap + 2;
+                        break;
+                    case 'e':
+                        lastPos.x -= arrowHeight - arrowGap + 2;
+                        break;
+                }
+                shape.lineTo(lastPos);
+            }
         }
-        // todo 绘制箭头
+        // 绘制箭头
+        const endPos = this.linkLine.endPos;
+        const endDirect = endPos.direct;
+        let arrowPoints: { x: number, y: number }[] = [];
+        switch (endDirect) {
+            case 'n':
+                arrowPoints = [
+                    { x: endPos.x - arrowWidth / 2, y: endPos.y - arrowGap },
+                    { x: endPos.x, y: endPos.y - arrowHeight - arrowGap },
+                    { x: endPos.x + arrowWidth / 2, y: endPos.y - arrowGap },
+                ];
+                break;
+            case 's':
+                arrowPoints = [
+                    { x: endPos.x - arrowWidth / 2, y: endPos.y + arrowGap },
+                    { x: endPos.x, y: endPos.y + arrowHeight + arrowGap },
+                    { x: endPos.x + arrowWidth / 2, y: endPos.y + arrowGap },
+                ];
+                break;
+            case 'w':
+                arrowPoints = [
+                    { x: endPos.x - arrowGap, y: endPos.y - arrowWidth / 2 },
+                    { x: endPos.x - arrowHeight - arrowGap, y: endPos.y },
+                    { x: endPos.x - arrowGap, y: endPos.y + arrowWidth / 2 },
+                ];
+                break;
+            case 'e':
+                arrowPoints = [
+                    { x: endPos.x + arrowGap, y: endPos.y - arrowWidth / 2 },
+                    { x: endPos.x + arrowHeight + arrowGap, y: endPos.y },
+                    { x: endPos.x + arrowGap, y: endPos.y + arrowWidth / 2 },
+                ];
+                break;
+        }
+        shape.from(arrowPoints[0]).lineTo(arrowPoints[1]).lineTo(arrowPoints[2]).closePath();
     }
 
     click(): void {
@@ -305,25 +366,37 @@ export class LinkLine {
      * 在垂直方向的端点之间创建连线
      */
     private makeLineOfVerticalDirection(startPos: { x: number, y: number }, endPos: { x: number, y: number }, cmdDirection: string, minDist: { x: number, y: number }): void {
-        // 规范化方向字符串 保证第一个字符是垂直方向 第二个字符是水平方向
-        if (cmdDirection[0] === 'w' || cmdDirection[0] === 'e') {
-            cmdDirection = cmdDirection.split('').reverse().join('');
+        const opposite: { [key: string]: string } = {
+            'n': 's',
+            's': 'n',
+            'w': 'e',
+            'e': 'w',
         }
-        // 判断两个点的实际方向
-        const realDirection = [
-            startPos.y > endPos.y ? 'n' : 's',
-            startPos.x > endPos.x ? 'w' : 'e',
-        ].join('');
+        // 判断两个点的实际方向 实际方向是指两个点之间的连线的方向
+        const realDirectionSet = ['', ''];
+        if (cmdDirection[0] === 'n' || cmdDirection[0] === 's') {
+            realDirectionSet[0] = startPos.y > endPos.y ? 'n' : 's';
+            realDirectionSet[1] = startPos.x > endPos.x ? 'w' : 'e';
+        } else {
+            realDirectionSet[0] = startPos.x > endPos.x ? 'w' : 'e';
+            realDirectionSet[1] = startPos.y > endPos.y ? 'n' : 's';
+        }
+        // 实际方向的两位中不能有一位与指令方向的对应位正好相反 比如指令方向是nw 实际方向不能是ne而应该是en
+        if (realDirectionSet[0] === opposite[cmdDirection[0]] || realDirectionSet[1] === opposite[cmdDirection[1]]) {
+            const temp = realDirectionSet[0];
+            realDirectionSet[0] = realDirectionSet[1];
+            realDirectionSet[1] = temp;
+        }
+        const realDirection = realDirectionSet.join('');
         // 若方向与实际方向相同 则以延长线连接 借用相反方向端点之间连线的方法
         if (cmdDirection === realDirection) {
             this.makeLineOfOppositeDirection(startPos, endPos, cmdDirection, minDist);
             return;
         }
+        // 构建实际方向的反方向用于判断
+        const realDirOppositeSet = [opposite[realDirection[1]], opposite[realDirection[0]]];
+        const realDirectionOpposite = realDirOppositeSet.join('');
         // 若方向与实际方向不同 则根据方向与实际方向是垂直还是相反来决定连接方式
-        const realDirectionOpposite = [
-            startPos.y > endPos.y ? 's' : 'n',
-            startPos.x > endPos.x ? 'e' : 'w',
-        ].join('');
         if (cmdDirection === realDirectionOpposite) {
             // 方向与实际方向相反时 将两个端点互换 并借用相反方向端点连线的方法完成连线
             this.makeLineOfOppositeDirection(endPos, startPos, cmdDirection, minDist);
@@ -331,12 +404,28 @@ export class LinkLine {
         } else {
             // 方向与实际方向垂直时 对两个端点中方向错误的做一个虚拟的辅助点
             const assistPos = { x: 0, y: 0 };
-            if (cmdDirection[0] !== realDirection[0]) {
+            if (cmdDirection[0] === realDirectionOpposite[0] || cmdDirection[0] === realDirectionOpposite[1]) {
                 // 开始点方向错误 则沿结束点的方向 从开始点的位置出发 给开始点加一个辅助点
                 const comp = useKanbanStore().components.find((item) => item.id === this.compId) as any;
                 const assistDirect = cmdDirection[1];
-                assistPos.x = assistDirect === 'w' ? (comp.pos.x - minDist.x) : assistDirect === 'e' ? (comp.pos.x + comp.rect.width + minDist.x) : startPos.x;
-                assistPos.y = assistDirect === 'n' ? (comp.pos.y - minDist.y) : assistDirect === 's' ? (comp.pos.y + comp.rect.height + minDist.y) : startPos.y;
+                switch (assistDirect) {
+                    case 'n':
+                        assistPos.x = startPos.x;;
+                        assistPos.y = endPos.y < (comp.pos.y - minDist.y) ? (comp.pos.y - minDist.y) : endPos.y;
+                        break;
+                    case 's':
+                        assistPos.x = startPos.x;
+                        assistPos.y = endPos.y > (comp.pos.y + comp.rect.height + minDist.y) ? (comp.pos.y + comp.rect.height + minDist.y) : endPos.y;
+                        break;
+                    case 'w':
+                        assistPos.x = endPos.x < (comp.pos.x - minDist.x) ? (comp.pos.x - minDist.x) : endPos.x;
+                        assistPos.y = startPos.y;
+                        break;
+                    case 'e':
+                        assistPos.x = endPos.x > (comp.pos.x + comp.rect.width + minDist.x) ? (comp.pos.x + comp.rect.width + minDist.x) : endPos.x;
+                        assistPos.y = startPos.y;
+                        break;
+                }
                 // 开始点连接到辅助点
                 this.path.push(assistPos);
                 // 连接辅助点和结束点 两个点是同方向 所以借用同方向端点连线的方法进行连接 在此过程中修正辅助点的位置
@@ -345,13 +434,28 @@ export class LinkLine {
                 // 结束点方向错误 则沿开始点的方向 从组件位置出发 给结束点加一个辅助点
                 const comp = useKanbanStore().components.find((item) => item.id === this.targetCompId) as any;
                 const assistDirect = cmdDirection[0];
-                assistPos.x = assistDirect === 'e' ? (comp.pos.x - minDist.x) : assistDirect === 'w' ? (comp.pos.x + comp.rect.width + minDist.x) : endPos.x;
-                assistPos.y = assistDirect === 's' ? (comp.pos.y - minDist.y) : assistDirect === 'n' ? (comp.pos.y + comp.rect.height + minDist.y) : endPos.y;
+                switch (assistDirect) {
+                    case 'n':
+                        assistPos.x = endPos.x;
+                        assistPos.y = startPos.y > (comp.pos.y + comp.rect.height + minDist.y) ? (comp.pos.y + comp.rect.height + minDist.y) : startPos.y;
+                        break;
+                    case 's':
+                        assistPos.x = endPos.x;
+                        assistPos.y = startPos.y < (comp.pos.y - minDist.y) ? (comp.pos.y - minDist.y) : startPos.y;
+                        break;
+                    case 'w':
+                        assistPos.x = startPos.x > (comp.pos.x + comp.rect.width + minDist.x) ? (comp.pos.x + comp.rect.width + minDist.x) : startPos.x;
+                        assistPos.y = endPos.y;
+                        break;
+                    case 'e':
+                        assistPos.x = startPos.x < (comp.pos.x - minDist.x) ? (comp.pos.x - minDist.x) : startPos.x;
+                        assistPos.y = endPos.y;
+                        break;
+                }
                 // 连接开始点和辅助点 两个点是同方向 所以借用同方向端点连线的方法进行连接 在此过程中修正辅助点的位置
                 this.makeLineOfSameDirection(startPos, assistPos, cmdDirection, minDist);
                 this.path.push(assistPos);
             }
-
         }
     }
 

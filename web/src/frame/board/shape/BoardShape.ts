@@ -139,6 +139,11 @@ export abstract class BoardShape {
      * @param pos 位置
      */
     abstract lineTo(pos: { x: number, y: number }): BoardShape
+
+    /**
+     * 使路径闭合
+     */
+    abstract closePath(): BoardShape
 }
 
 /**
@@ -195,7 +200,12 @@ export class BoardShapeSvg extends BoardShape {
     }[] {
         // 整理路径
         return this._paths.map(path => {
-            const pathStr = path.points.map(point => `${point.command} ${point.pos.x - this.topLeft.x} ${point.pos.y - this.topLeft.y}`).join(' ');
+            const pathStr = path.points.map(point => {
+                if (point.command === 'Z') {
+                    return point.command;
+                }
+                return `${point.command} ${point.pos.x - this.topLeft.x} ${point.pos.y - this.topLeft.y}`;
+            }).join(' ');
             return { path: pathStr, attrs: path.attrs };
         });
     }
@@ -291,6 +301,20 @@ export class BoardShapeSvg extends BoardShape {
         return this;
     }
 
+    closePath(): BoardShape {
+        // 闭合路径
+        const currentPath = this._paths[this._paths.length - 1];
+        if (!currentPath || !currentPath.points || currentPath.points.length === 0) {
+            return this;
+        }
+        // 记录点
+        currentPath.points.push({
+            command: 'Z',
+            pos: currentPath.points[0].pos,
+        });
+        return this;
+    }
+
 }
 
 
@@ -307,7 +331,7 @@ export class BoardShapeCanvas extends BoardShape {
     // 记录上个路径点 用于绘图指令拼接
     private lastPos: { x: number, y: number } = null as any;
     // 绘图指令集合
-    private canvasCommands: Function[] = [];
+    private canvasCommandSet: Function[][] = [];
 
     constructor() {
         super();
@@ -336,7 +360,8 @@ export class BoardShapeCanvas extends BoardShape {
 
     from(pos: { x: number, y: number }, lineStyle: LineStyle = new LineStyle(),): BoardShapeCanvas {
         const clientPos = this.transPosToClientPos(pos);
-        this.canvasCommands.push(() => {
+        const newCommands = [];
+        newCommands.push(() => {
             if (!this.ctx) {
                 return;
             }
@@ -346,6 +371,7 @@ export class BoardShapeCanvas extends BoardShape {
             this.ctx.lineWidth = lineStyle.lineWidth;
             // todo 设置线段颜色
         });
+        this.canvasCommandSet.push(newCommands);
         this.lastPos = clientPos;
         return this;
     }
@@ -356,7 +382,8 @@ export class BoardShapeCanvas extends BoardShape {
         }
         const clientPos = this.transPosToClientPos(pos);
         // 记录画线指令
-        this.canvasCommands.push(() => {
+        const currentCommand = this.canvasCommandSet[this.canvasCommandSet.length - 1];
+        currentCommand.push(() => {
             if (!this.ctx) {
                 return;
             }
@@ -367,9 +394,23 @@ export class BoardShapeCanvas extends BoardShape {
         return this;
     }
 
+    closePath(): BoardShape {
+        // 闭合路径
+        const currentCommand = this.canvasCommandSet[this.canvasCommandSet.length - 1];
+        currentCommand.push(() => {
+            if (!this.ctx) {
+                return;
+            }
+            this.ctx.closePath();
+        });
+        return this;
+    }
+
     print(): void {
         // 运行画线指令
-        this.canvasCommands.forEach(command => command());
-        this.ctx?.stroke();
+        this.canvasCommandSet.forEach(commandSet => {
+            commandSet.forEach(command => command());
+            this.ctx?.stroke();
+        });
     }
 }
