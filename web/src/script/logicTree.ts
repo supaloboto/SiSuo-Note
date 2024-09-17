@@ -1,4 +1,4 @@
-import { TreeNodeSet, FormulaNode, TreeNode, VarNode } from "./ast";
+import { TreeNodeSet, FuncNode, TreeNode, VarNode } from "./ast";
 
 /**
  * 将AST树转换为可执行逻辑节点树
@@ -73,9 +73,9 @@ export class Variable extends LogicNode {
     // 变量值
     private _value: LogicNode;
     // 变量类型
-    private _type: 'ref' | 'var' | 'global' | 'import';
+    private _type: 'ref' | 'var' | 'import';
 
-    constructor(name: string, type: 'ref' | 'var' | 'global' | 'import', value: LogicNode) {
+    constructor(name: string, type: 'ref' | 'var' | 'import', value: LogicNode) {
         super();
         this._name = name;
         this._value = value;
@@ -178,16 +178,16 @@ export class TreeRender {
                 this.render(node);
             });
             return;
-        } else if (astTreeNode instanceof FormulaNode) {
-            // 处理公式节点
+        } else if (astTreeNode instanceof FuncNode) {
+            // 处理函数节点
             const calcNode = new Calc();
-            calcNode.func = astTreeNode.formula;
-            astTreeNode.params.forEach((param) => {
+            calcNode.func = astTreeNode.func;
+            astTreeNode.params.getNodes().forEach((param) => {
                 calcNode.params.push(transNode(param));
             });
             this._execNodes.push(calcNode);
             return;
-        } else if (astTreeNode.operator === 'var' || astTreeNode.operator === 'ref' || astTreeNode.operator === 'global') {
+        } else if (astTreeNode.operator === 'var' || astTreeNode.operator === 'ref') {
             // 处理变量声明节点
             const variable = new Variable(
                 (astTreeNode.leftChild as VarNode).name,

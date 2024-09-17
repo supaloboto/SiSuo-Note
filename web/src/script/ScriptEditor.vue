@@ -2,8 +2,8 @@
   import Codemirror from "codemirror-editor-vue3";
   import { javascript } from "@codemirror/lang-javascript";
   import { ref, watch } from "vue";
-  import expressionSplit from "@/script/expressionSplit";
-  import { analyseExpressionToAST, TreeNode, TreeNodeSet } from "@/script/ast";
+  import tokenize from "@/script/tokenization";
+  import { tokenToAST, TreeNode, TreeNodeSet } from "@/script/ast";
   import { Constant, TreeRender, Variable } from "@/script/logicTree";
   import { ExecutedVariable, getOutputs } from "@/script/exec";
 
@@ -56,13 +56,11 @@
       outputList.value = [];
       return;
     }
-    // 去除表达式中的回车字符
-    let expression = scriptText.value.replace(/\n/g, '');
     // 字符串分割
-    const expressionParts = expressionSplit(expression);
+    const expressionParts = tokenize(scriptText.value);
     splitResultStr.value = JSON.stringify(expressionParts, null, 2);
     // 解析算式 在返回的结果中找到树的根节点
-    const ast = analyseExpressionToAST(expressionParts);
+    const ast = tokenToAST(expressionParts);
     // 展示AST内容之前先做整理 去掉节点的parent属性 避免序列化时循环引用
     cleanAST(ast);
     astStr.value = JSON.stringify(ast, null, 2);
