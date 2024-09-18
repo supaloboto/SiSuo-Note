@@ -6,7 +6,6 @@
  */
 
 import { deepCopy } from "@/assets/utils/copy";
-import { c } from "node_modules/vite/dist/node/types.d-aGj9QkWt";
 
 /**
  * 词元类

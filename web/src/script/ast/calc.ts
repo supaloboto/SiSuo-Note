@@ -1,4 +1,4 @@
-import { TreeNode, TreeNodeSet, VarNode, type ASTAnalyser } from "../ast";
+import { ConstNode, TreeNode, VarNode, type ASTAnalyser } from "../ast";
 import type { Token } from "../tokenization";
 
 /**
@@ -81,7 +81,12 @@ export class ASTCalcNodeFactory {
                 updateResultNode(siblingNode);
             } else {
                 // 当前节点为变量或者常量
-                updateResultNode(new VarNode(token.content));
+                const varNode = token.content.startsWith('@') ? new VarNode(token.content) : this.analyser.variables.find((node) => node.name === token.content);
+                if (varNode) {
+                    updateResultNode(varNode);
+                } else {
+                    updateResultNode(new ConstNode(token.content));
+                }
             }
         }
         // 当循环结束后 若此时树节点没有右节点和operator 则证明此节点为引用或者常量 将左节点取出并返回

@@ -1,4 +1,4 @@
-import { TreeNodeSet, FuncNode, TreeNode, VarNode } from "./ast";
+import { TreeNodeSet, FuncNode, TreeNode, VarNode, ConstNode } from "./ast";
 
 /**
  * 将AST树转换为可执行逻辑节点树
@@ -11,7 +11,26 @@ import { TreeNodeSet, FuncNode, TreeNode, VarNode } from "./ast";
  * 节点基类
  */
 export class LogicNode {
+    // 局部变量
+    private _variables: Variable[] = [];
+    // 引用变量
+    private _inputs: Variable[] = [];
+    // 执行逻辑
+    private _execNodes: LogicNode[] = [];
+
     constructor() {
+    }
+
+    get variables() {
+        return this._variables;
+    }
+
+    get inputs() {
+        return this._inputs;
+    }
+
+    get execNodes() {
+        return this._execNodes;
     }
 }
 
@@ -111,93 +130,107 @@ export class Variable extends LogicNode {
  * 树节点整理类
  */
 export class TreeRender {
-    // 变量声明
-    private _defines: Variable[] = [];
-    // 用到的传入参数
-    private _params: Variable[] = [];
-    // 执行逻辑
-    private _execNodes: LogicNode[] = [];
+    private _logicRoot: LogicNode;
 
-    constructor() {
+    constructor(astTreeNodeSet: TreeNodeSet) {
+        // 初始化逻辑根节点
+        this._logicRoot = new LogicNode();
+        // 遍历AST树节点集合 渲染逻辑树
+        astTreeNodeSet.getNodes().forEach((node) => {
+            this._logicRoot.execNodes.push(this.astNodeToLogicNode(node));
+        });
     }
 
-    get params() {
-        return this._params;
-    }
-
-    get defines() {
-        return this._defines;
-    }
-
-    get execNodes() {
-        return this._execNodes;
+    get logicRoot() {
+        return this._logicRoot;
     }
 
     /**
-     * 渲染树节点 将AST树转换为可执行逻辑
+     * 将AST树节点转换为逻辑树节点
      */
-    render(astTreeNode: TreeNode) {
-        // 处理单个节点的方法
-        const transNode = (node: TreeNode): LogicNode => {
-            if (node instanceof VarNode) {
-                // 处理入参或常量节点
-                const variable = node.name;
-                if (variable.startsWith('@')) {
-                    // 如果是要求外界输入的变量 则生成变量节点 值先为空
-                    const refer = new Variable(variable, 'import', new Constant(null));
-                    // 记录使用到了此参数
-                    this._params.push(refer);
-                    return refer;
-                } else if (this._defines.map(d => d.name).indexOf(variable) > -1) {
-                    // 如果是由函数内部定义的变量 则直接返回
-                    return this._defines.find(d => d.name === variable) as Variable;
-                } else {
-                    // 常量
-                    return new Constant(node.name);
-                }
-            }
-            // 处理计算节点
-            const calc = new Calc();
-            if (!node.operator) {
-                //TODO 未知操作节点
-                throw new Error('未知操作节点');
-            }
-            calc.func = node.operator;
-            if (node.leftChild) {
-                calc.params.push(transNode(node.leftChild));
-            }
-            if (node.rightChild) {
-                calc.params.push(transNode(node.rightChild));
-            }
-            return calc;
-        }
+    astNodeToLogicNode(astTreeNode: TreeNode): LogicNode {
         // 根据ast节点类型进行处理
         if (astTreeNode instanceof TreeNodeSet) {
             // 递归处理树节点集合
-            astTreeNode.getNodes().forEach((node) => {
-                this.render(node);
-            });
-            return;
-        } else if (astTreeNode instanceof FuncNode) {
-            // 处理函数节点
-            const calcNode = new Calc();
-            calcNode.func = astTreeNode.func;
-            astTreeNode.params.getNodes().forEach((param) => {
-                calcNode.params.push(transNode(param));
-            });
-            this._execNodes.push(calcNode);
-            return;
+            return new TreeRender(astTreeNode)._logicRoot;
+        } else if (astTreeNode instanceof VarNode) {
+            // 处理变量引用节点
+            return this.transVariable(astTreeNode);
         } else if (astTreeNode.operator === 'var' || astTreeNode.operator === 'ref') {
             // 处理变量声明节点
-            const variable = new Variable(
+            const variableNode = new Variable(
                 (astTreeNode.leftChild as VarNode).name,
                 astTreeNode.operator,
-                astTreeNode.rightChild ? transNode(astTreeNode.rightChild) : new Constant(null)
+                astTreeNode.rightChild ? this.astNodeToLogicNode(astTreeNode.rightChild) : new Constant(null)
             );
-            this._defines.push(variable);
-            return;
+            // 记录变量
+            this._logicRoot.variables.push(variableNode);
+            return variableNode;
+        } else if (astTreeNode instanceof ConstNode) {
+            // 处理常量节点
+            return new Constant(astTreeNode.value);
         }
         // 处理普通节点
-        this._execNodes.push(transNode(astTreeNode));
+        return this.transNode(astTreeNode);
     }
+
+    /**
+     * 将AST变量声明节点转换为逻辑节点
+     */
+    private transVariable(node: VarNode): LogicNode {
+        // 处理入参或常量节点
+        const variable = node.name;
+        if (variable.startsWith('@')) {
+            // 如果是要求外界输入的变量 则生成变量节点 值先为空
+            const refer = new Variable(variable, 'import', new Constant(null));
+            // 记录使用到了此参数
+            if (this._logicRoot.inputs.map(d => d.name).indexOf(variable) === -1) {
+                this._logicRoot.inputs.push(refer);
+            }
+            return refer;
+        } else if (this._logicRoot.variables.map(d => d.name).indexOf(variable) > -1) {
+            // 如果是函数内部变量 则直接返回
+            return this._logicRoot.variables.find(d => d.name === variable) as Variable;
+        }
+        //TODO 处理未定义变量
+        throw new Error(`未定义变量:${node.name}`);
+    }
+
+    /**
+     * 将AST普通节点转换为逻辑节点
+     */
+    private transNode(node: TreeNode): LogicNode {
+        // // 判断节点的操作是否是方法调用
+        // //TODO 处理内置方法
+        // if (functions.map(d => d.name).indexOf(node.operator) > -1) {
+        //     // 处理方法调用节点
+        //     const func = functions.find(d => d.name === node.operator) as FuncNode;
+        //     const calc = new Calc();
+        //     calc.func = func.name;
+        //     // 处理参数
+        //     node.children.forEach((child) => {
+        //         calc.params.push(this.transNode(child, variables, functions));
+        //     });
+        //     return calc;
+        // }
+
+
+
+        // 处理方法调用节点
+        const calc = new Calc();
+        if (!node.operator) {
+            //TODO 未知操作节点
+            throw new Error('未知操作节点');
+        }
+        calc.func = node.operator;
+        if (node.leftChild) {
+            calc.params.push(this.astNodeToLogicNode(node.leftChild));
+        }
+        if (node.rightChild) {
+            calc.params.push(this.astNodeToLogicNode(node.rightChild));
+        }
+
+        return calc;
+    }
+
 }

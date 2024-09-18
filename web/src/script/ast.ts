@@ -1,4 +1,5 @@
 import { ASTCalcNodeFactory } from "./ast/calc";
+import { ASTFuncNodeFactory } from "./ast/func";
 import { Token } from "./tokenization.js";
 
 /**
@@ -71,7 +72,7 @@ export class TreeNode {
     }
 
     /**
-     * 将节点设置为自己的左节点
+     * 将节点设置为自己的左节点 并维护父子关系
      */
     setLeft(node: TreeNode | null) {
         if (node) {
@@ -85,7 +86,7 @@ export class TreeNode {
     }
 
     /**
-     * 将节点设置为自己的右节点
+     * 将节点设置为自己的右节点 并维护父子关系
      */
     setRight(node: TreeNode | null) {
         if (node) {
@@ -108,36 +109,28 @@ export class TreeNode {
         }
     }
 
-}
-
-/**
- * 树节点集合类 树节点的一种 用于存储多个节点
- */
-export class TreeNodeSet extends TreeNode {
-    private nodes: TreeNode[] = [];
-
-    constructor() {
-        super();
+    /**
+     * 链接左节点 仅表达引用关系 不维护父子关系
+     */
+    linkLeft(node: TreeNode) {
+        this.leftChild = node;
     }
 
-    addNode(node: TreeNode) {
-        this.nodes.push(node);
+    /**
+     * 链接右节点 仅表达引用关系 不维护父子关系
+     */
+    linkRight(node: TreeNode) {
+        this.rightChild = node;
     }
 
-    getNodes() {
-        return this.nodes;
-    }
 }
 
 /**
  * 函数节点类 树节点的一种 用于存储函数信息
- * 当为函数调用时 operator为空 _func为函数名 右节点为函数入参 (以后可以考虑实现左节点为对象)
- * 当为函数定义时 operator为func _func为函数名 右节点为函数体 _params为函数形参
+ * operator为'function' _func为函数名 左节点为函数入参TreeNodeSet 右节点为函数体TreeNodeSet
  */
 export class FuncNode extends TreeNode {
     private _func: string = '';
-    // 函数的入参
-    private _params: TreeNodeSet = new TreeNodeSet();
 
     constructor() {
         super();
@@ -150,29 +143,76 @@ export class FuncNode extends TreeNode {
     set func(value) {
         this._func = value;
     }
-
-    get params() {
-        return this._params;
-    }
-
-    set params(value: TreeNodeSet) {
-        this._params = value;
-    }
 }
 
 /**
- * 变量节点类 树节点的一种 用于存储变量信息(也可能是常量信息,AST中无法区分它们)
+ * 变量节点类 树节点的一种 用于存储变量信息
  */
 export class VarNode extends TreeNode {
-    private _name: any;
+    private _name: string;
 
-    constructor(name: any) {
+    constructor(name: string) {
         super();
         this._name = name;
     }
 
     get name() {
         return this._name;
+    }
+}
+
+/**
+ * 常量节点类 树节点的一种 用于存储常量
+ */
+export class ConstNode extends TreeNode {
+    private _value: any;
+
+    constructor(value: any) {
+        super();
+        this._value = value;
+    }
+
+    get value() {
+        return this._value;
+    }
+}
+
+/**
+ * 树节点集合类 树节点的一种 用于存储多个节点
+ */
+export class TreeNodeSet extends TreeNode {
+    private nodes: TreeNode[] = [];
+    // 局部变量集合
+    private _variables: VarNode[] = [];
+    // 局部方法集合 
+    private _functions: FuncNode[] = [];
+
+    constructor() {
+        super();
+    }
+
+    addNode(node: TreeNode) {
+        this.nodes.push(node);
+    }
+
+    getNodes() {
+        return this.nodes;
+    }
+
+    get variables() {
+        return this._variables;
+    }
+
+    set variables(value) {
+        this._variables = value;
+    }
+
+    get functions() {
+        return this._functions;
+    }
+
+    set functions(value) {
+        this._functions = value;
     }
 }
 
@@ -193,53 +233,68 @@ export class ASTAnalyser {
     functions: FuncNode[] = [];
     // 节点工厂
     calcFactory: ASTCalcNodeFactory;
+    funcFactory: ASTFuncNodeFactory;
 
     constructor() {
         this.calcFactory = new ASTCalcNodeFactory(this);
+        this.funcFactory = new ASTFuncNodeFactory(this);
+    }
+
+    /**
+     * 添加可用变量 当结构体嵌套时外部结构可能会向内部结构传递变量
+     */
+    addVariables(varNodes: VarNode[]) {
+        this.variables.push(...varNodes);
+    }
+
+    /**
+     * 添加可用方法 当结构体嵌套时外部结构可能会向内部结构传递方法
+     */
+    addFunctions(funcNodes: FuncNode[]) {
+        this.functions.push(...funcNodes);
     }
 
     getAST(tokens: Token[]): TreeNodeSet {
         const result = new TreeNodeSet();
-        // 分割语句
-        const sentenceList: Token[][] = [];
-        let buffer: Token[] = [];
-        for (let i = 0; i < tokens.length; i++) {
-            const token = tokens[i];
-            // 以分号断句
-            if (token.content === ';') {
-                sentenceList.push(buffer.splice(0));
-            } else {
-                buffer.push(token);
-            }
-        }
-        if (buffer.length > 0) {
-            sentenceList.push(buffer.splice(0));
-        }
         // 解析语句为AST节点
-        sentenceList.forEach((sentence) => {
-            result.addNode(this.getNode(sentence));
-        });
+        let currentSentence: Token[] = tokens;
+        while (currentSentence.length > 0) {
+            // 将语句传入解析器
+            const [treeNode, sentenceEnd] = this.getNode(currentSentence);
+            result.addNode(treeNode);
+            // 解析下一条语句
+            currentSentence = currentSentence.slice(sentenceEnd + 1);
+        }
+        // 赋予局部变量和方法集合
+        result.variables = this.variables;
+        result.functions = this.functions;
         return result;
     }
 
-    getNode(sentence: Token[]): TreeNode {
+    /**
+     * 解析语句为AST节点
+     * @returns [AST节点, 当前语句结束位置]
+     */
+    getNode(fullSentence: Token[]): [TreeNode, number] {
+        // 按分号分割语句
+        let sentenceEnd = fullSentence.findIndex((token) => token.content === ';');
+        if (sentenceEnd === -1) {
+            sentenceEnd = fullSentence.length;
+        }
+        const sentence = fullSentence.slice(0, sentenceEnd);
         // 解析语句开头关键字
         const sentenceType = sentence[0].content;
         if (sentenceType === 'var' || sentenceType === 'ref') {
             // 解析变量定义语句
             const treeNode = new TreeNode();
-            // 变量名
-            const varName = sentence[1];
-            // 变量定义语句
-            const varDefine: Token[] = sentence.slice(3);
-            // 记录语句为AST节点
-            treeNode.operator = sentenceType;
-            const varNode = new VarNode(varName);
-            treeNode.setLeft(varNode);
-            treeNode.setRight(this.calcFactory.assembleCalcNode(varDefine));
+            const varNode = new VarNode(sentence[1].content);
             // 记录变量信息
             this.variables.push(varNode);
-            return treeNode;
+            // 变量定义语句左侧为变量名 右侧为计算节点
+            treeNode.operator = sentenceType;
+            treeNode.setLeft(varNode);
+            treeNode.setRight(this.calcFactory.assembleCalcNode(sentence.slice(3)));
+            return [treeNode, sentenceEnd];
         } else if (sentenceType === 'if') {
             //TODO 解析if语句
         } else if (sentenceType === 'elseif') {
@@ -250,22 +305,19 @@ export class ASTAnalyser {
 
         } else if (sentenceType === 'function') {
             // 解析函数定义语句
-            const funcNode = new FuncNode();
+            const funcNode = this.funcFactory.assembleFuncNode(sentence[2], sentence[3]);
             funcNode.operator = 'function';
             funcNode.func = sentence[1].content;
-            //TODO 入参
-            funcNode.params = this.getAST(sentence[2].children);
-            // 函数体
-            funcNode.setRight(this.getAST(sentence[3].children));
             // 记录函数信息
             this.functions.push(funcNode);
-            return funcNode;
+            // 语句结束于函数体闭合位置
+            return [funcNode, 3];
         } else if (sentenceType === 'return') {
             //TODO 解析返回语句
             const treeNode = new TreeNode();
             treeNode.operator = 'return';
             treeNode.setLeft(this.calcFactory.assembleCalcNode(sentence.slice(1)));
-            return treeNode;
+            return [treeNode, sentenceEnd];
         }
 
         // 关键字没有命中时 解析语句动作类型
@@ -273,9 +325,14 @@ export class ASTAnalyser {
             // 解析赋值语句
             const treeNode = new TreeNode();
             treeNode.operator = '=';
-            treeNode.setLeft(new VarNode(sentence[0]));
+            const varNode = this.variables.find((node) => node.name === sentence[0].content);
+            //TODO 处理变量找不到时的情况
+            if (!varNode) {
+                throw new Error('未定义的变量 ' + sentence[0]);
+            }
+            treeNode.linkLeft(varNode);
             treeNode.setRight(this.calcFactory.assembleCalcNode(sentence.splice(2)));
-            return treeNode;
+            return [treeNode, sentenceEnd];
         } else if (sentence[1].type === 'bracket') {
             // 解析函数调用语句 
             const treeNode = new TreeNode();
@@ -289,7 +346,7 @@ export class ASTAnalyser {
             treeNode.operator = funcNode.func;
             //TODO 入参
             treeNode.setRight(this.getAST(sentence[1].children));
-            return treeNode;
+            return [treeNode, sentenceEnd];
         }
 
         // 未知语句类型

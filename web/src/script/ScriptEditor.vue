@@ -1,46 +1,19 @@
 <script setup lang="ts">
   import Codemirror from "codemirror-editor-vue3";
   import { javascript } from "@codemirror/lang-javascript";
-  import { ref, watch } from "vue";
+  import { ref } from "vue";
   import tokenize from "@/script/tokenization";
-  import { tokenToAST, TreeNode, TreeNodeSet } from "@/script/ast";
-  import { Constant, TreeRender, Variable } from "@/script/logicTree";
+  import { tokenToAST } from "@/script/ast";
+  import { TreeRender, Variable } from "@/script/logicTree";
   import { ExecutedVariable, getOutputs } from "@/script/exec";
 
   // 用户输入的脚本内容
   const scriptTextCodeMirror = ref<any>(null);
   const scriptText = ref<string>();
-  // 字符串分割结果
-  const splitResultCodeMirror = ref<any>(null);
-  const splitResultStr = ref<string>('');
-  // AST内容
-  const astCodeMirror = ref<any>(null);
-  const astStr = ref<string>('');
-  // 执行内容
-  const renderedTree = ref<TreeRender>(null);
-  const renderedTreeCodeMirror = ref<any>(null);
-  const renderedTreeStr = ref<string>('');
   // 输入
   const inputList = ref<ExecutedVariable[]>([]);
   // 输出
   const outputList = ref<ExecutedVariable[]>([]);
-
-  // 清理AST 删除节点上的父节点属性 避免序列化时循环引用
-  const cleanAST = (node: TreeNode) => {
-    if (!node) {
-      return null;
-    }
-    node.parent = null;
-    if (node.leftChild) {
-      cleanAST(node.leftChild);
-    }
-    if (node.rightChild) {
-      cleanAST(node.rightChild);
-    }
-    if (node instanceof TreeNodeSet) {
-      Array.from((node as TreeNodeSet).getNodes()).forEach(cleanAST);
-    }
-  }
 
   /**
    * 重新整理输出物
@@ -48,34 +21,27 @@
   const getOutput = () => {
     // 当用户输入为空时 清空全部内容
     if (!scriptText.value) {
-      splitResultStr.value = '';
-      astStr.value = '';
-      renderedTreeStr.value = '';
-      renderedTree.value = null;
       inputList.value = [];
       outputList.value = [];
       return;
     }
-    // 字符串分割
-    const expressionParts = tokenize(scriptText.value);
-    splitResultStr.value = JSON.stringify(expressionParts, null, 2);
-    // 解析算式 在返回的结果中找到树的根节点
-    const ast = tokenToAST(expressionParts);
-    // 展示AST内容之前先做整理 去掉节点的parent属性 避免序列化时循环引用
-    cleanAST(ast);
-    astStr.value = JSON.stringify(ast, null, 2);
+
+    // 字符串分割为词元
+    const tokenizeResult = tokenize(scriptText.value);
+    console.log('tokenization', tokenizeResult);
+    // 将词元转化为AST 在返回的结果中找到树的根节点
+    const ast = tokenToAST(tokenizeResult);
+    console.log('ast', ast);
     // 将AST转换为可执行树
-    const treeRender = new TreeRender();
-    treeRender.render(ast);
-    renderedTree.value = treeRender;
-    renderedTreeStr.value = JSON.stringify(renderedTree.value, null, 2);
+    const treeRender = new TreeRender(ast);
+    console.log('logic tree', treeRender);
     // 从可执行树中获取变量声明 整理入参
-    const { params } = renderedTree.value;
-    inputList.value = params.map((item: Variable): ExecutedVariable => {
+    const { inputs } = treeRender.logicRoot;
+    inputList.value = inputs.map((item: Variable): ExecutedVariable => {
       return new ExecutedVariable(item.name, '');
     });
     // 整理输出物
-    outputList.value = getOutputs(renderedTree.value.defines as Variable[], inputList.value as ExecutedVariable[]);
+    outputList.value = getOutputs(treeRender.logicRoot.variables as Variable[], inputList.value as ExecutedVariable[]);
   }
 
 </script>
@@ -107,15 +73,6 @@
           <input v-model="item.value" type="text" />
         </div>
       </div>
-      <h2>字符串分割结果</h2>
-      <codemirror ref="splitResultCodeMirror" v-model:value="splitResultStr" :style="{ height: '200px' }"
-        :autofocus="true" :indent-with-tab="true" :tab-size="2" :extensions="[javascript()]" />
-      <h2>AST</h2>
-      <codemirror ref="astCodeMirror" v-model:value="astStr" :style="{ height: '600px' }" :autofocus="true"
-        :indent-with-tab="true" :tab-size="2" :extensions="[javascript()]" />
-      <h2>执行内容</h2>
-      <codemirror ref="renderedTreeCodeMirror" v-model:value="renderedTreeStr" :style="{ height: '600px' }"
-        :autofocus="true" :indent-with-tab="true" :tab-size="2" :extensions="[javascript()]" />
     </div>
   </div>
 </template>
