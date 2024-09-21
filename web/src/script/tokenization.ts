@@ -164,7 +164,7 @@ function cutIntoPieces(expressionStr: string): Token[] {
                 const [str, childEndPos] = cutToChar(getRestExpression(charIndex, expressionStr), char === '“' ? '”' : char);
                 charIndex += childEndPos + 1;
                 // 引号内的内容作为一个整体 加入结果集
-                const content = charBuffer.splice(0).join('') + char + str + char;
+                const content = charBuffer.splice(0).join('') + str;
                 const posStart = deepCopy(cursor.start);
                 const posEnd = {
                     row: cursor.end.row,

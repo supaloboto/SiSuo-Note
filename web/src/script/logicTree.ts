@@ -63,6 +63,40 @@ export class Calc extends LogicNode {
 }
 
 /**
+ * 逻辑分支节点 处理if/else
+ */
+export class Branch extends LogicNode {
+    // 条件列表
+    private _conditions: LogicNode[];
+    // 分支列表 每个元素都是一个函数调用节点 下标与条件列表对应
+    private _branches: LogicNode[];
+
+    constructor() {
+        super();
+        this._conditions = [];
+        this._branches = [];
+    }
+
+    get conditions() {
+        return this._conditions;
+    }
+
+    get branches() {
+        return this._branches;
+    }
+}
+
+/**
+ * 循环节点 处理for/while
+ */
+export class Loop extends LogicNode {
+
+    constructor() {
+        super();
+    }
+}
+
+/**
  * 常量节点
  */
 export class Constant extends LogicNode {
@@ -153,7 +187,18 @@ export class TreeRender {
             if (node instanceof FuncNode) {
                 return;
             }
-            this._logicRoot.execNodes.push(this.astNodeToLogicNode(node));
+            // 对连续的逻辑分支节点进行特殊处理 将连续的if/elseif/else节点整合为一个节点
+            if (node.operator === 'elseif' || node.operator === 'else') {
+                const newBrancdLogicNode = this.astNodeToLogicNode(node) as Branch;
+                // 如果是连续的逻辑分支节点 则将上一个逻辑分支节点取出
+                const lastNode = this._logicRoot.execNodes[this._logicRoot.execNodes.length - 1] as Branch;
+                // 将当前节点的条件和分支添加到上一个逻辑分支节点中
+                lastNode.conditions.push(newBrancdLogicNode.conditions[0]);
+                lastNode.branches.push(newBrancdLogicNode.branches[0]);
+            } else {
+                // 其他情况下逻辑节点直接添加到根节点
+                this._logicRoot.execNodes.push(this.astNodeToLogicNode(node));
+            }
         });
     }
 
@@ -176,7 +221,15 @@ export class TreeRender {
         } else if (astTreeNode instanceof ConstNode) {
             // 处理常量节点
             return new Constant(astTreeNode.value);
-        } else if (astTreeNode.operator === 'var' || astTreeNode.operator === 'ref') {
+        }
+
+        // 如果节点类型为一般节点 则根据操作符进行处理
+        if (!astTreeNode.operator) {
+            //TODO 未知操作节点
+            console.error('未知操作节点', astTreeNode);
+            throw new Error('未知操作节点');
+        }
+        if (astTreeNode.operator === 'var' || astTreeNode.operator === 'ref') {
             // 处理变量声明节点
             const variableNode = new Variable(
                 (astTreeNode.leftChild as VarNode).name,
@@ -192,9 +245,36 @@ export class TreeRender {
                 this._logicRoot.variables[index] = variableNode;
             }
             return variableNode;
+        } else if (astTreeNode.operator === 'if' || astTreeNode.operator === 'elseif' || astTreeNode.operator === 'else') {
+            // 处理if节点
+            const ifNode = new Branch();
+            // 处理条件
+            const condition = astTreeNode.operator === 'else' ? new Constant(true) : this.astNodeToLogicNode(astTreeNode.leftChild as TreeNode);
+            // 处理then
+            const thenBranchNode = new FuncNode();
+            thenBranchNode.linkRight(astTreeNode.rightChild as TreeNodeSet);
+            const thenBranch = this.transFuncCall(new TreeNode(), thenBranchNode);
+            // 记录条件和分支
+            ifNode.conditions.push(condition);
+            ifNode.branches.push(thenBranch);
+            return ifNode;
         }
-        // 处理普通节点
-        return this.transNode(astTreeNode);
+        // 判断节点的操作是否是方法调用 如果在可用方法中没有找到此方法 则认为是数学计算
+        //TODO 处理内置方法
+        const funcNode = this._context.functions.find(d => d.func === astTreeNode.operator) as FuncNode;
+        if (!funcNode) {
+            // 处理数学计算
+            const calc = new Calc();
+            calc.func = astTreeNode.operator;
+            if (astTreeNode.leftChild) {
+                calc.params.push(this.astNodeToLogicNode(astTreeNode.leftChild));
+            }
+            if (astTreeNode.rightChild) {
+                calc.params.push(this.astNodeToLogicNode(astTreeNode.rightChild));
+            }
+            return calc;
+        }
+        return this.transFuncCall(astTreeNode, funcNode);
     }
 
     /**
@@ -217,33 +297,6 @@ export class TreeRender {
         }
         //TODO 处理未定义变量
         throw new Error(`未定义变量:${node.name}`);
-    }
-
-    /**
-     * 将AST数据操作节点转换为逻辑节点
-     */
-    private transNode(node: TreeNode): LogicNode {
-        if (!node.operator) {
-            //TODO 未知操作节点
-            console.error('未知操作节点', node);
-            throw new Error('未知操作节点');
-        }
-        // 判断节点的操作是否是方法调用 如果在可用方法中没有找到此方法 则认为是数学计算
-        //TODO 处理内置方法
-        const funcNode = this._context.functions.find(d => d.func === node.operator) as FuncNode;
-        if (!funcNode) {
-            // 处理数学计算
-            const calc = new Calc();
-            calc.func = node.operator;
-            if (node.leftChild) {
-                calc.params.push(this.astNodeToLogicNode(node.leftChild));
-            }
-            if (node.rightChild) {
-                calc.params.push(this.astNodeToLogicNode(node.rightChild));
-            }
-            return calc;
-        }
-        return this.transFuncCall(node, funcNode);
     }
 
     /**

@@ -296,14 +296,27 @@ export class ASTAnalyser {
             treeNode.setLeft(varNode);
             treeNode.setRight(this.calcFactory.assembleCalcNode(sentence.slice(3)));
             return [treeNode, sentenceEnd];
-        } else if (sentenceType === 'if') {
-            //TODO 解析if语句
-        } else if (sentenceType === 'elseif') {
-
-        } else if (sentenceType === 'else') {
-
+        } else if (sentenceType === 'if' || sentenceType === 'elseif' || sentenceType === 'else') {
+            // 解析if语句
+            const ifNode = new TreeNode();
+            ifNode.operator = sentenceType;
+            const condition = sentenceType === 'else' ? null : this.calcFactory.assembleCalcNode(sentence[1].children);
+            const then = sentenceType === 'else' ?
+                this.funcFactory.getFuncBodyAsNodeSet(sentence[1]) : this.funcFactory.getFuncBodyAsNodeSet(sentence[2]);
+            ifNode.setLeft(condition);
+            ifNode.setRight(then);
+            // 语句结束于函数体闭合位置
+            return sentenceType === 'else' ? [ifNode, 1] : [ifNode, 2];
         } else if (sentenceType === 'for') {
-
+            //TODO 解析for语句
+            const forNode = new TreeNode();
+            forNode.operator = sentenceType;
+            const condition = this.calcFactory.assembleCalcNode(sentence.slice(1));
+            const funcBody = this.getAST(sentence.slice(2));
+            funcBody.setLeft(condition);
+            funcBody.setRight(funcBody);
+            // 语句结束于函数体闭合位置
+            return [funcBody, 2];
         } else if (sentenceType === 'function') {
             // 解析函数定义语句
             const funcNode = this.funcFactory.assembleFuncNode(sentence[2], sentence[3]);

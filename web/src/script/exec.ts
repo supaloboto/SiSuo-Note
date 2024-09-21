@@ -1,4 +1,4 @@
-import { LogicNode, Calc, Constant, Variable } from "./logicTree";
+import { LogicNode, Calc, Constant, Variable, Branch } from "./logicTree";
 import { runFormula } from "./formula/runExpression";
 import { getShortID } from "@/assets/utils/idworker";
 
@@ -106,8 +106,11 @@ export class Exec {
         return outputs;
     }
 
-    // 递归逻辑树 整理变量的变化过程
-    walkThroughLogic(node: LogicNode): any {
+    /**
+     * 递归逻辑树 整理变量的变化过程
+     * @returns [返回值, 是否结束执行]
+     */
+    walkThroughLogic(node: LogicNode): [any, boolean] {
         // 执行当前逻辑节点
         if (node instanceof Variable) {
             // 如果是变量声明节点 则记录逻辑和变量之间的关系
@@ -127,19 +130,33 @@ export class Exec {
                 }
                 executedVariable.addValueFlow(() => this.getValue(node.params[1]));
             } else if (node.func === 'return') {
-                // 如果是返回节点则返回值
-                return this.getValue(node.params[0]);
+                // 如果是返回节点则返回值 并结束执行
+                return [this.getValue(node.params[0]), true];
+            }
+        } else if (node instanceof Branch) {
+            // 如果是分支节点则检查分支条件 并执行对应分支
+            const branch = node as Branch;
+            const conditions: LogicNode[] = branch.conditions;
+            for (let i = 0; i < conditions.length; i++) {
+                const condition = conditions[i];
+                if (this.getValue(condition)) {
+                    return this.walkThroughLogic(branch.branches[i]);
+                }
             }
         }
         // 递归
         if (node.execNodes) {
-            let result = null;
-            node.execNodes.forEach((child) => {
-                result = this.walkThroughLogic(child);
-            });
-            return result;
+            for (let i = 0; i < node.execNodes.length; i++) {
+                const child = node.execNodes[i];
+                const [result, end] = this.walkThroughLogic(child);
+                if (end) {
+                    return [result, end];
+                } else if (i === node.execNodes.length - 1) {
+                    return [result, false];
+                }
+            }
         }
-        return null;
+        return [null, false];
     }
 
     /**
@@ -174,11 +191,7 @@ export class Exec {
             }
         } else if (node.execNodes.length > 0) {
             // 处理值为函数返回值的情况
-            let result = null;
-            node.execNodes.forEach((child) => {
-                // 逐行运行
-                result = this.walkThroughLogic(child);
-            });
+            const [result, end] = this.walkThroughLogic(node);
             return result;
         }
         return null;

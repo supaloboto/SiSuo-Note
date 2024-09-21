@@ -2,7 +2,6 @@ import {runFormula as executeFormula} from './runExpression'
 import * as Math from './math.js';
 import * as Date from './date.js';
 import * as String from './string.js';
-import * as Logic from './logic.js';
 // 获取math.js中的所有函数名称，用于判断公式中是否包含函数
 let functionNames = [];
 import("./math.js").then(res => {
@@ -17,11 +16,6 @@ import("./date").then(res => {
 let stringFunctionNames = [];
 import("./string").then(res => {
     stringFunctionNames = Object.keys(res);
-});
-// 获取逻辑公式
-let logicFunctionNames = [];
-import("./logic").then(res => {
-    logicFunctionNames = Object.keys(res);
 });
 
 /**

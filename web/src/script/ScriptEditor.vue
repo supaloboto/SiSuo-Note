@@ -70,8 +70,7 @@
         </div>
         <h4>输出</h4>
         <div v-for="item in outputList" :key="item.name">
-          <span>{{ item.name }} : </span>
-          <input v-model="item.value" type="text" />
+          <p>{{ item.name }} : {{ item.value }}</p>
         </div>
       </div>
     </div>

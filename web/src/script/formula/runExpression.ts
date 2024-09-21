@@ -8,8 +8,6 @@
 // math和logic模块暂时以JS格式保留
 // @ts-ignore
 import * as Math from "./math";
-// @ts-ignore
-import * as Logic from "./logic";
 
 // // 获取math.js中的所有函数名称，用于判断公式中是否包含函数
 // let functionNames = [];
@@ -35,19 +33,19 @@ export function runFormula(operator: string, args: any[]): any {
         case '%':
             return Math.MOD(...args);
         case '<':
-            return Logic.LESS(...args);
+            return args[0] < args[1];
         case '<=':
-            return Logic.LESSEQUAL(...args);
+            return args[0] <= args[1];
         case '>':
-            return Logic.GREATER(...args);
+            return args[0] > args[1];
         case '>=':
-            return Logic.GREATEREQUAL(...args);
+            return args[0] >= args[1];
         case '=':
         case '==':
-            return Logic.EQUAL(...args);
+            return args[0] == args[1];
         case '!=':
         case '<>':
-            return !Logic.EQUAL(...args);
+            return args[0] != args[1];
         default:
             // TODO 运算符未识别提示方式
             console.error('未识别的运算符: ', operator);
