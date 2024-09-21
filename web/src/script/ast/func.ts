@@ -21,6 +21,9 @@ export class ASTFuncNodeFactory {
         funcNode.leftChild = new TreeNodeSet();
         if (params) {
             params.children.forEach((param) => {
+                if (param.content === ',' || param.content === ';') {
+                    return;
+                }
                 const paramNode = new VarNode(param.content);
                 paramNodes.push(paramNode);
                 (funcNode.leftChild as TreeNodeSet).addNode(paramNode);

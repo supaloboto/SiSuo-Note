@@ -131,18 +131,30 @@ export class Variable extends LogicNode {
  */
 export class TreeRender {
     private _logicRoot: LogicNode;
+    private _context: TreeNodeSet;
 
-    constructor(astTreeNodeSet: TreeNodeSet) {
+    constructor(astContext: TreeNodeSet) {
         // 初始化逻辑根节点
         this._logicRoot = new LogicNode();
         // 遍历AST树节点集合 渲染逻辑树
-        astTreeNodeSet.getNodes().forEach((node) => {
-            this._logicRoot.execNodes.push(this.astNodeToLogicNode(node));
-        });
+        this._context = astContext;
     }
 
     get logicRoot() {
         return this._logicRoot;
+    }
+
+    /**
+     * 渲染逻辑树
+     */
+    render() {
+        this._context.getNodes().forEach((node) => {
+            // 越过函数声明节点 函数声明节点在函数被调用的地方处理
+            if (node instanceof FuncNode) {
+                return;
+            }
+            this._logicRoot.execNodes.push(this.astNodeToLogicNode(node));
+        });
     }
 
     /**
@@ -152,10 +164,18 @@ export class TreeRender {
         // 根据ast节点类型进行处理
         if (astTreeNode instanceof TreeNodeSet) {
             // 递归处理树节点集合
-            return new TreeRender(astTreeNode)._logicRoot;
+            const subTreeRender = new TreeRender(astTreeNode);
+            // 使下级逻辑树可以使用当前节点的变量和方法
+            subTreeRender._logicRoot.variables.push(...this._logicRoot.variables);
+            subTreeRender._logicRoot.inputs.push(...this._logicRoot.inputs);
+            subTreeRender.render();
+            return subTreeRender._logicRoot;
         } else if (astTreeNode instanceof VarNode) {
             // 处理变量引用节点
             return this.transVariable(astTreeNode);
+        } else if (astTreeNode instanceof ConstNode) {
+            // 处理常量节点
+            return new Constant(astTreeNode.value);
         } else if (astTreeNode.operator === 'var' || astTreeNode.operator === 'ref') {
             // 处理变量声明节点
             const variableNode = new Variable(
@@ -164,11 +184,14 @@ export class TreeRender {
                 astTreeNode.rightChild ? this.astNodeToLogicNode(astTreeNode.rightChild) : new Constant(null)
             );
             // 记录变量
-            this._logicRoot.variables.push(variableNode);
+            if (this._logicRoot.variables.map(d => d.name).indexOf(variableNode.name) === -1) {
+                this._logicRoot.variables.push(variableNode);
+            } else {
+                // 替换已经声明的变量 这种情况出现在函数调用时 若函数内部有变量和外部变量同名 则会被替换
+                const index = this._logicRoot.variables.findIndex(d => d.name === variableNode.name);
+                this._logicRoot.variables[index] = variableNode;
+            }
             return variableNode;
-        } else if (astTreeNode instanceof ConstNode) {
-            // 处理常量节点
-            return new Constant(astTreeNode.value);
         }
         // 处理普通节点
         return this.transNode(astTreeNode);
@@ -197,40 +220,78 @@ export class TreeRender {
     }
 
     /**
-     * 将AST普通节点转换为逻辑节点
+     * 将AST数据操作节点转换为逻辑节点
      */
     private transNode(node: TreeNode): LogicNode {
-        // // 判断节点的操作是否是方法调用
-        // //TODO 处理内置方法
-        // if (functions.map(d => d.name).indexOf(node.operator) > -1) {
-        //     // 处理方法调用节点
-        //     const func = functions.find(d => d.name === node.operator) as FuncNode;
-        //     const calc = new Calc();
-        //     calc.func = func.name;
-        //     // 处理参数
-        //     node.children.forEach((child) => {
-        //         calc.params.push(this.transNode(child, variables, functions));
-        //     });
-        //     return calc;
-        // }
-
-
-
-        // 处理方法调用节点
-        const calc = new Calc();
         if (!node.operator) {
             //TODO 未知操作节点
+            console.error('未知操作节点', node);
             throw new Error('未知操作节点');
         }
-        calc.func = node.operator;
-        if (node.leftChild) {
-            calc.params.push(this.astNodeToLogicNode(node.leftChild));
+        // 判断节点的操作是否是方法调用 如果在可用方法中没有找到此方法 则认为是数学计算
+        //TODO 处理内置方法
+        const funcNode = this._context.functions.find(d => d.func === node.operator) as FuncNode;
+        if (!funcNode) {
+            // 处理数学计算
+            const calc = new Calc();
+            calc.func = node.operator;
+            if (node.leftChild) {
+                calc.params.push(this.astNodeToLogicNode(node.leftChild));
+            }
+            if (node.rightChild) {
+                calc.params.push(this.astNodeToLogicNode(node.rightChild));
+            }
+            return calc;
         }
-        if (node.rightChild) {
-            calc.params.push(this.astNodeToLogicNode(node.rightChild));
-        }
+        return this.transFuncCall(node, funcNode);
+    }
 
-        return calc;
+    /**
+     * 将AST函数调用节点转换为逻辑节点
+     */
+    private transFuncCall(callNode: TreeNode, funcNode: FuncNode): LogicNode {
+        // 处理方法调用
+        const funcBody: TreeNodeSet = funcNode.rightChild as TreeNodeSet;
+        // 取函数的形参和实参
+        const params: TreeNodeSet | null = funcNode.leftChild ? funcNode.leftChild as TreeNodeSet : null;
+        const args: TreeNodeSet | null = callNode.rightChild ? callNode.rightChild as TreeNodeSet : null;
+        //TODO 处理参数不匹配的情况
+        if ((!params && args) || (params && !args)) {
+            console.error('参数不匹配:方法', funcNode.func, '形参', params, '实参', args);
+            throw new Error('参数不匹配');
+        }
+        // 构建下级逻辑树
+        const subTreeRender = new TreeRender(funcBody);
+        // 修改下级逻辑树的上下文
+        if (params && args) {
+            const subContext = new TreeNodeSet();
+            params.getNodes().forEach((node: TreeNode, index: number) => {
+                // 形参
+                const param = node as VarNode;
+                // 实参
+                const arg = args.getNodes()[index] as VarNode;
+                //TODO 处理变量没有找到的情况
+                const varialbleToChange = subTreeRender._context.variables.find(d => d.name === param.name);
+                if (varialbleToChange) {
+                    // 为形参添加变量声明过程 使形参化为实参
+                    const paramToArg = new TreeNode();
+                    paramToArg.operator = 'var';
+                    paramToArg.setLeft(new VarNode(param.name));
+                    paramToArg.setRight(arg);
+                    subContext.addNode(paramToArg);
+                }
+            });
+            subContext.variables = subTreeRender._context.variables;
+            subContext.functions = subTreeRender._context.functions;
+            subTreeRender._context.getNodes().forEach((node: TreeNode) => subContext.addNode(node));
+            subTreeRender._context = subContext;
+        }
+        // 使下级逻辑树可以使用当前节点的变量和方法
+        subTreeRender._logicRoot.variables.push(...this._logicRoot.variables);
+        subTreeRender._logicRoot.inputs.push(...this._logicRoot.inputs);
+        // 构建函数节点
+        subTreeRender.render();
+        return subTreeRender.logicRoot;
     }
 
 }

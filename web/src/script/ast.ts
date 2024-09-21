@@ -9,10 +9,6 @@ import { Token } from "./tokenization.js";
  * @since 2024-09-08
  */
 
-// 内置函数
-//TODO 待完善
-const buildInFunctions: string[] = ['SUM', 'AVG'];
-
 /**
  * 树节点类
  */
@@ -159,6 +155,10 @@ export class VarNode extends TreeNode {
     get name() {
         return this._name;
     }
+
+    set name(value) {
+        this._name = value;
+    }
 }
 
 /**
@@ -229,7 +229,8 @@ export function tokenToAST(tokens: Token[]): TreeNodeSet {
 export class ASTAnalyser {
     // 语法树内部变量集合
     variables: VarNode[] = [];
-    // 语法树内部方法集合 
+    // 语法树内部方法集合
+    //TODO 内置函数集合
     functions: FuncNode[] = [];
     // 节点工厂
     calcFactory: ASTCalcNodeFactory;
@@ -339,7 +340,6 @@ export class ASTAnalyser {
             // 查找函数定义
             const funcNode = this.functions.find((node) => node.func === sentence[0].content);
             if (!funcNode) {
-                //TODO 内置函数集合
                 throw new Error('未定义的函数 ' + sentence[0]);
             }
             // 记录函数调用为AST节点

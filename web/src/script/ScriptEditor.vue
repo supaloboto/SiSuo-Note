@@ -5,7 +5,7 @@
   import tokenize from "@/script/tokenization";
   import { tokenToAST } from "@/script/ast";
   import { TreeRender, Variable } from "@/script/logicTree";
-  import { ExecutedVariable, getOutputs } from "@/script/exec";
+  import { ExecutedVariable, Exec } from "@/script/exec";
 
   // 用户输入的脚本内容
   const scriptTextCodeMirror = ref<any>(null);
@@ -34,14 +34,15 @@
     console.log('ast', ast);
     // 将AST转换为可执行树
     const treeRender = new TreeRender(ast);
+    treeRender.render();
     console.log('logic tree', treeRender);
     // 从可执行树中获取变量声明 整理入参
     const { inputs } = treeRender.logicRoot;
     inputList.value = inputs.map((item: Variable): ExecutedVariable => {
-      return new ExecutedVariable(item.name, '');
+      return new ExecutedVariable(item.name);
     });
     // 整理输出物
-    outputList.value = getOutputs(treeRender.logicRoot.variables as Variable[], inputList.value as ExecutedVariable[]);
+    outputList.value = new Exec().getOutputs(treeRender.logicRoot, inputList.value as ExecutedVariable[]);
   }
 
 </script>

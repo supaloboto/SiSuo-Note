@@ -15,128 +15,190 @@ import { getShortID } from "@/assets/utils/idworker";
 export class ExecutedVariable {
     // 变量名
     private _name: string;
+    // 变量类型 var|ref
+    private _type: string = 'var';
     // 变量的值
-    private _excutedValue: any;
+    private _getValue: Function[] = [];
+    private _value: any;
     // 变量变化时触发的事件
-    private _onValueChange: { id: string, event: Function }[] = [];
+    private _onValueChange: Function[] = [];
 
-    constructor(name: string, value: any) {
+    constructor(name: string) {
         this._name = name;
-        this._excutedValue = value;
-    }
-
-    addChangeEvt(event: Function): string {
-        const id = getShortID();
-        this._onValueChange.push({ id, event });
-        return id;
-    }
-
-    removeChangeEvt(evt: string | Function) {
-        if (typeof evt === 'string') {
-            this._onValueChange = this._onValueChange.filter(e => e.id !== evt);
-        } else {
-            this._onValueChange = this._onValueChange.filter(e => e.event !== evt);
-        }
-    }
-
-    triggerChangeEvt() {
-        this._onValueChange.forEach(e => e.event(this));
     }
 
     get name(): string {
         return this._name;
     }
 
-    get value(): any {
-        return this._excutedValue;
+    get type(): string {
+        return this._type;
     }
 
-    set value(newValue: any) {
-        this._excutedValue = newValue;
-        this.triggerChangeEvt();
+    set type(value: string) {
+        this._type = value;
     }
-}
 
-/**
- * 获取逻辑输出的变量
- * @param defines 变量定义列表 所有的定义都会被转为输出
- * @param inputs 输入数据列表
- */
-export function getOutputs(defines: Variable[], inputs: ExecutedVariable[]): ExecutedVariable[] {
-    // 整理全部变量信息
-    const variableMap: { [key: string]: ExecutedVariable } = {};
-    inputs.forEach((param) => {
-        variableMap[param.name] = param;
-    });
-    // 生成引用
-    return defines.map((define: Variable): ExecutedVariable => {
-        const varRef = new ExecutedVariable(define.name, getValue(define.value, variableMap));
-        // 处理引用类型的变量 使其具备响应式的更新
-        if (define.type === 'ref') {
-            if (define.value instanceof Variable) {
-                // 当引用源是变量时 如果引用源的值变化则触发引用变量的值变化
-                const sourceVar = define.value as Variable;
-                //TODO 处理变量找不到时的情况
-                variableMap[sourceVar.name].addChangeEvt((self: ExecutedVariable) => {
-                    varRef.value = self.value;
-                });
-            } else if (define.value instanceof Calc) {
-                // 当引用源为计算时 如果整个计算逻辑树中有任何一个变量更新了则重新计算
-                setupCalc(varRef, define.value as Calc, variableMap);
-            }
-        }
-        // 记录值 用于值的相互引用
-        variableMap[define.name] = varRef;
-        return varRef;
-    });
-}
-
-/**
- * 获取节点值的方法
- */
-function getValue(node: LogicNode, variableMap: { [key: string]: ExecutedVariable }): any {
-    if (node instanceof Calc) {
-        const calcNode = node as Calc;
-        // 计算节点进行递归计算
-        return runFormula(calcNode.func, calcNode.params.map(param => getValue(param, variableMap)));
-    } else if (node instanceof Constant) {
-        // 常量节点如果是数字则进行转化
-        const constant = node as Constant;
-        if (!isNaN(constant.value)) {
-            return Number(constant.value);
-        } else {
-            return constant.value;
-        }
-    } else if (node instanceof Variable) {
-        // 处理变量
-        const variable = node as Variable;
-        if (variableMap[variable.name]) {
-            return variableMap[variable.name].value;
-        } else {
-            //TODO 未定义的变量
-            return NaN;
-        }
+    addChangeEvt(event: Function) {
+        this._onValueChange.push(event);
     }
-    return null;
-}
 
-/**
- * 设置响应式计算的方法
- */
-function setupCalc(calcResult: ExecutedVariable, calcNode: Calc, variableMap: { [key: string]: ExecutedVariable }) {
-    // 向下递归 给Calc树中所有对应了变量的节点添加值变化事件
-    const giveAllVariableChildEvt = (calcParent: Calc) => {
-        calcParent.params.forEach(param => {
-            if (param instanceof Variable) {
-                //TODO 处理变量找不到时的情况
-                variableMap[param.name].addChangeEvt(() => {
-                    calcResult.value = getValue(calcNode, variableMap);
-                });
-            } else if (param instanceof Calc) {
-                giveAllVariableChildEvt(param as Calc);
-            }
+    addValueFlow(func: Function) {
+        // 更新此变量值的获取流程 并直接触发值更新
+        this._getValue.push(func);
+        this.update();
+    }
+
+    update() {
+        this._getValue.forEach((func) => {
+            this.value = func();
         });
     }
-    // 执行递归
-    giveAllVariableChildEvt(calcNode);
+
+    get value(): any {
+        return this._value;
+    }
+
+    set value(value: any) {
+        this._value = value;
+        this._onValueChange.forEach(evt => evt(this));
+    }
+}
+
+/**
+ * 逻辑树执行工具
+ */
+export class Exec {
+    // 变量映射表 逻辑中出现的所有变量都会在这里记录
+    private variableMap: { [key: string]: ExecutedVariable } = {};
+    // 变量收集缓存 在设置响应计算时会用到 用来追踪所有与目标变量有关的数据 为null代表不启用
+    private relatedValueCacheSet: Set<ExecutedVariable> | null = null;
+
+    constructor() {
+    }
+
+    /**
+     * 获取逻辑输出的变量
+     * @param logicTreeRoot 逻辑树的根节点
+     * @param inputs 输入数据列表
+     */
+    getOutputs(logicTreeRoot: LogicNode, inputs: ExecutedVariable[]): ExecutedVariable[] {
+        // 整理全部变量信息
+        this.variableMap = {};
+        inputs.forEach((param) => {
+            this.variableMap[param.name] = param;
+        });
+        // 递归逻辑树 整理变量的变化过程
+        this.walkThroughLogic(logicTreeRoot);
+        // 整理输出变量
+        const outputs = logicTreeRoot.variables.map((define: Variable): ExecutedVariable => {
+            return this.variableMap[define.name];
+        });
+        // 如果是引用类变量 给逻辑树上的所有节点添加值变化事件
+        //TODO 检查循环引用
+        outputs.forEach(output => {
+            if (output.type !== 'ref') {
+                return;
+            }
+            this.setupRefer(output);
+        });
+        // 返回
+        return outputs;
+    }
+
+    // 递归逻辑树 整理变量的变化过程
+    walkThroughLogic(node: LogicNode): any {
+        // 执行当前逻辑节点
+        if (node instanceof Variable) {
+            // 如果是变量声明节点 则记录逻辑和变量之间的关系
+            const variable = node as Variable;
+            const executedVariable = new ExecutedVariable(variable.name);
+            executedVariable.type = variable.type;
+            executedVariable.addValueFlow(() => this.getValue(variable.value));
+            this.variableMap[variable.name] = executedVariable;
+        } else if (node instanceof Calc) {
+            if (node.func === '=') {
+                // 如果是计算节点则执行计算
+                const variable = node.params[0] as Variable;
+                const executedVariable = this.variableMap[variable.name];
+                if (!executedVariable) {
+                    //TODO 未定义的变量
+                    throw new Error(`未定义的变量:${variable.name}`);
+                }
+                executedVariable.addValueFlow(() => this.getValue(node.params[1]));
+            } else if (node.func === 'return') {
+                // 如果是返回节点则返回值
+                return this.getValue(node.params[0]);
+            }
+        }
+        // 递归
+        if (node.execNodes) {
+            let result = null;
+            node.execNodes.forEach((child) => {
+                result = this.walkThroughLogic(child);
+            });
+            return result;
+        }
+        return null;
+    }
+
+    /**
+     * 获取节点值的方法
+     */
+    getValue(node: LogicNode): any {
+        if (node instanceof Calc) {
+            const calcNode = node as Calc;
+            // 计算节点进行递归计算
+            return runFormula(calcNode.func, calcNode.params.map(param => this.getValue(param)));
+        } else if (node instanceof Constant) {
+            // 常量节点如果是数字则进行转化
+            const constant = node as Constant;
+            if (!isNaN(constant.value)) {
+                return Number(constant.value);
+            } else {
+                return constant.value;
+            }
+        } else if (node instanceof Variable) {
+            // 处理变量
+            const variable = node as Variable;
+            if (this.variableMap[variable.name]) {
+                // 记录此变量的依赖关系
+                const executedVariable = this.variableMap[variable.name];
+                if (this.relatedValueCacheSet) {
+                    this.relatedValueCacheSet.add(executedVariable);
+                }
+                return executedVariable.value;
+            } else {
+                //TODO 未定义的变量
+                return NaN;
+            }
+        } else if (node.execNodes.length > 0) {
+            // 处理值为函数返回值的情况
+            let result = null;
+            node.execNodes.forEach((child) => {
+                // 逐行运行
+                result = this.walkThroughLogic(child);
+            });
+            return result;
+        }
+        return null;
+    }
+
+    /**
+     * 设置响应式计算的方法
+     */
+    setupRefer(refValue: ExecutedVariable) {
+        // 触发值的更新 在这个过程中收集依赖
+        this.relatedValueCacheSet = new Set();
+        refValue.update();
+        // 给所有关联的变量添加修改事件
+        this.relatedValueCacheSet.forEach((relatedValue) => {
+            relatedValue.addChangeEvt(() => {
+                refValue.update();
+            });
+        });
+        // 清空缓存
+        this.relatedValueCacheSet = null;
+    }
+
 }

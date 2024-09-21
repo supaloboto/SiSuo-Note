@@ -1,4 +1,4 @@
-import { ConstNode, TreeNode, VarNode, type ASTAnalyser } from "../ast";
+import { ConstNode, TreeNode, TreeNodeSet, VarNode, type ASTAnalyser } from "../ast";
 import type { Token } from "../tokenization";
 
 /**
@@ -20,9 +20,39 @@ export class ASTCalcNodeFactory {
     assembleCalcNode(tokens: Token[]): TreeNode | null {
         // 组建单个节点
         let resultTreeNode = new TreeNode();
-        // 运算符缓冲 因为运算符起作用的方式收到前后节点关系的影响 所以需要延迟生效
+        // 判断是否为函数调用 若为函数调用则拼装函数节点
+        const funcNode = this.analyser.functions.find((node) => node.func === tokens[0].content);
+        if (funcNode && tokens[1].type === 'bracket') {
+            const funcCallNode = new TreeNode();
+            funcCallNode.operator = tokens[0].content;
+            // 整理函数的入参 将括号内容按逗号或分号分割 然后将分割结果整理为节点集合
+            const argTokenTable: Token[][] = [[]];
+            tokens[1].children.forEach((arg) => {
+                if (arg.content === ',' || arg.content === ';') {
+                    argTokenTable.push([]);
+                } else {
+                    argTokenTable.slice(-1)[0].push(arg);
+                }
+            });
+            const args = new TreeNodeSet();
+            argTokenTable.forEach((argTokenList) => {
+                const argNode = this.assembleCalcNode(argTokenList);
+                if (argNode) {
+                    args.addNode(argNode);
+                }
+            });
+            funcCallNode.setRight(args);
+            // 根据语句是否已经结束判断是否需要继续拼装
+            if (tokens.length == 2) {
+                return funcCallNode;
+            }
+            // 将当前函数节点作为左节点 跳过已经消费了的token 继续拼装
+            resultTreeNode.setLeft(funcCallNode);
+            tokens.splice(0, 2);
+        }
+        // 运算符缓冲 因为运算符起作用的方式受到前后节点关系的影响 所以需要延迟生效
         let currentOperator: string | null = null;
-        // 将遇到引用或者常量时 将其存储为节点的动作
+        // 当遇到引用或者常量时 将其存储为节点的动作
         const updateResultNode = (node: TreeNode) => {
             // 判断当前是否记录了运算符
             if (currentOperator === null) {
