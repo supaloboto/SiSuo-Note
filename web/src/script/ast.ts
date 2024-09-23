@@ -162,6 +162,36 @@ export class VarNode extends TreeNode {
 }
 
 /**
+ * 数组节点类 树节点的一种 用于存储数组变量信息
+ */
+export class ArrayNode extends VarNode {
+    private _items: TreeNode[] = [];
+
+    constructor(name: string) {
+        super(name);
+    }
+
+    get items() {
+        return this._items;
+    }
+}
+
+/**
+ * 结构体节点类 树节点的一种 用于存储结构体变量信息
+ */
+export class StuctNode extends VarNode {
+    private _props: { [key: string]: TreeNode } = {};
+
+    constructor(name: string) {
+        super(name);
+    }
+
+    get props() {
+        return this._props;
+    }
+}
+
+/**
  * 常量节点类 树节点的一种 用于存储常量
  */
 export class ConstNode extends TreeNode {

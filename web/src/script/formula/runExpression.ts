@@ -46,6 +46,10 @@ export function runFormula(operator: string, args: any[]): any {
         case '!=':
         case '<>':
             return args[0] != args[1];
+        case '&&':
+            return args[0] && args[1];
+        case '||':
+            return args[0] || args[1];
         default:
             // TODO 运算符未识别提示方式
             console.error('未识别的运算符: ', operator);

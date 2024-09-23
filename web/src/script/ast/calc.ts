@@ -79,8 +79,8 @@ export class ASTCalcNodeFactory {
             if (['+', '-'].includes(token.content) || ['*', '/', '%'].includes(token.content)) {
                 // 存储运算符
                 currentOperator = token.content;
-            } else if (['>', '>=', '<', '<=', '=', '==', '!=', '<>'].includes(token.content)) {
-                // 比较运算符 比较运算符的两边一定作为此运算符的左右两侧节点 因此此时将当前运算符清空 就地整理节点
+            } else if (['>', '>=', '<', '<=', '=', '==', '!=', '<>', '&&', '||'].includes(token.content)) {
+                // 比较运算符和逻辑运算符 这些符号的两边一定作为此运算符的左右两侧节点 因此此时将当前运算符清空 就地整理节点
                 // 按正常语法 此时的运算符本来也应当是null
                 currentOperator = null;
                 // 截取后续节点 向后找直到碰到逻辑关系符
@@ -97,9 +97,6 @@ export class ASTCalcNodeFactory {
                 }
                 resultTreeNode = this.assembleCompareNode(resultTreeNode, token.content, afterNode);
                 resultTreeNode.operator = token.content;
-            } else if (['&&', '||'].includes(token.content)) {
-                //TODO 处理逻辑关系符
-
             } else if (token.type === 'bracket') {
                 // 当前节点为括号 则递归括号内的内容
                 const siblingNode = this.assembleCalcNode(token.children);
