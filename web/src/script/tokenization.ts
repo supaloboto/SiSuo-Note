@@ -187,10 +187,25 @@ function cutIntoPieces(expressionStr: string): Token[] {
 
             /**=========== 操作符 ===========**/
             case '+': case '-': case '*': case '/': case '%':
-                // 如果碰到数学操作符 则直接存入结果集
-                saveBuffer();
-                saveCurrentChar(char, 'operator');
-                break;
+                // 数学操作符可能和后一个操作符拼接为一个操作
+                if (charIndex < expressionStr.length - 1 && expressionStr[charIndex + 1] === '=') {
+                    saveBuffer();
+                    charIndex++;
+                    cursor.end.col++;
+                    saveCurrentChar(`${char}=`, 'operator');
+                    break;
+                } else if (charIndex < expressionStr.length - 1 && (char === '+' || char === '-') && expressionStr[charIndex + 1] === char) {
+                    saveBuffer();
+                    charIndex++;
+                    cursor.end.col++;
+                    saveCurrentChar(`${char}${char}`, 'operator');
+                    break;
+                } else {
+                    // 单纯的数学操作符直接存入结果集
+                    saveBuffer();
+                    saveCurrentChar(char, 'operator');
+                    break;
+                }
             case '<': case '>': case '=': case '!':
                 // 逻辑类字符 可能和后续的'='字符拼接为一个操作 或者出现'<>'的情况
                 if (charIndex < expressionStr.length - 1 && expressionStr[charIndex + 1] === '=') {

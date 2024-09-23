@@ -283,10 +283,10 @@ export class ASTAnalyser {
             sentenceEnd = fullSentence.length;
         }
         const sentence = fullSentence.slice(0, sentenceEnd);
-        // 解析语句开头关键字
+        // =============== 解析语句开头关键字 ===============
         const sentenceType = sentence[0].content;
         if (sentenceType === 'var' || sentenceType === 'ref') {
-            // 解析变量定义语句
+            // ------------- 解析变量定义语句 -------------
             const treeNode = new TreeNode();
             const varNode = new VarNode(sentence[1].content);
             // 记录变量信息
@@ -297,7 +297,7 @@ export class ASTAnalyser {
             treeNode.setRight(this.calcFactory.assembleCalcNode(sentence.slice(3)));
             return [treeNode, sentenceEnd];
         } else if (sentenceType === 'if' || sentenceType === 'elseif' || sentenceType === 'else') {
-            // 解析if语句
+            // ------------- 解析if语句 -------------
             const ifNode = new TreeNode();
             ifNode.operator = sentenceType;
             const condition = sentenceType === 'else' ? null : this.calcFactory.assembleCalcNode(sentence[1].children);
@@ -308,17 +308,36 @@ export class ASTAnalyser {
             // 语句结束于函数体闭合位置
             return sentenceType === 'else' ? [ifNode, 1] : [ifNode, 2];
         } else if (sentenceType === 'for') {
-            //TODO 解析for语句
+            // ------------- 解析for语句 -------------
             const forNode = new TreeNode();
             forNode.operator = sentenceType;
-            const condition = this.calcFactory.assembleCalcNode(sentence.slice(1));
-            const funcBody = this.getAST(sentence.slice(2));
-            funcBody.setLeft(condition);
-            funcBody.setRight(funcBody);
+            // 第一个括号为循环变量定义和值变化
+            const condition: TreeNodeSet = this.funcFactory.getForiLoopConditionSet(sentence[1]);
+            // 第二个括号为循环体
+            const funcBody: TreeNode = this.funcFactory.getForiLoopBodyNode(sentence[2], condition.variables[0]);
+            forNode.setLeft(condition);
+            forNode.setRight(funcBody);
             // 语句结束于函数体闭合位置
-            return [funcBody, 2];
+            return [forNode, 2];
+        } else if (sentenceType === 'while') {
+            // ------------- 解析while语句 -------------
+            const whileNode = new TreeNode();
+            whileNode.operator = sentenceType;
+            // 第一个括号为循环条件
+            const condition: TreeNode = this.calcFactory.assembleCalcNode(sentence[1].children)!;
+            // 第二个括号为循环体
+            const funcBody: TreeNode = this.funcFactory.getForiLoopBodyNode(sentence[2], null);
+            whileNode.setLeft(condition);
+            whileNode.setRight(funcBody);
+            // 语句结束于函数体闭合位置
+            return [whileNode, 2];
+        } else if (sentenceType === 'break' || sentenceType === 'continue') {
+            // ------------- 解析循环控制语句 -------------
+            const treeNode = new TreeNode();
+            treeNode.operator = sentenceType;
+            return [treeNode, sentenceEnd];
         } else if (sentenceType === 'function') {
-            // 解析函数定义语句
+            // ------------- 解析函数定义语句 -------------
             const funcNode = this.funcFactory.assembleFuncNode(sentence[2], sentence[3]);
             funcNode.operator = 'function';
             funcNode.func = sentence[1].content;
@@ -327,28 +346,42 @@ export class ASTAnalyser {
             // 语句结束于函数体闭合位置
             return [funcNode, 3];
         } else if (sentenceType === 'return') {
-            //TODO 解析返回语句
+            // ------------- 解析返回语句 -------------
             const treeNode = new TreeNode();
             treeNode.operator = 'return';
             treeNode.setLeft(this.calcFactory.assembleCalcNode(sentence.slice(1)));
             return [treeNode, sentenceEnd];
         }
 
-        // 关键字没有命中时 解析语句动作类型
+        // =============== 关键字没有命中时 解析语句动作类型 ===============
         if (sentence[1].content === '=') {
-            // 解析赋值语句
+            // ------------- 解析赋值语句 -------------
             const treeNode = new TreeNode();
             treeNode.operator = '=';
             const varNode = this.variables.find((node) => node.name === sentence[0].content);
-            //TODO 处理变量找不到时的情况
             if (!varNode) {
                 throw new Error('未定义的变量 ' + sentence[0]);
             }
             treeNode.linkLeft(varNode);
-            treeNode.setRight(this.calcFactory.assembleCalcNode(sentence.splice(2)));
+            treeNode.setRight(this.calcFactory.assembleCalcNode(sentence.slice(2)));
+            return [treeNode, sentenceEnd];
+        } else if (['+=', '-=', '*=', '/=', '%='].includes(sentence[1].content)) {
+            // ------------- 解析复合赋值语句 -------------
+            const treeNode = new TreeNode();
+            treeNode.operator = '=';
+            const varNode = this.variables.find((node) => node.name === sentence[0].content);
+            if (!varNode) {
+                throw new Error('未定义的变量 ' + sentence[0]);
+            }
+            treeNode.linkLeft(varNode);
+            // 复合赋值语句右侧为计算节点
+            const operatorToken = new Token('assist', sentence[1].content[0], sentence[1].start, sentence[1].end);
+            const calcTokens = [sentence[0], operatorToken, ...sentence.slice(2)];
+            const calcNode = this.calcFactory.assembleCalcNode(calcTokens);
+            treeNode.setRight(calcNode);
             return [treeNode, sentenceEnd];
         } else if (sentence[1].type === 'bracket') {
-            // 解析函数调用语句 
+            // ------------- 解析函数调用语句 -------------
             const treeNode = new TreeNode();
             // 查找函数定义
             const funcNode = this.functions.find((node) => node.func === sentence[0].content);
@@ -357,12 +390,11 @@ export class ASTAnalyser {
             }
             // 记录函数调用为AST节点
             treeNode.operator = funcNode.func;
-            //TODO 入参
             treeNode.setRight(this.getAST(sentence[1].children));
             return [treeNode, sentenceEnd];
         }
 
-        // 未知语句类型
+        // =============== 未知语句类型 ===============
         throw new Error('未知语句类型 ' + sentence);
     }
 

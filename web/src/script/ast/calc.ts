@@ -1,5 +1,5 @@
 import { ConstNode, TreeNode, TreeNodeSet, VarNode, type ASTAnalyser } from "../ast";
-import type { Token } from "../tokenization";
+import { Token } from "../tokenization";
 
 /**
  * AST计算节点工厂

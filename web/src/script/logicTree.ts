@@ -32,6 +32,17 @@ export class LogicNode {
     get execNodes() {
         return this._execNodes;
     }
+
+    addInput(input: Variable) {
+        if (this._inputs.map(d => d.name).indexOf(input.name) === -1) {
+            this._inputs.push(input);
+        } else {
+            // 替换已经声明的变量
+            const index = this._inputs.findIndex(d => d.name === input.name);
+            this._inputs[index] = input;
+        }
+    }
+
 }
 
 /**
@@ -90,10 +101,48 @@ export class Branch extends LogicNode {
  * 循环节点 处理for/while
  */
 export class Loop extends LogicNode {
+    // 循环类型
+    private _type: 'for' | 'while';
+    // 循环条件
+    private _condition: Calc | null = null;
+    // 游标量
+    private _cursor: Variable | null = null;
+    // 游标变化
+    private _cursorChange: LogicNode | null = null;
 
-    constructor() {
+    constructor(type: 'for' | 'while') {
         super();
+        this._type = type;
     }
+
+    get type() {
+        return this._type;
+    }
+
+    get condition() {
+        return this._condition;
+    }
+
+    set condition(value) {
+        this._condition = value;
+    }
+
+    get cursor() {
+        return this._cursor;
+    }
+
+    set cursor(value) {
+        this._cursor = value;
+    }
+
+    get cursorChange() {
+        return this._cursorChange;
+    }
+
+    set cursorChange(value) {
+        this._cursorChange = value;
+    }
+
 }
 
 /**
@@ -206,31 +255,35 @@ export class TreeRender {
      * 将AST树节点转换为逻辑树节点
      */
     astNodeToLogicNode(astTreeNode: TreeNode): LogicNode {
-        // 根据ast节点类型进行处理
+        // ============== 根据ast节点类型进行处理 ==============
         if (astTreeNode instanceof TreeNodeSet) {
-            // 递归处理树节点集合
+            // -------------- 递归处理树节点集合 --------------
             const subTreeRender = new TreeRender(astTreeNode);
             // 使下级逻辑树可以使用当前节点的变量和方法
             subTreeRender._logicRoot.variables.push(...this._logicRoot.variables);
             subTreeRender._logicRoot.inputs.push(...this._logicRoot.inputs);
             subTreeRender.render();
+            // 从下级逻辑树取得引用变量
+            if (subTreeRender._logicRoot.inputs.length > 0) {
+                subTreeRender._logicRoot.inputs.forEach((input) => this._logicRoot.addInput(input));
+            }
             return subTreeRender._logicRoot;
         } else if (astTreeNode instanceof VarNode) {
-            // 处理变量引用节点
+            // -------------- 处理变量引用节点 --------------
             return this.transVariable(astTreeNode);
         } else if (astTreeNode instanceof ConstNode) {
-            // 处理常量节点
+            // -------------- 处理常量节点 --------------
             return new Constant(astTreeNode.value);
         }
 
-        // 如果节点类型为一般节点 则根据操作符进行处理
+        // ============== 如果节点类型为一般节点 则根据操作符进行处理 ==============
         if (!astTreeNode.operator) {
             //TODO 未知操作节点
             console.error('未知操作节点', astTreeNode);
             throw new Error('未知操作节点');
         }
         if (astTreeNode.operator === 'var' || astTreeNode.operator === 'ref') {
-            // 处理变量声明节点
+            // -------------- 处理变量声明节点 --------------
             const variableNode = new Variable(
                 (astTreeNode.leftChild as VarNode).name,
                 astTreeNode.operator,
@@ -246,7 +299,7 @@ export class TreeRender {
             }
             return variableNode;
         } else if (astTreeNode.operator === 'if' || astTreeNode.operator === 'elseif' || astTreeNode.operator === 'else') {
-            // 处理if节点
+            // -------------- 处理if节点 --------------
             const ifNode = new Branch();
             // 处理条件
             const condition = astTreeNode.operator === 'else' ? new Constant(true) : this.astNodeToLogicNode(astTreeNode.leftChild as TreeNode);
@@ -258,21 +311,51 @@ export class TreeRender {
             ifNode.conditions.push(condition);
             ifNode.branches.push(thenBranch);
             return ifNode;
+        } else if (astTreeNode.operator === 'for') {
+            // -------------- 处理for节点 --------------
+            const loopNode = new Loop('for');
+            // 取出循环变量定义 条件 值变化语句
+            const loopParams = astTreeNode.leftChild as TreeNodeSet;
+            // 处理游标变量
+            const cursorAST = loopParams.getNodes()[0] as TreeNode;
+            const cursor = new Variable(
+                (cursorAST.leftChild as VarNode).name,
+                'var',
+                cursorAST.rightChild ? this.astNodeToLogicNode(cursorAST.rightChild) : new Constant(null)
+            );
+            loopNode.cursor = cursor;
+            // 临时添加进变量列表 以方便后续拼接
+            this._logicRoot.variables.push(cursor);
+            // 处理条件
+            loopNode.condition = this.transCalc(loopParams.getNodes()[1] as TreeNode);
+            // 处理游标变化
+            const cursorChange = this.astNodeToLogicNode(loopParams.getNodes()[2] as TreeNode);
+            loopNode.cursorChange = cursorChange;
+            // 处理循环体 循环体相当于一次函数调用
+            const loopBodyAST = astTreeNode.rightChild as TreeNode;
+            const loopBodyNode = this.transFuncCall(loopBodyAST, loopBodyAST.leftChild as FuncNode);
+            loopNode.execNodes.push(loopBodyNode);
+            // 去掉临时添加的变量
+            this._logicRoot.variables.pop();
+            // 返回
+            return loopNode;
+        } else if (astTreeNode.operator === 'while') {
+            // -------------- 处理while节点 --------------
+            const loopNode = new Loop('while');
+            // 处理条件
+            loopNode.condition = this.transCalc(astTreeNode.leftChild as TreeNode);
+            // 处理循环体 循环体相当于一次函数调用
+            const loopBodyAST = astTreeNode.rightChild as TreeNode;
+            const loopBodyNode = this.transFuncCall(loopBodyAST, loopBodyAST.leftChild as FuncNode);
+            loopNode.execNodes.push(loopBodyNode);
+            // 返回
+            return loopNode;
         }
-        // 判断节点的操作是否是方法调用 如果在可用方法中没有找到此方法 则认为是数学计算
+        // ============== 判断节点的操作是否是方法调用 如果在可用方法中没有找到此方法 则认为是数学计算 ==============
         //TODO 处理内置方法
         const funcNode = this._context.functions.find(d => d.func === astTreeNode.operator) as FuncNode;
         if (!funcNode) {
-            // 处理数学计算
-            const calc = new Calc();
-            calc.func = astTreeNode.operator;
-            if (astTreeNode.leftChild) {
-                calc.params.push(this.astNodeToLogicNode(astTreeNode.leftChild));
-            }
-            if (astTreeNode.rightChild) {
-                calc.params.push(this.astNodeToLogicNode(astTreeNode.rightChild));
-            }
-            return calc;
+            return this.transCalc(astTreeNode);
         }
         return this.transFuncCall(astTreeNode, funcNode);
     }
@@ -288,7 +371,7 @@ export class TreeRender {
             const refer = new Variable(variable, 'import', new Constant(null));
             // 记录使用到了此参数
             if (this._logicRoot.inputs.map(d => d.name).indexOf(variable) === -1) {
-                this._logicRoot.inputs.push(refer);
+                this._logicRoot.addInput(refer);
             }
             return refer;
         } else if (this._logicRoot.variables.map(d => d.name).indexOf(variable) > -1) {
@@ -297,6 +380,22 @@ export class TreeRender {
         }
         //TODO 处理未定义变量
         throw new Error(`未定义变量:${node.name}`);
+    }
+
+    /**
+     * 将AST数学计算节点转换为逻辑节点
+     */
+    private transCalc(node: TreeNode): Calc {
+        // 处理数学计算
+        const calc = new Calc();
+        calc.func = node.operator!;
+        if (node.leftChild) {
+            calc.params.push(this.astNodeToLogicNode(node.leftChild));
+        }
+        if (node.rightChild) {
+            calc.params.push(this.astNodeToLogicNode(node.rightChild));
+        }
+        return calc;
     }
 
     /**
@@ -344,6 +443,10 @@ export class TreeRender {
         subTreeRender._logicRoot.inputs.push(...this._logicRoot.inputs);
         // 构建函数节点
         subTreeRender.render();
+        // 从下级逻辑树取得引用变量
+        if (subTreeRender._logicRoot.inputs.length > 0) {
+            subTreeRender._logicRoot.inputs.forEach((input) => this._logicRoot.addInput(input));
+        }
         return subTreeRender.logicRoot;
     }
 
