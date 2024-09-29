@@ -1,6 +1,8 @@
+import type { V } from "node_modules/vite/dist/node/types.d-aGj9QkWt";
 import { ASTCalcNodeFactory } from "./ast/calc";
 import { ASTFuncNodeFactory } from "./ast/func";
 import { Token } from "./tokenization.js";
+import { get } from "node_modules/axios/index.cjs";
 
 /**
  * AST抽象语法树
@@ -122,22 +124,18 @@ export class TreeNode {
 }
 
 /**
- * 函数节点类 树节点的一种 用于存储函数信息
- * operator为'function' _func为函数名 左节点为函数入参TreeNodeSet 右节点为函数体TreeNodeSet
+ * 常量节点类 树节点的一种 用于存储常量
  */
-export class FuncNode extends TreeNode {
-    private _func: string = '';
+export class ConstNode extends TreeNode {
+    private _value: any;
 
-    constructor() {
+    constructor(value: any) {
         super();
+        this._value = value;
     }
 
-    get func() {
-        return this._func;
-    }
-
-    set func(value) {
-        this._func = value;
+    get value() {
+        return this._value;
     }
 }
 
@@ -164,11 +162,11 @@ export class VarNode extends TreeNode {
 /**
  * 数组节点类 树节点的一种 用于存储数组变量信息
  */
-export class ArrayNode extends VarNode {
+export class ArrayNode extends TreeNode {
     private _items: TreeNode[] = [];
 
-    constructor(name: string) {
-        super(name);
+    constructor() {
+        super();
     }
 
     get items() {
@@ -179,11 +177,11 @@ export class ArrayNode extends VarNode {
 /**
  * 结构体节点类 树节点的一种 用于存储结构体变量信息
  */
-export class StuctNode extends VarNode {
+export class StuctNode extends TreeNode {
     private _props: { [key: string]: TreeNode } = {};
 
-    constructor(name: string) {
-        super(name);
+    constructor() {
+        super();
     }
 
     get props() {
@@ -192,18 +190,47 @@ export class StuctNode extends VarNode {
 }
 
 /**
- * 常量节点类 树节点的一种 用于存储常量
+ * 变量引用类 树节点的一种 用于存储变量引用信息
+ * 当直接引用基础类型变量时 引用者可以直接与变量做link操作 但如果引用的是数组或结构体 则需要在link变量的基础上再添加对下标或属性名的引用参数
  */
-export class ConstNode extends TreeNode {
-    private _value: any;
+export class PointerNode extends TreeNode {
+    private _point_index: TreeNode | null = null;
 
-    constructor(value: any) {
+    constructor() {
         super();
-        this._value = value;
     }
 
-    get value() {
-        return this._value;
+    pointTo(varNode: VarNode, index: TreeNode) {
+        this.linkLeft(varNode);
+        this._point_index = index;
+    }
+
+    get target(): VarNode {
+        return this.leftChild as VarNode;
+    }
+
+    get index() {
+        return this._point_index;
+    }
+}
+
+/**
+ * 函数节点类 树节点的一种 用于存储函数信息
+ * operator为'function' _func为函数名 左节点为函数入参TreeNodeSet 右节点为函数体TreeNodeSet
+ */
+export class FuncNode extends TreeNode {
+    private _func: string = '';
+
+    constructor() {
+        super();
+    }
+
+    get func() {
+        return this._func;
+    }
+
+    set func(value) {
+        this._func = value;
     }
 }
 
@@ -388,7 +415,7 @@ export class ASTAnalyser {
             // ------------- 解析赋值语句 -------------
             const treeNode = new TreeNode();
             treeNode.operator = '=';
-            const varNode = this.variables.find((node) => node.name === sentence[0].content);
+            const varNode = this.getVarNode(sentence[0]);
             if (!varNode) {
                 throw new Error('未定义的变量 ' + sentence[0]);
             }
@@ -399,7 +426,7 @@ export class ASTAnalyser {
             // ------------- 解析复合赋值语句 -------------
             const treeNode = new TreeNode();
             treeNode.operator = '=';
-            const varNode = this.variables.find((node) => node.name === sentence[0].content);
+            const varNode = this.getVarNode(sentence[0]);
             if (!varNode) {
                 throw new Error('未定义的变量 ' + sentence[0]);
             }
@@ -426,6 +453,55 @@ export class ASTAnalyser {
 
         // =============== 未知语句类型 ===============
         throw new Error('未知语句类型 ' + sentence);
+    }
+
+    /**
+     * 根据token获取变量节点
+     */
+    getVarNode(token: Token): VarNode | ArrayNode | StuctNode | PointerNode | undefined {
+        const varName = token.content;
+        // 获取变量或引用
+        const getVarOrImport = (name: string): VarNode | undefined => {
+            const varNode = name.startsWith('@') ? new VarNode(name) : this.variables.find((node) => node.name === name);
+            if (!varNode) {
+                return undefined;
+            }
+            return varNode as VarNode;
+        }
+        // 当token没有下级时 代表为基础变量或对象引用
+        if (token.children.length === 0) {
+            // 检查是否为对象引用
+            if (varName.includes('.')) {
+                const [pointerName, index] = varName.split('.');
+                const pointer = getVarOrImport(pointerName);
+                if (!pointer) {
+                    return undefined;
+                }
+                const pointerNode = new PointerNode();
+                pointerNode.pointTo(pointer, new ConstNode(index));
+                return pointerNode;
+            } else {
+                return this.variables.find((node) => node.name === varName);
+            }
+        }
+        // 当token有下级时按数组语法处理
+        // 若token的content为空 代表为新建数组或对象
+        if (!varName) {
+            if (token.type === 'array') {
+                return this.calcFactory.getArrayNode(token);
+            }
+            if (token.type === 'function') {
+                return this.calcFactory.getStructNode(token)
+            }
+        }
+        // 若token的content不为空 代表为数组引用 或以数组引用形式进行的对象引用
+        const pointerNode = new PointerNode();
+        const pointer = getVarOrImport(varName);
+        if (!pointer) {
+            return undefined;
+        }
+        pointerNode.pointTo(pointer, this.calcFactory.assembleCalcNode(token.children)!);
+        return pointerNode;
     }
 
 }

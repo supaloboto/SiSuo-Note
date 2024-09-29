@@ -1,4 +1,4 @@
-import { ConstNode, TreeNode, TreeNodeSet, VarNode, type ASTAnalyser } from "../ast";
+import { ArrayNode, ConstNode, StuctNode, TreeNode, TreeNodeSet, VarNode, type ASTAnalyser } from "../ast";
 import { Token } from "../tokenization";
 
 /**
@@ -12,6 +12,55 @@ export class ASTCalcNodeFactory {
 
     constructor(analyser: ASTAnalyser) {
         this.analyser = analyser;
+    }
+
+    /**
+     * 整理数组节点
+     */
+    getArrayNode(token: Token): ArrayNode {
+        const array = new ArrayNode();
+        let currentItems: Token[] = [];
+        for (let i = 0; i < token.children.length; i++) {
+            // 跳过逗号
+            if (token.children[i].content !== ',') {
+                currentItems.push(token.children[i]);
+            }
+            // 组建一个数组项
+            if (token.children[i].content === ',' || i === token.children.length - 1) {
+                array.items.push(this.assembleCalcNode(currentItems)!);
+                currentItems = [];
+                continue;
+            }
+        }
+        return array;
+    }
+
+    /**
+     * 整理对象节点
+     */
+    getStructNode(token: Token): StuctNode {
+        const struct = new StuctNode();
+        let key: string = '';
+        let valueItems: Token[] = [];
+        for (let i = 0; i < token.children.length; i++) {
+            const item = token.children[i];
+            // 跳过冒号和逗号 当前无key则为key 当前有key则为value
+            if (item.content !== ':' && item.content !== ',') {
+                if (!key) {
+                    key = item.content;
+                } else {
+                    valueItems.push(item);
+                }
+            }
+            // 组建一个键值对
+            if (item.content === ',' || i === token.children.length - 1) {
+                struct.props[key] = this.assembleCalcNode(valueItems)!;
+                key = '';
+                valueItems = [];
+                continue;
+            }
+        }
+        return struct;
     }
 
     /**
@@ -108,10 +157,11 @@ export class ASTCalcNodeFactory {
                 updateResultNode(siblingNode);
             } else {
                 // 当前节点为变量或者常量
-                const varNode = token.content.startsWith('@') ? new VarNode(token.content) : this.analyser.variables.find((node) => node.name === token.content);
+                const varNode = this.analyser.getVarNode(token);
                 if (varNode) {
                     updateResultNode(varNode);
                 } else {
+                    //TODO 判断是否真的是常量而不是拼写错误
                     updateResultNode(new ConstNode(token.content));
                 }
             }

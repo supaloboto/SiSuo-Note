@@ -1,4 +1,4 @@
-import { LogicNode, Calc, Constant, Variable, Branch, Loop } from "./logicTree";
+import { LogicNode, Calc, Constant, Variable, Branch, Loop, Struct, VarArray, Pointer } from "./logicTree";
 import { runFormula } from "./formula/runExpression";
 
 /**
@@ -53,7 +53,7 @@ export class ExecutedVariable {
     addValueFlow(func: Function) {
         // 更新此变量值的获取流程 并更新值
         this._getValue.push(func);
-        this.value = func();
+        this.value = func(this);
     }
 
     update() {
@@ -65,7 +65,7 @@ export class ExecutedVariable {
         // 将值置为null 将整个获取流程重新执行一遍
         this._value = null;
         this._getValue.forEach((func) => {
-            this._value = func();
+            this._value = func(this);
         });
         // 值更新完成后触发事件
         this._onValueChange.forEach(evt => evt(this));
@@ -143,13 +143,33 @@ export class Exec {
         } else if (node instanceof Calc) {
             if (node.func === '=') {
                 // 如果是计算节点则执行计算
-                const variable = node.params[0] as Variable;
-                const executedVariable = this.variableMap[variable.name];
-                if (!executedVariable) {
-                    //TODO 未定义的变量
-                    throw new Error(`未定义的变量:${variable.name}`);
+                // 获取等号左侧的变量 如果是引用则处理引用
+                if (node.params[0] instanceof Pointer) {
+                    const pointer = node.params[0] as Pointer;
+                    const targetValue = this.variableMap[(pointer.target as Variable).name];
+                    if (!targetValue) {
+                        //TODO 未定义的变量 或者变量在此处不为数组或对象
+                        throw new Error(`错误的引用对象:${(pointer.target as Variable).name}`);
+                    }
+                    // 根据下标设置对应的值
+                    const index = this.getValue(pointer.index!);
+                    targetValue.addValueFlow((self: ExecutedVariable) => {
+                        if (self.value instanceof Array) {
+                            self.value[index] = this.getValue(node.params[1]);
+                        } else if (self.value instanceof Object) {
+                            self.value[index] = this.getValue(node.params[1]);
+                        }
+                        return self.value;
+                    });
+                } else {
+                    const variable = node.params[0] as Variable;
+                    const executedVariable = this.variableMap[variable.name];
+                    if (!executedVariable) {
+                        //TODO 未定义的变量
+                        throw new Error(`错误的变量:${variable.name}`);
+                    }
+                    executedVariable.addValueFlow(() => this.getValue(node.params[1]));
                 }
-                executedVariable.addValueFlow(() => this.getValue(node.params[1]));
             } else if (node.func === 'return') {
                 // 如果是返回节点则返回值 并结束执行
                 return [this.getValue(node.params[0]), STATE_RETURN];
@@ -251,6 +271,30 @@ export class Exec {
                 //TODO 未定义的变量
                 return NaN;
             }
+        } else if (node instanceof VarArray) {
+            // 处理数组
+            const array = node as VarArray;
+            return array.items.map((item) => this.getValue(item));
+        } else if (node instanceof Struct) {
+            // 处理结构体
+            const struct = node as Struct;
+            const result: { [key: string]: any } = {};
+            for (const key in struct.props) {
+                result[key] = this.getValue(struct.props[key]);
+            }
+            return result;
+        } else if (node instanceof Pointer) {
+            // 处理指向
+            // 找到指向的变量
+            const pointer = node as Pointer;
+            const targetValue = this.variableMap[(pointer.target as Variable).name];
+            // TODO 指向的变量不存在的情况
+            if (!targetValue) {
+                return null;
+            }
+            // 根据下标取对应的内容
+            const index = this.getValue(pointer.index!);
+            return targetValue.value[index];
         } else if (node.execNodes.length > 0) {
             // 处理值为函数返回值的情况
             const [result, end] = this.walkThroughLogic(node);

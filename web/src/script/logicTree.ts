@@ -1,4 +1,4 @@
-import { TreeNodeSet, FuncNode, TreeNode, VarNode, ConstNode } from "./ast";
+import { TreeNodeSet, FuncNode, TreeNode, VarNode, ConstNode, PointerNode, ArrayNode, StuctNode } from "./ast";
 
 /**
  * 将AST树转换为可执行逻辑节点树
@@ -210,6 +210,64 @@ export class Variable extends LogicNode {
 }
 
 /**
+ * 数组
+ */
+export class VarArray extends LogicNode {
+    private _items: LogicNode[] = [];
+
+    constructor() {
+        super();
+    }
+
+    get items() {
+        return this._items;
+    }
+}
+
+/**
+ * 结构体
+ */
+export class Struct extends LogicNode {
+    private _props: { [key: string]: LogicNode } = {};
+
+    constructor() {
+        super();
+    }
+
+    get props() {
+        return this._props;
+    }
+}
+
+/**
+ * 变量引用
+ */
+export class Pointer extends LogicNode {
+    private _point_to: Variable | null = null;
+    private _point_index: LogicNode | null = null;
+
+    constructor() {
+        super();
+    }
+
+    get target() {
+        return this._point_to;
+    }
+
+    set target(variable) {
+        this._point_to = variable;
+    }
+
+    get index() {
+        return this._point_index;
+    }
+
+    set index(value) {
+        this._point_index = value;
+    }
+}
+
+/**
  * 树节点整理类
  */
 export class TreeRender {
@@ -269,8 +327,31 @@ export class TreeRender {
             }
             return subTreeRender._logicRoot;
         } else if (astTreeNode instanceof VarNode) {
-            // -------------- 处理变量引用节点 --------------
+            // -------------- 处理基础变量节点 --------------
             return this.transVariable(astTreeNode);
+        } else if (astTreeNode instanceof PointerNode) {
+            // -------------- 处理变量引用节点 --------------
+            const astPointer = astTreeNode as PointerNode;
+            const pointer = new Pointer();
+            pointer.target = this.transVariable(astPointer.target);
+            pointer.index = this.astNodeToLogicNode(astTreeNode.index as TreeNode);
+            return pointer;
+        } else if (astTreeNode instanceof ArrayNode) {
+            // -------------- 处理数组节点 --------------
+            const astArray = astTreeNode as ArrayNode;
+            const array = new VarArray();
+            astArray.items.forEach((item) => {
+                array.items.push(this.astNodeToLogicNode(item));
+            });
+            return array;
+        } else if (astTreeNode instanceof StuctNode) {
+            // -------------- 处理结构体节点 --------------
+            const astStruct = astTreeNode as StuctNode;
+            const struct = new Struct();
+            for (const key in astStruct.props) {
+                struct.props[key] = this.astNodeToLogicNode(astStruct.props[key]);
+            }
+            return struct;
         } else if (astTreeNode instanceof ConstNode) {
             // -------------- 处理常量节点 --------------
             return new Constant(astTreeNode.value);
@@ -363,7 +444,7 @@ export class TreeRender {
     /**
      * 将AST变量声明节点转换为逻辑节点
      */
-    private transVariable(node: VarNode): LogicNode {
+    private transVariable(node: VarNode): Variable {
         // 处理入参或常量节点
         const variable = node.name;
         if (variable.startsWith('@')) {
