@@ -5,6 +5,6 @@ import { Component } from "@/components/Component";
  * @author 刘志栋
  * @since 2024/07/24
  */
-export class BlockComponent<T> extends Component<T> {
+export class BlockComponent<T> extends Component<T > {
 
 }

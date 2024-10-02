@@ -7,7 +7,7 @@ import type { LinkLine } from "./plugins/link/LinkLine";
  * @author 刘志栋
  * @since 2024/07/24
  */
-export class Component<T extends { [key: string]: any }> {
+export class Component<T> {
     // 组件类型
     compType: string;
     // 组件id

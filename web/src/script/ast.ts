@@ -1,8 +1,6 @@
-import type { V } from "node_modules/vite/dist/node/types.d-aGj9QkWt";
 import { ASTCalcNodeFactory } from "./ast/calc";
 import { ASTFuncNodeFactory } from "./ast/func";
 import { Token } from "./tokenization.js";
-import { get } from "node_modules/axios/index.cjs";
 
 /**
  * AST抽象语法树
