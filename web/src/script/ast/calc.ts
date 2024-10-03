@@ -1,5 +1,8 @@
 import { ArrayNode, ConstNode, StuctNode, TreeNode, TreeNodeSet, VarNode, type ASTAnalyser } from "../ast";
 import { Token } from "../tokenization";
+import i18n from "@/assets/lang";
+
+const $t = i18n.global.t;
 
 /**
  * AST计算节点工厂
@@ -18,7 +21,7 @@ export class ASTCalcNodeFactory {
      * 整理数组节点
      */
     getArrayNode(token: Token): ArrayNode {
-        const array = new ArrayNode();
+        const array = new ArrayNode(token);
         let currentItems: Token[] = [];
         for (let i = 0; i < token.children.length; i++) {
             // 跳过逗号
@@ -39,7 +42,7 @@ export class ASTCalcNodeFactory {
      * 整理对象节点
      */
     getStructNode(token: Token): StuctNode {
-        const struct = new StuctNode();
+        const struct = new StuctNode(token);
         let key: string = '';
         let valueItems: Token[] = [];
         for (let i = 0; i < token.children.length; i++) {
@@ -68,11 +71,17 @@ export class ASTCalcNodeFactory {
      */
     assembleCalcNode(tokens: Token[]): TreeNode | null {
         // 组建单个节点
-        let resultTreeNode = new TreeNode();
+        let resultTreeNode = new TreeNode(null);
         // 判断是否为函数调用 若为函数调用则拼装函数节点
-        const funcNode = this.analyser.functions.find((node) => node.func === tokens[0].content);
-        if (funcNode && tokens[1].type === 'bracket') {
-            const funcCallNode = new TreeNode();
+        if (tokens[0]?.type === 'element' && tokens[1]?.type === 'bracket') {
+            // 查找函数定义
+            // TODO 检查参数是否匹配
+            const funcNode = this.analyser.functions.find((node) => node.func === tokens[0].content);
+            if (!funcNode) {
+                tokens[0].error = $t("script.error.undefined_function") + tokens[0].content;
+            }
+            // 拼装函数节点
+            const funcCallNode = new TreeNode(tokens[0]);
             funcCallNode.operator = tokens[0].content;
             // 整理函数的入参 将括号内容按逗号或分号分割 然后将分割结果整理为节点集合
             const argTokenTable: Token[][] = [[]];
@@ -114,7 +123,7 @@ export class ASTCalcNodeFactory {
                 } else if (['*', '/', '%'].includes(currentOperator)) {
                     resultTreeNode = this.assembleMulDivNode(resultTreeNode, currentOperator, node);
                 } else {
-                    console.error('未知操作符 ', currentOperator);
+                    console.error($t("script.error.unknown_operator"), currentOperator);
                 }
                 // 运算符生效后清空
                 currentOperator = null;
@@ -160,9 +169,10 @@ export class ASTCalcNodeFactory {
                 const varNode = this.analyser.getVarNode(token);
                 if (varNode) {
                     updateResultNode(varNode);
+                } else if (token.type === 'quote' || !isNaN(Number(token.content))) {
+                    updateResultNode(new ConstNode(token.content, token));
                 } else {
-                    //TODO 判断是否真的是常量而不是拼写错误
-                    updateResultNode(new ConstNode(token.content));
+                    token.error = $t("script.error.undefined_variable") + token.content;
                 }
             }
         }
@@ -195,7 +205,7 @@ export class ASTCalcNodeFactory {
             return currentNode;
         }
         // 拼接新的节点
-        const newNode = new TreeNode();
+        const newNode = new TreeNode(null);
         newNode.operator = operator;
         newNode.setLeft(currentNode);
         newNode.setRight(afterNode);
@@ -212,7 +222,7 @@ export class ASTCalcNodeFactory {
             return currentNode;
         }
         // 拼接新的节点
-        const newNode = new TreeNode();
+        const newNode = new TreeNode(null);
         newNode.operator = operator;
         newNode.setRight(afterNode);
         if (currentNode instanceof TreeNode) {
@@ -241,7 +251,7 @@ export class ASTCalcNodeFactory {
             return currentNode;
         }
         // 拼接新的节点
-        const newNode = new TreeNode();
+        const newNode = new TreeNode(null);
         newNode.operator = operator;
         newNode.setLeft(currentNode);
         newNode.setRight(afterNode);

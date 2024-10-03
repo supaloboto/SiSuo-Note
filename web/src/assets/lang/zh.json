@@ -30,5 +30,12 @@
     "note": "笔记",
     "grid": "表格",
     "chart": "图表"
+  },
+  "script": {
+    "error": {
+      "undefined_variable": "未定义的变量",
+      "undefined_function": "未定义的函数",
+      "unknown_operator": "未知的操作符"
+    }
   }
 }

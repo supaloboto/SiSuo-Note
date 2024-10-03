@@ -1,6 +1,9 @@
 import { ASTCalcNodeFactory } from "./ast/calc";
 import { ASTFuncNodeFactory } from "./ast/func";
 import { Token } from "./tokenization.js";
+import i18n from "@/assets/lang";
+
+const $t = i18n.global.t;
 
 /**
  * AST抽象语法树
@@ -21,8 +24,11 @@ export class TreeNode {
     private _rightChild: TreeNode | null = null;
     // 运算符
     private _operator: string | null = null;
+    // 指向token
+    private _token: Token | null = null;
 
-    constructor() {
+    constructor(token: Token | null) {
+        this._token = token;
     }
 
     get parent() {
@@ -55,6 +61,14 @@ export class TreeNode {
 
     set operator(value) {
         this._operator = value;
+    }
+
+    get token() {
+        return this._token;
+    }
+
+    set token(value) {
+        this._token = value;
     }
 
     // 判断是否无左节点
@@ -127,8 +141,8 @@ export class TreeNode {
 export class ConstNode extends TreeNode {
     private _value: any;
 
-    constructor(value: any) {
-        super();
+    constructor(value: any, token: Token | null) {
+        super(token);
         this._value = value;
     }
 
@@ -143,8 +157,8 @@ export class ConstNode extends TreeNode {
 export class VarNode extends TreeNode {
     private _name: string;
 
-    constructor(name: string) {
-        super();
+    constructor(name: string, token: Token | null) {
+        super(token);
         this._name = name;
     }
 
@@ -163,8 +177,8 @@ export class VarNode extends TreeNode {
 export class ArrayNode extends TreeNode {
     private _items: TreeNode[] = [];
 
-    constructor() {
-        super();
+    constructor(token: Token | null) {
+        super(token);
     }
 
     get items() {
@@ -178,8 +192,8 @@ export class ArrayNode extends TreeNode {
 export class StuctNode extends TreeNode {
     private _props: { [key: string]: TreeNode } = {};
 
-    constructor() {
-        super();
+    constructor(token: Token | null) {
+        super(token);
     }
 
     get props() {
@@ -194,8 +208,8 @@ export class StuctNode extends TreeNode {
 export class PointerNode extends TreeNode {
     private _point_index: TreeNode | null = null;
 
-    constructor() {
-        super();
+    constructor(token: Token | null) {
+        super(token);
     }
 
     pointTo(varNode: VarNode, index: TreeNode) {
@@ -219,8 +233,8 @@ export class PointerNode extends TreeNode {
 export class FuncNode extends TreeNode {
     private _func: string = '';
 
-    constructor() {
-        super();
+    constructor(token: Token | null) {
+        super(token);
     }
 
     get func() {
@@ -243,7 +257,7 @@ export class TreeNodeSet extends TreeNode {
     private _functions: FuncNode[] = [];
 
     constructor() {
-        super();
+        super(null);
     }
 
     addNode(node: TreeNode) {
@@ -342,8 +356,8 @@ export class ASTAnalyser {
         const sentenceType = sentence[0].content;
         if (sentenceType === 'var' || sentenceType === 'ref') {
             // ------------- 解析变量定义语句 -------------
-            const treeNode = new TreeNode();
-            const varNode = new VarNode(sentence[1].content);
+            const treeNode = new TreeNode(sentence[0]);
+            const varNode = new VarNode(sentence[1].content, sentence[1]);
             // 记录变量信息
             this.variables.push(varNode);
             // 变量定义语句左侧为变量名 右侧为计算节点
@@ -353,7 +367,7 @@ export class ASTAnalyser {
             return [treeNode, sentenceEnd];
         } else if (sentenceType === 'if' || sentenceType === 'elseif' || sentenceType === 'else') {
             // ------------- 解析if语句 -------------
-            const ifNode = new TreeNode();
+            const ifNode = new TreeNode(sentence[0]);
             ifNode.operator = sentenceType;
             const condition = sentenceType === 'else' ? null : this.calcFactory.assembleCalcNode(sentence[1].children);
             const then = sentenceType === 'else' ?
@@ -364,7 +378,7 @@ export class ASTAnalyser {
             return sentenceType === 'else' ? [ifNode, 1] : [ifNode, 2];
         } else if (sentenceType === 'for') {
             // ------------- 解析for语句 -------------
-            const forNode = new TreeNode();
+            const forNode = new TreeNode(sentence[0]);
             forNode.operator = sentenceType;
             // 第一个括号为循环变量定义和值变化
             const condition: TreeNodeSet = this.funcFactory.getForiLoopConditionSet(sentence[1]);
@@ -376,7 +390,7 @@ export class ASTAnalyser {
             return [forNode, 2];
         } else if (sentenceType === 'while') {
             // ------------- 解析while语句 -------------
-            const whileNode = new TreeNode();
+            const whileNode = new TreeNode(sentence[0]);
             whileNode.operator = sentenceType;
             // 第一个括号为循环条件
             const condition: TreeNode = this.calcFactory.assembleCalcNode(sentence[1].children)!;
@@ -388,7 +402,7 @@ export class ASTAnalyser {
             return [whileNode, 2];
         } else if (sentenceType === 'break' || sentenceType === 'continue') {
             // ------------- 解析循环控制语句 -------------
-            const treeNode = new TreeNode();
+            const treeNode = new TreeNode(sentence[0]);
             treeNode.operator = sentenceType;
             return [treeNode, sentenceEnd];
         } else if (sentenceType === 'function') {
@@ -402,7 +416,7 @@ export class ASTAnalyser {
             return [funcNode, 3];
         } else if (sentenceType === 'return') {
             // ------------- 解析返回语句 -------------
-            const treeNode = new TreeNode();
+            const treeNode = new TreeNode(sentence[0]);
             treeNode.operator = 'return';
             treeNode.setLeft(this.calcFactory.assembleCalcNode(sentence.slice(1)));
             return [treeNode, sentenceEnd];
@@ -411,24 +425,26 @@ export class ASTAnalyser {
         // =============== 关键字没有命中时 解析语句动作类型 ===============
         if (sentence[1].content === '=') {
             // ------------- 解析赋值语句 -------------
-            const treeNode = new TreeNode();
+            const treeNode = new TreeNode(sentence[0]);
             treeNode.operator = '=';
             const varNode = this.getVarNode(sentence[0]);
             if (!varNode) {
-                throw new Error('未定义的变量 ' + sentence[0]);
+                sentence[0].error = $t("script.error.undefined_variable") + sentence[0].content;
+            } else {
+                treeNode.linkLeft(varNode);
+                treeNode.setRight(this.calcFactory.assembleCalcNode(sentence.slice(2)));
             }
-            treeNode.linkLeft(varNode);
-            treeNode.setRight(this.calcFactory.assembleCalcNode(sentence.slice(2)));
             return [treeNode, sentenceEnd];
         } else if (['+=', '-=', '*=', '/=', '%='].includes(sentence[1].content)) {
             // ------------- 解析复合赋值语句 -------------
-            const treeNode = new TreeNode();
+            const treeNode = new TreeNode(sentence[0]);
             treeNode.operator = '=';
             const varNode = this.getVarNode(sentence[0]);
             if (!varNode) {
-                throw new Error('未定义的变量 ' + sentence[0]);
+                sentence[0].error = $t("script.error.undefined_variable") + sentence[0].content;
+            } else {
+                treeNode.linkLeft(varNode);
             }
-            treeNode.linkLeft(varNode);
             // 复合赋值语句右侧为计算节点
             const operatorToken = new Token('assist', sentence[1].content[0], sentence[1].start, sentence[1].end);
             const calcTokens = [sentence[0], operatorToken, ...sentence.slice(2)];
@@ -437,20 +453,21 @@ export class ASTAnalyser {
             return [treeNode, sentenceEnd];
         } else if (sentence[1].type === 'bracket') {
             // ------------- 解析函数调用语句 -------------
-            const treeNode = new TreeNode();
+            const treeNode = new TreeNode(sentence[0]);
             // 查找函数定义
             const funcNode = this.functions.find((node) => node.func === sentence[0].content);
             if (!funcNode) {
-                throw new Error('未定义的函数 ' + sentence[0]);
+                treeNode.token!.error = $t("script.error.undefined_function") + sentence[0].content;
             }
             // 记录函数调用为AST节点
-            treeNode.operator = funcNode.func;
+            treeNode.operator = sentence[0].content;
             treeNode.setRight(this.getAST(sentence[1].children));
             return [treeNode, sentenceEnd];
         }
 
         // =============== 未知语句类型 ===============
-        throw new Error('未知语句类型 ' + sentence);
+        sentence[0].error = $t("script.error.unknown_operator");
+        return [new TreeNode(sentence[0]), sentenceEnd];
     }
 
     /**
@@ -460,7 +477,7 @@ export class ASTAnalyser {
         const varName = token.content;
         // 获取变量或引用
         const getVarOrImport = (name: string): VarNode | undefined => {
-            const varNode = name.startsWith('@') ? new VarNode(name) : this.variables.find((node) => node.name === name);
+            const varNode = name.startsWith('@') ? new VarNode(name, token) : this.variables.find((node) => node.name === name);
             if (!varNode) {
                 return undefined;
             }
@@ -475,8 +492,8 @@ export class ASTAnalyser {
                 if (!pointer) {
                     return undefined;
                 }
-                const pointerNode = new PointerNode();
-                pointerNode.pointTo(pointer, new ConstNode(index));
+                const pointerNode = new PointerNode(token);
+                pointerNode.pointTo(pointer, new ConstNode(index, null));
                 return pointerNode;
             } else {
                 return this.variables.find((node) => node.name === varName);
@@ -493,7 +510,7 @@ export class ASTAnalyser {
             }
         }
         // 若token的content不为空 代表为数组引用 或以数组引用形式进行的对象引用
-        const pointerNode = new PointerNode();
+        const pointerNode = new PointerNode(token);
         const pointer = getVarOrImport(varName);
         if (!pointer) {
             return undefined;

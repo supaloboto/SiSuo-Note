@@ -1,6 +1,5 @@
 <script setup lang="ts">
-  import Codemirror from "codemirror-editor-vue3";
-  import { javascript } from "@codemirror/lang-javascript";
+  import CodeMirror from "./CodeMirror.vue";
   import { ref } from "vue";
   import tokenize from "@/script/tokenization";
   import { tokenToAST } from "@/script/ast";
@@ -8,8 +7,7 @@
   import { ExecutedVariable, Exec } from "@/script/exec";
 
   // 用户输入的脚本内容
-  const scriptTextCodeMirror = ref<any>(null);
-  const scriptText = ref<string>();
+  const scriptText = ref<string>('var a = 1;\nvar b = 2;\nvar c = a + b;');
   // 输入
   const inputList = ref<ExecutedVariable[]>([]);
   // 输出
@@ -52,8 +50,7 @@
     <!-- 脚本区域 -->
     <div class="script-editor">
       <h2>脚本</h2>
-      <codemirror ref="scriptTextCodeMirror" v-model:value="scriptText" :style="{ height: '800px', width: '420px' }"
-        :autofocus="true" :indent-with-tab="true" :tab-size="2" />
+      <CodeMirror :height="800" :width="400" v-model="scriptText" />
     </div>
     <!-- 分割线 -->
     <div class="split">

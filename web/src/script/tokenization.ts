@@ -5,8 +5,6 @@
  * @since 2024/09/16
  */
 
-import { deepCopy } from "@/assets/utils/copy";
-
 /**
  * 词元类
  */
@@ -16,18 +14,16 @@ export class Token {
     // 内容
     content: string;
     // 位置
-    start: {
-        row: number;
-        col: number;
-    }
-    end: {
-        row: number;
-        col: number;
-    };
+    start: number;
+    end: number;
     // 子集
     children: Token[] = [];
+    // 提示
+    warning: string = '';
+    // 错误
+    error: string = '';
 
-    constructor(type: string, content: string, start: { row: number, col: number }, end: { row: number, col: number }) {
+    constructor(type: string, content: string, start: number, end: number) {
         this.type = type;
         this.content = content;
         this.start = start;
@@ -107,34 +103,26 @@ function cutIntoPieces(expressionStr: string): Token[] {
     // 字符缓冲区
     const charBuffer: string[] = [];
     // 字符位置游标
-    const cursor: { start: { row: number, col: number }, end: { row: number, col: number } } = { start: { row: 0, col: 0 }, end: { row: 0, col: 0 } };
+    const cursor: { start: number, end: number } = { start: 0, end: 0 };
     // 打断缓冲区累积过程 将缓冲区内容存入结果集
     const saveBuffer = (type: string = 'element') => {
         if (charBuffer.length > 0) {
             const bufferStr = charBuffer.splice(0).join('');
-            const bufferToken = new Token(type, bufferStr, deepCopy(cursor.start), deepCopy(cursor.end));
+            cursor.end += bufferStr.length;
+            const bufferToken = new Token(type, bufferStr, cursor.start, cursor.end);
             resultStrSet.push(bufferToken);
         }
         // 更新游标位置
-        cursor.start.row = cursor.end.row;
-        cursor.start.col = cursor.end.col;
+        cursor.start = cursor.end;
     };
     // 保存操作符到结果集
     const saveOperator = (char: string, type: string = 'operator') => {
-        // 移动游标以选中字符
-        cursor.end.col += char.length;
+        cursor.end += char.length;
         // 保存字符
-        const bufferToken = new Token(type, char, deepCopy(cursor.start), deepCopy(cursor.end));
+        const bufferToken = new Token(type, char, cursor.start, cursor.end);
         resultStrSet.push(bufferToken);
         // 更新游标位置
-        cursor.start.row = cursor.end.row;
-        cursor.start.col = cursor.end.col;
-    }
-    // 光标向右移动
-    const cursorMoveRight = (step: number = 1) => {
-        cursor.start.row = cursor.end.row;
-        cursor.start.col = cursor.end.col + step;
-        cursor.end.col = cursor.end.col + step;
+        cursor.start = cursor.end;
     }
     // 按字符遍历
     for (let charIndex = 0; charIndex < expressionStr.length; charIndex++) {
@@ -142,11 +130,7 @@ function cutIntoPieces(expressionStr: string): Token[] {
         switch (char) {
             /**=========== 断句符号 ===========**/
             case '\n':
-                // 如果碰到回车符 则行数加一 列数归零
-                cursor.start.row += 1;
-                cursor.end.row = cursor.start.row;
-                cursor.start.col = 0;
-                cursor.end.col = 0;
+                cursor.end += 1;
                 break;
             case ',': case '，': case ':': case '：': case ';': case '；':
                 // 有分隔语义作用的符号 直接存入结果集
@@ -156,35 +140,26 @@ function cutIntoPieces(expressionStr: string): Token[] {
                 } else if (char === '；' || char === ';') {
                     saveOperator(';', 'end');
                 }
-                cursorMoveRight();
                 break;
             case ' ':
                 // 遇到空格则将当前缓冲区内容加入结果集
                 saveBuffer();
-                // 跳过空格
-                cursorMoveRight();
+                // 更新游标位置以使游标跳过空格
+                cursor.end += 1;
+                cursor.start = cursor.end;
                 break;
 
             /**=========== 括号和引号 ===========**/
             case '"': case '\'': case '“':
                 // 截取至引号闭合位置
-                cursor.end.col++;
                 //TODO 处理引号内包含回车的情况
                 const [str, childEndPos] = cutToChar(getRestExpression(charIndex, expressionStr), char === '“' ? '”' : char);
                 charIndex += childEndPos + 1;
+                cursor.end += childEndPos + 1;
                 // 引号内的内容作为一个整体 加入结果集
                 const content = charBuffer.splice(0).join('') + str;
-                const posStart = deepCopy(cursor.start);
-                const posEnd = {
-                    row: cursor.end.row,
-                    col: cursor.end.col + childEndPos + 1
-                };
-                const token = new Token('quote', content, posStart, posEnd);
+                const token = new Token('quote', content, cursor.start, cursor.end);
                 resultStrSet.push(token);
-                // 更新位置
-                cursor.start.row = posEnd.row;
-                cursor.start.col = posEnd.col;
-                cursor.end.col = posEnd.col;
                 break;
             case '(': case ')':
                 // 如果碰到括号 则为数学算式中的括号或函数调用 此时直接存入结果集 括号的具体处理在字符串分割完成后进行
@@ -198,33 +173,6 @@ function cutIntoPieces(expressionStr: string): Token[] {
                     saveBuffer();
                 }
                 saveOperator(char);
-                // // 如果碰到方括号 则判断是否为数组或结构体引用
-                // if (char === '[' && charBuffer.length > 0) {
-                //     // 缓冲区有内容 则此内容应为变量名 与方括号拼接为数组引用
-                //     // 截取至方括号闭合位置
-                //     cursor.end.col++;
-                //     const [str, childEndPos] = cutToChar(getRestExpression(charIndex, expressionStr), ']');
-                //     charIndex += childEndPos + 1;
-                //     // 方括号内的内容作为一个整体 加入结果集
-                //     const content = charBuffer.splice(0).join('') + '[' + str + ']';
-                //     const posStart = deepCopy(cursor.start);
-                //     const posEnd = {
-                //         row: cursor.end.row,
-                //         col: cursor.end.col + childEndPos + 1
-                //     };
-                //     const token = new Token('array', content, posStart, posEnd);
-                //     resultStrSet.push(token);
-                //     // 更新位置
-                //     cursor.start.row = posEnd.row;
-                //     cursor.start.col = posEnd.col;
-                //     cursor.end.col = posEnd.col;
-                // } else {
-                //     // 不是数组或结构体引用 则直接存入结果集 括号的具体处理在字符串分割完成后进行
-                //     if (charBuffer.length > 0) {
-                //         saveBuffer();
-                //     }
-                //     saveOperator(char);
-                // }
                 break;
             case '{': case '}':
                 // 如果碰到花括号 则为函数体或结构体 此时直接存入结果集 括号的具体处理在字符串分割完成后进行
@@ -240,13 +188,13 @@ function cutIntoPieces(expressionStr: string): Token[] {
                 if (charIndex < expressionStr.length - 1 && expressionStr[charIndex + 1] === '=') {
                     saveBuffer();
                     charIndex++;
-                    cursor.end.col++;
+                    cursor.end++;
                     saveOperator(`${char}=`, 'operator');
                     break;
                 } else if (charIndex < expressionStr.length - 1 && (char === '+' || char === '-') && expressionStr[charIndex + 1] === char) {
                     saveBuffer();
                     charIndex++;
-                    cursor.end.col++;
+                    cursor.end++;
                     saveOperator(`${char}${char}`, 'operator');
                     break;
                 } else {
@@ -260,12 +208,12 @@ function cutIntoPieces(expressionStr: string): Token[] {
                 if (charIndex < expressionStr.length - 1 && expressionStr[charIndex + 1] === '=') {
                     saveBuffer();
                     charIndex++;
-                    cursor.end.col++;
+                    cursor.end++;
                     saveOperator(`${char}=`, 'operator');
                 } else if (charIndex < expressionStr.length - 1 && char === '<' && expressionStr[charIndex + 1] === '>') {
                     saveBuffer();
                     charIndex++;
-                    cursor.end.col++;
+                    cursor.end++;
                     saveOperator('<>', 'operator');
                 } else {
                     saveBuffer();
@@ -277,7 +225,6 @@ function cutIntoPieces(expressionStr: string): Token[] {
                 if (charIndex < expressionStr.length - 1 && expressionStr[charIndex + 1] === char) {
                     saveBuffer();
                     charIndex++;
-                    cursor.end.col++;
                     saveOperator(`${char}${char}`, 'operator');
                 } else {
                     saveBuffer();
@@ -289,7 +236,6 @@ function cutIntoPieces(expressionStr: string): Token[] {
             default:
                 // 未碰到特殊字符 则加入缓冲区
                 charBuffer.push(char);
-                cursor.end.col++;
         }
     }
     // 清空缓冲区
@@ -313,8 +259,6 @@ const bracketTypeMap: { [key: string]: { name: string; end: string } } = {
  * @returns 返回整理后的Token集合 和括号结束位置的token索引
  */
 function findPairBracket(tokens: Token[], bracketType: { name: string, end: string }, startPos: number): [Token, number] {
-    // 子节点的序号
-    let childIndex = 1;
     // 子集内容
     const tokenChildren: Token[] = [];
     // 遍历词元集合
@@ -323,15 +267,7 @@ function findPairBracket(tokens: Token[], bracketType: { name: string, end: stri
         if (token.content === bracketType.end) {
             // 如果匹配了目标括号结束字符 则整理此括号的Token并返回 将积攒的内容整理为Token的子集
             const tokenType = bracketType.name;
-            const tokenStart = {
-                row: tokenChildren.length > 0 ? tokenChildren[0].start.row : token.start.row,
-                col: tokenChildren.length > 0 ? tokenChildren[0].start.col : token.start.col - 1,
-            }
-            const tokenEnd = {
-                row: token.end.row,
-                col: token.end.col,
-            }
-            const resultToken = new Token(tokenType, '', tokenStart, tokenEnd);
+            const resultToken = new Token(tokenType, '', tokenChildren.length > 0 ? tokenChildren[0].start : token.start, token.end);
             resultToken.children = tokenChildren;
             return [resultToken, i];
         } else if (bracketTypeMap[token.content]) {

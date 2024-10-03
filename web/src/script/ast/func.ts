@@ -18,7 +18,7 @@ export class ASTFuncNodeFactory {
      * 整理函数节点
      */
     assembleFuncNode(params: Token | null, body: Token): FuncNode {
-        const funcNode = new FuncNode();
+        const funcNode = new FuncNode(null);
         // 入参 存储于函数节点的左子节点
         const paramNodes: VarNode[] = [];
         funcNode.leftChild = new TreeNodeSet();
@@ -27,7 +27,7 @@ export class ASTFuncNodeFactory {
                 if (param.content === ',' || param.content === ';') {
                     return;
                 }
-                const paramNode = new VarNode(param.content);
+                const paramNode = new VarNode(param.content, param);
                 paramNodes.push(paramNode);
                 (funcNode.leftChild as TreeNodeSet).addNode(paramNode);
             });
@@ -73,9 +73,9 @@ export class ASTFuncNodeFactory {
         });
         // 第一行是初始化变量 i = 0
         const cursorDefineToken = tokens[0];
-        const cursorVar: TreeNode = new TreeNode();
+        const cursorVar: TreeNode = new TreeNode(null);
         cursorVar.operator = 'var';
-        cursorVar.setLeft(new VarNode(cursorDefineToken[0].content));
+        cursorVar.setLeft(new VarNode(cursorDefineToken[0].content, cursorDefineToken[0]));
         cursorVar.setRight(this.analyser.calcFactory.assembleCalcNode(cursorDefineToken.slice(2)));
         result.addNode(cursorVar);
         // 将变量存入变量表
@@ -88,7 +88,7 @@ export class ASTFuncNodeFactory {
         result.addNode(cursorCondition!);
         // 第三行是循环变量变化 i+=1 / i = i + 1
         const cursorChangeToken = tokens[2];
-        const cursorChange: TreeNode = new TreeNode();
+        const cursorChange: TreeNode = new TreeNode(null);
         cursorChange.operator = '=';
         cursorChange.linkLeft(cursorVar.leftChild as VarNode);
         if (cursorChangeToken[1].content != '=') {
@@ -111,7 +111,7 @@ export class ASTFuncNodeFactory {
      */
     getForiLoopBodyNode(funcBody: Token, cursorVar: VarNode | null): TreeNode {
         // 整理函数节点
-        const funcNode = new FuncNode();
+        const funcNode = new FuncNode(null);
         funcNode.leftChild = new TreeNodeSet();
         // 函数体 新建一个AST解析器用于解析函数体
         const childAnalyser = new ASTAnalyser();
@@ -130,7 +130,7 @@ export class ASTFuncNodeFactory {
             argsNode.addNode(cursorVar);
         }
         // 整理函数调用节点
-        const callNode = new TreeNode();
+        const callNode = new TreeNode(null);
         callNode.setRight(argsNode);
         callNode.setLeft(funcNode);
         return callNode;

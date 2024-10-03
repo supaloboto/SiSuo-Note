@@ -1,10 +1,9 @@
-import {fileURLToPath, URL} from 'node:url'
+import { fileURLToPath, URL } from 'node:url'
 
-import {defineConfig} from 'vite'
+import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
-import vueDevTools from 'vite-plugin-vue-devtools'
-import {createSvgIconsPlugin} from "vite-plugin-svg-icons";
+import { createSvgIconsPlugin } from "vite-plugin-svg-icons";
 import path from "path";
 
 export default defineConfig({
@@ -20,6 +19,14 @@ export default defineConfig({
             customDomId: '__svg__icons__dom__',
         }),
     ],
+    css: {
+        // css预处理器
+        preprocessorOptions: {
+            scss: {
+                api: 'modern',
+            }
+        }
+    },
     // 服务配置
     server: {
         // 代理本机所有IP
