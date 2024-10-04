@@ -81,7 +81,20 @@
         const langSupport = new LanguageSupport(ScriptLang, [completion]);
         //TODO 设置语法高亮
         const highlightStyle = HighlightStyle.define([
+            // 关键字
+            { tag: tags.definitionKeyword, color: "#a5045c" },
+            { tag: tags.keyword, color: "#0e66a7" },
+            // 变量声明
+            // { tag: tags.variableName, color: "#0e66a7" },
+            // 变量类型
+            { tag: tags.bool, color: "#6d6961" },
             { tag: tags.string, color: "#c58f27" },
+            { tag: tags.number, color: "#6d6961" },
+            // 括号
+            { tag: tags.paren, color: "#868989" },
+            { tag: tags.brace, color: "#868989" },
+            { tag: tags.squareBracket, color: "#868989" },
+            // 注释
             { tag: tags.comment, color: "#17b91e" }
         ]);
         const highlightPlugin = syntaxHighlighting(highlightStyle);
