@@ -183,7 +183,21 @@ function cutIntoPieces(expressionStr: string): Token[] {
                 break;
 
             /**=========== 操作符 ===========**/
-            case '+': case '-': case '*': case '/': case '%':
+            case '/':
+                // '/'可能和后一个'/'合并为注释符
+                if (charIndex < expressionStr.length - 1 && expressionStr[charIndex + 1] === '/') {
+                    if (charBuffer.length > 0) {
+                        saveBuffer();
+                    }
+                    const [str, childEndPos] = cutToChar(getRestExpression(charIndex, expressionStr), '\n');
+                    charIndex += childEndPos + 1;
+                    cursor.end += childEndPos + 1;
+                    cursor.start = cursor.end;
+                    const token = new Token('comment', str, cursor.start, cursor.end);
+                    resultStrSet.push(token);
+                    break;
+                }
+            case '+': case '-': case '*': case '%':
                 // 数学操作符可能和后一个操作符拼接为一个操作
                 if (charIndex < expressionStr.length - 1 && expressionStr[charIndex + 1] === '=') {
                     saveBuffer();

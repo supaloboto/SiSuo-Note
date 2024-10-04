@@ -327,7 +327,7 @@ export class ASTAnalyser {
     getAST(tokens: Token[]): TreeNodeSet {
         const result = new TreeNodeSet();
         // 解析语句为AST节点
-        let currentSentence: Token[] = tokens;
+        let currentSentence: Token[] = tokens.filter((token) => token.type !== 'comment');
         while (currentSentence.length > 0) {
             // 将语句传入解析器
             const [treeNode, sentenceEnd] = this.getNode(currentSentence);

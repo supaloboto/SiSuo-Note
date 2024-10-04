@@ -15,6 +15,9 @@
     import { keymap } from "@codemirror/view"
     import { indentWithTab } from "@codemirror/commands"
     import { logicLinter } from "@/script/codemirror/lint";
+    import { LanguageSupport } from "@codemirror/language";
+    import { completeFromList } from "@codemirror/autocomplete";
+    import { ScriptLang } from "@/script/codemirror/lang.js";
 
     const emit = defineEmits();
     const editorDivRef = ref(null);
@@ -62,6 +65,17 @@
                 emit('update:modelValue', editorView.value.state.doc.toString());
             }
         });
+        // 设置自动补全
+        const completion = ScriptLang.data.of({
+            autocomplete: completeFromList([
+                { label: "ref", type: "keyword" },
+                { label: "var", type: "keyword" },
+                { label: "function", type: "keyword" },
+                { label: "for", type: "keyword" },
+                // { label: "for", type: "function" },
+            ])
+        });
+        const langSupport = new LanguageSupport(ScriptLang, [completion]);
         // 构建编辑器配置
         const state = EditorState.create({
             doc: props.modelValue,
@@ -70,6 +84,7 @@
                 keymap.of([indentWithTab]),
                 logicLinter,
                 customTheme,
+                langSupport,
                 onChange,
             ]
         });

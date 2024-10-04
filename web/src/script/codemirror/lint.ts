@@ -19,7 +19,6 @@ export const logicLinter = linter(view => {
         const recursive = (tokens: Token[]) => {
             tokens.forEach(token => {
                 if (token.warning) {
-                    console.log(token);
                     diagnostics.push({
                         from: token.start,
                         to: token.end,
