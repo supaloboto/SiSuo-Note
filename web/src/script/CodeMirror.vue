@@ -9,15 +9,18 @@
 </template>
 
 <script lang="ts" setup>
-    import { onMounted, ref, watch } from 'vue'
-    import { EditorState } from "@codemirror/state"
-    import { EditorView, basicSetup } from "codemirror"
-    import { keymap } from "@codemirror/view"
-    import { indentWithTab } from "@codemirror/commands"
+    import { onMounted, ref, watch } from 'vue';
+    import { EditorState } from "@codemirror/state";
+    import { EditorView, basicSetup } from "codemirror";
+    import { keymap } from "@codemirror/view";
+    import { indentWithTab } from "@codemirror/commands";
     import { logicLinter } from "@/script/codemirror/lint";
     import { LanguageSupport } from "@codemirror/language";
     import { completeFromList } from "@codemirror/autocomplete";
+    import { syntaxHighlighting } from "@codemirror/language";
     import { ScriptLang } from "@/script/codemirror/lang.js";
+    import { tags } from "@lezer/highlight";
+    import { HighlightStyle } from "@codemirror/language";
 
     const emit = defineEmits();
     const editorDivRef = ref(null);
@@ -76,6 +79,12 @@
             ])
         });
         const langSupport = new LanguageSupport(ScriptLang, [completion]);
+        //TODO 设置语法高亮
+        const highlightStyle = HighlightStyle.define([
+            { tag: tags.string, color: "#c58f27" },
+            { tag: tags.comment, color: "#17b91e" }
+        ]);
+        const highlightPlugin = syntaxHighlighting(highlightStyle);
         // 构建编辑器配置
         const state = EditorState.create({
             doc: props.modelValue,
@@ -84,8 +93,9 @@
                 keymap.of([indentWithTab]),
                 logicLinter,
                 customTheme,
-                langSupport,
                 onChange,
+                langSupport,
+                highlightPlugin
             ]
         });
         // 创建编辑器

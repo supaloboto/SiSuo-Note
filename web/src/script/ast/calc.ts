@@ -169,7 +169,7 @@ export class ASTCalcNodeFactory {
                 const varNode = this.analyser.getVarNode(token);
                 if (varNode) {
                     updateResultNode(varNode);
-                } else if (token.type === 'quote' || !isNaN(Number(token.content))) {
+                } else if (token.type === 'quote' || !isNaN(Number(token.content)) || token.content === 'true' || token.content === 'false') {
                     updateResultNode(new ConstNode(token.content, token));
                 } else {
                     token.error = $t("script.error.undefined_variable") + token.content;
