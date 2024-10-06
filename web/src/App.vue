@@ -30,7 +30,6 @@ body {
   display: flex;
   margin: 2px;
   flex: 1;
-  background-color: var(--body-background-color);
 }
 
 #app {
