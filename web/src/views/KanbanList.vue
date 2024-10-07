@@ -116,7 +116,7 @@
             <FormButton class="operate-btn" @click="idToDel = ''">{{ $t('common.cancel') }}</FormButton>
           </div>
           <!-- 分割线 -->
-          <div class="kanban-item-split" v-if="index !== kanbanList.length - 1"></div>
+          <div class="kanban-item-split"></div>
         </div>
       </div>
     </div>

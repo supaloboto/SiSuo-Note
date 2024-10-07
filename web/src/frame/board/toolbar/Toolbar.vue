@@ -108,10 +108,10 @@ const addComp = (compName: string) => {
 #toolbar {
   position: fixed;
   z-index: var(--toolbar-zindex);
-  top: calc(50% - 345px);
+  top: calc(50% - 35vh);
+  height: 70vh;
   left: 12px;
   width: 75px;
-  height: 615px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
