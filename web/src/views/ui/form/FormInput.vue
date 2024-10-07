@@ -68,6 +68,7 @@
     .input-border {
         // 设置padding时让输入项稍微靠上 这样placeholder不会被遮挡
         padding: 8px 10px 12px 10px;
+        background-color: var(--input-background-color);
         border: 1px solid var(--input-border-color);
         border-radius: 5px;
         cursor: text;
@@ -105,7 +106,6 @@
         border: none;
         font-size: 16px;
         color: var(--input-text-color);
-        background-color: var(--input-background-color);
     }
 
     input::placeholder {

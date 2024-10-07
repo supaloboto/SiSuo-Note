@@ -57,8 +57,27 @@
       getKanbanList();
     });
   }
-  // todo 编辑看板标题
-  const editKanbanTitle = () => {
+
+  // 编辑看板标题
+  const titleEditForm = ref({});
+  const switchEdit = (kanbanId: string) => {
+    if (titleEditForm.value.hasOwnProperty(kanbanId)) {
+      delete titleEditForm.value[kanbanId];
+    } else {
+      const kanban = kanbanList.value.find(kanban => kanban.kanbanId === kanbanId);
+      titleEditForm.value[kanbanId] = kanban.title;
+    }
+  }
+  /**
+   * 保存看板标题
+   * @param kanbanId 看板id
+   * @param title 看板标题
+   */
+  const updateKanbanTitle = (kanbanId: string) => {
+    kanbanApi.updateKanban({ kanbanId, title: titleEditForm.value[kanbanId] }).then(res => {
+      switchEdit(kanbanId);
+      getKanbanList();
+    });
   }
 
   // 待删除看板ID
@@ -94,19 +113,8 @@
       <!-- 看板列表 -->
       <div class="kanban-list">
         <div v-for="(kanban, index) in kanbanList" class="kanban-item">
-          <!-- 正常展示状态 -->
-          <div class="item-content" v-if="idToDel !== kanban.kanbanId">
-            <!-- 标题 -->
-            <span>{{ kanban.title }}</span>
-            <!-- 打开按钮 -->
-            <FormButton class="operate-btn" @click="gotoKanban(kanban.kanbanId)">{{ $t('common.open') }}</FormButton>
-            <!-- 删除按钮点击后进入删除状态 -->
-            <FormButton class="operate-btn" @click="idToDel = kanban.kanbanId">
-              {{ $t('common.delete') }}
-            </FormButton>
-          </div>
           <!-- 待删除状态 -->
-          <div class="delete-confirm" v-else>
+          <div class="delete-confirm" v-if="idToDel === kanban.kanbanId">
             <!-- 删除提示 -->
             <span>{{ $t("filemanage.deleteConfirm") }}</span>
             <!-- 确认和取消按钮 -->
@@ -115,6 +123,35 @@
             </FormButton>
             <FormButton class="operate-btn" @click="idToDel = ''">{{ $t('common.cancel') }}</FormButton>
           </div>
+
+          <!-- 标题修改状态 -->
+          <div class="item-content" v-else-if="titleEditForm.hasOwnProperty(kanban.kanbanId)">
+            <!-- 标题 -->
+            <FormInput class="title-edit-input" v-model="titleEditForm[kanban.kanbanId]" placeholder="修改标题"
+              @keyup.enter="updateKanbanTitle(kanban.kanbanId)" @keyup.esc="switchEdit(kanban.kanbanId)" />
+            <!-- 保存按钮 -->
+            <FormButton class="operate-btn" type="primary" :disabled="!titleEditForm[kanban.kanbanId]"
+              @click="updateKanbanTitle(kanban.kanbanId)">
+              {{ $t('common.confirm') }}
+            </FormButton>
+            <!-- 取消按钮 -->
+            <FormButton class="operate-btn" @click="switchEdit(kanban.kanbanId)">
+              {{ $t('common.cancel') }}
+            </FormButton>
+          </div>
+
+          <!-- 正常展示状态 -->
+          <div class="item-content" v-else>
+            <!-- 标题 -->
+            <span @click="switchEdit(kanban.kanbanId)">{{ kanban.title }}</span>
+            <!-- 打开按钮 -->
+            <FormButton class="operate-btn" @click="gotoKanban(kanban.kanbanId)">{{ $t('common.open') }}</FormButton>
+            <!-- 删除按钮点击后进入删除状态 -->
+            <FormButton class="operate-btn" @click="idToDel = kanban.kanbanId">
+              {{ $t('common.delete') }}
+            </FormButton>
+          </div>
+
           <!-- 分割线 -->
           <div class="kanban-item-split"></div>
         </div>
@@ -179,6 +216,7 @@
         color: var(--input-text-color);
         font-weight: 800;
         text-align: center;
+        cursor: default;
       }
 
       .operate-btn {
@@ -192,6 +230,14 @@
 
       .item-content:hover {
         background-color: var(--kanban-item-hover-color);
+      }
+
+      // 标题修改状态
+      .title-edit-input {
+        width: calc(100% - 176px);
+        float: inline-start;
+        margin-right: 10px;
+        margin-top: -3px;
       }
 
       // 删除待确认状态
