@@ -42,6 +42,11 @@
       && !loginFormError.value.account
       && !loginFormError.value.password;
   });
+  // 监听登录表单变化 当值改变时清空错误信息
+  watch(loginForm, (value) => {
+    loginFormError.value.account = '';
+    loginFormError.value.password = '';
+  }, { deep: true });
 
   /**
    * 登录方法
@@ -59,6 +64,10 @@
       globalStore.user.token = res.token;
       // 跳转到文件列表页
       router.push({ path: '/filemanage' });
+    }).catch(err => {
+      if (err.errCode === 102) {
+        loginFormError.value.account = $t('account.loginError');
+      }
     });
   }
 
@@ -112,11 +121,14 @@
       username,
       password: passwdEncrypt(password)
     }).then(res => {
-      console.log('register success', res);
       // 注册成功后自动登录
       loginForm.value.account = account;
       loginForm.value.password = password;
       login();
+    }).catch(err => {
+      if (err.errCode === 101) {
+        registerFormError.value.account = $t('account.accountExist');
+      }
     });
   }
 

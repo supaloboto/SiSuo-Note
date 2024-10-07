@@ -54,9 +54,8 @@ func register(c *gin.Context) {
 	}
 	// 判断用户是否存在
 	existUser := GetUserByAccount(user.Account)
-	if existUser != (User{}) {
+	if existUser != nil {
 		// 用户已存在
-		//c.String(http.StatusOK, "RegisAccountExist")
 		restful.Error(c, 101, "RegisAccountExist")
 	} else {
 		// 生成UUID
@@ -86,6 +85,9 @@ func login(c *gin.Context) {
 	restful.BindJson(c, &json)
 	// 查询用户信息
 	user := GetUserByAccount(json.Account)
+	if user == nil {
+		panic("LoginFail1")
+	}
 	// 检查用户信息
 	pass := user.Password == json.Password
 	if pass {

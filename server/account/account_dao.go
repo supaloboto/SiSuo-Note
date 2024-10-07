@@ -9,14 +9,13 @@ import (
 /**
  * 获取账户信息
  */
-func GetUserByAccount(account string) User {
+func GetUserByAccount(account string) *User {
 	// 查询账户信息
 	document, searchErr := mongo.GetDocument("account", bson.M{"account": account})
 	if document == nil || searchErr != nil {
-		// todo 错误处理
-		return User{}
+		return nil
 	} else {
-		user := User{}
+		user := &User{}
 		decodeErr := document.Decode(&user)
 		if decodeErr != nil {
 			// todo 错误处理
