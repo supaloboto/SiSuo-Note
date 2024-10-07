@@ -6,6 +6,9 @@
  -->
 <script setup lang="ts">
 import router from '@/router';
+import { useKanbanStore } from '@/stores/kanban';
+
+const kanbanStore = useKanbanStore();
 
 /**
  * 返回列表页
@@ -35,7 +38,7 @@ const goBack = () => {
     <!-- 中间部分 -->
     <div class="header-middle">
       <div class="title">
-        标题
+        {{ kanbanStore.kanbanTitle }}
       </div>
     </div>
     <!-- 右边部分 -->

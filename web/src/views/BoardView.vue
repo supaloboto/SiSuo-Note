@@ -38,6 +38,7 @@ onBeforeMount(() => {
     // 更新store
     const kanbanStore = useKanbanStore();
     kanbanStore.kanbanId = res.kanbanId;
+    kanbanStore.kanbanTitle = res.title;
     kanbanStore.components = compList;
   });
 });
