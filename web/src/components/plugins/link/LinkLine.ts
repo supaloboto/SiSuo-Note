@@ -1,4 +1,5 @@
-import { BoardShapeCommand, BoardShape } from "@/frame/board/shape/BoardShape";
+import { BoardShapeCommand } from "@/frame/board/shape/BoardShapeCommand";
+import { BoardShape, BoardShapeCanvas, BoardShapeSvg, LineStyle } from "@/frame/board/shape/BoardShape";
 import { useCanvasStore } from "@/stores/canvas";
 import { useKanbanStore } from "@/stores/kanban";
 import { LinkEditorDialog } from "./LinkEditorDialog.js";
@@ -6,6 +7,7 @@ import { useDialogStore } from "@/stores/dialog";
 import { getLongID } from "@/assets/utils/idworker";
 import { Dialog } from "@/frame/dialog/Dialog.js";
 import { deepCopy } from "@/assets/utils/copy.js";
+import { watch, computed } from "vue";
 
 /**
  * 组件关联连线渲染指令
@@ -14,17 +16,26 @@ import { deepCopy } from "@/assets/utils/copy.js";
  * @since 2024/08/26
  */
 export class LinkLineRenderCmd extends BoardShapeCommand {
-    // 关联连线信息 并利用此对象触发渲染更新
-    private linkLine: LinkLine;
+    // 关联连线信息
+    private _linkLine: LinkLine;
 
     constructor(linkLine: LinkLine) {
         super();
-        this.linkLine = linkLine;
+        this._linkLine = linkLine;
     }
 
-    render(shape: BoardShape): void {
+    get linkLine(): LinkLine {
+        return this._linkLine;
+    }
+
+    get selected(): boolean {
+        return useCanvasStore().currentPointer.selected.includes(this._linkLine.id);
+    }
+
+    render(): BoardShape {
+        this.shape = this.type === 'svg' ? new BoardShapeSvg() : new BoardShapeCanvas();
         // 如果路径点小于2个则不绘制
-        if (this.linkLine.path.length < 2) {
+        if (this._linkLine.path.length < 2) {
             return null as any;
         }
         // 箭头宽高
@@ -33,15 +44,15 @@ export class LinkLineRenderCmd extends BoardShapeCommand {
         // 箭头与线段终点的间距
         const arrowGap = -6;
         // 从第一个点开始绘制
-        shape.from(this.linkLine.path[0]);
+        this.shape.from(this._linkLine.path[0]);
         // 所有路径点
-        for (let i = 1; i < this.linkLine.path.length; i++) {
+        for (let i = 1; i < this._linkLine.path.length; i++) {
             // 最后一个点回退一点给箭头留位置
-            if (i < this.linkLine.path.length - 1) {
-                shape.lineTo(this.linkLine.path[i]);
+            if (i < this._linkLine.path.length - 1) {
+                this.shape.lineTo(this._linkLine.path[i]);
             } else {
-                const lastPos = deepCopy(this.linkLine.path[i]);
-                const lastDirect = this.linkLine.endPos.direct;
+                const lastPos = deepCopy(this._linkLine.path[i]);
+                const lastDirect = this._linkLine.endPos.direct;
                 switch (lastDirect) {
                     case 'n':
                         lastPos.y += arrowHeight - arrowGap + 2;
@@ -56,11 +67,11 @@ export class LinkLineRenderCmd extends BoardShapeCommand {
                         lastPos.x -= arrowHeight - arrowGap + 2;
                         break;
                 }
-                shape.lineTo(lastPos);
+                this.shape.lineTo(lastPos);
             }
         }
         // 绘制箭头
-        const endPos = this.linkLine.endPos;
+        const endPos = this._linkLine.endPos;
         const endDirect = endPos.direct;
         let arrowPoints: { x: number, y: number }[] = [];
         switch (endDirect) {
@@ -93,19 +104,47 @@ export class LinkLineRenderCmd extends BoardShapeCommand {
                 ];
                 break;
         }
-        shape.from(arrowPoints[0]).lineTo(arrowPoints[1]).lineTo(arrowPoints[2]).closePath();
+        this.shape.from(arrowPoints[0]).lineTo(arrowPoints[1]).lineTo(arrowPoints[2]).closePath();
+        // 当被选中时 在线段两端绘制小圆点 用于拖动连线
+        if (this.selected) {
+            const endPointLineStyle = new LineStyle();
+            endPointLineStyle.stroke = 'var(--line-fill-endpoint)';
+            endPointLineStyle.fill = 'var(--line-fill-endpoint)';
+            const shape = this.shape as BoardShapeSvg;
+            shape.from(this._linkLine.startPos, endPointLineStyle).circle(2);
+            shape.from(this._linkLine.endPos, endPointLineStyle).circle(2);
+        }
+        return this.shape;
+    }
+
+    select(removeOtherSelection: boolean = true, reverse: boolean = false): void {
+        const canvasStore = useCanvasStore();
+        // 以线ID作为组件ID
+        const cmdId = this._linkLine.id;
+        canvasStore.selectComponent(cmdId, removeOtherSelection, reverse);
+        // 触发重绘
+        this.update?.();
+        // 如果此时被选中则建立监听 当取消选中时再次触发重绘
+        if (this.selected) {
+            const selectWatch = watch(computed(() => this.selected), (val) => {
+                if (!val) {
+                    this.update?.();
+                    selectWatch();
+                }
+            });
+        }
     }
 
     click(): void {
         super.click();
-        // todo 点击连线时的操作
+        this.select();
     }
 
     dblclick(): void {
         super.dblclick();
         // 检查是否已经存在此连线的编辑弹窗
         let dialog: LinkEditorDialog = useDialogStore().dialogs.find((dialog) => {
-            return dialog instanceof LinkEditorDialog && dialog.id === this.linkLine.id;
+            return dialog instanceof LinkEditorDialog && dialog.id === this._linkLine.id;
         }) as any;
         if (!dialog) {
             // 新建编辑弹窗
@@ -116,12 +155,12 @@ export class LinkLineRenderCmd extends BoardShapeCommand {
                 width: 860, height: 960
             };
             dialog = new LinkEditorDialog(
-                this.linkLine.id,
+                this._linkLine.id,
                 // todo 国际化
                 "连线编辑",
                 Dialog.fixPos(pos, rect),
                 rect,
-                this.linkLine
+                this._linkLine
             );
         }
         // 打开并聚焦编辑弹窗
@@ -175,10 +214,6 @@ export class LinkLine {
             // 执行一次渲染 自动计算路径点
             this.refresh();
         }
-    }
-
-    draw() {
-        this.renderCommand.draw();
     }
 
     erase() {
@@ -325,6 +360,10 @@ export class LinkLine {
         this.path.push(lastPos);
         // 记录结束点
         this.path.push(endPos);
+        // 触发重绘
+        if (this.renderCommand.update) {
+            this.renderCommand.update();
+        }
     }
 
     /**

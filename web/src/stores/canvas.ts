@@ -8,7 +8,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import { roundOff } from "@/assets/utils/math";
 import type { Component } from "@/components/Component";
-import type { BoardShapeCommand } from "@/frame/board/shape/BoardShape";
+import type { BoardShapeCommand } from "@/frame/board/shape/BoardShapeCommand";
 
 /**
  * 指针对象

@@ -1,91 +1,11 @@
-import { getLongID } from "@/assets/utils/idworker";
 import { useCanvasStore } from "@/stores/canvas";
 
 /**
- * 画板图形渲染指令接口
+ * 画板图形信息相关类
  * 
  * @author 刘志栋
  * @since 2024/08/26
  */
-export abstract class BoardShapeCommand {
-    // ID
-    private _id: string = '';
-    // svg/canvas
-    private _type: string = '';
-
-    constructor() {
-        this._id = getLongID();
-        // 添加进store
-        useCanvasStore().boardShapeCmds.push(this);
-    }
-
-    get id(): string {
-        return this._id;
-    }
-
-    get type(): string {
-        // 默认使用svg
-        if (!this._type) {
-            this.useSvg();
-        }
-        return this._type;
-    }
-
-    useSvg(): BoardShapeCommand {
-        this._type = 'svg';
-        return this;
-    }
-
-    useCanvas(): BoardShapeCommand {
-        this._type = 'canvas';
-        return this;
-    }
-
-    /**
-     * 图形渲染逻辑 由子类实现
-     * @param shape 图形对象
-     */
-    abstract render(shape: BoardShape): void;
-
-    /**
-     * 渲染图形
-     */
-    draw(): void {
-        // 添加进store 使之生效
-        const canvasStore = useCanvasStore();
-        if (canvasStore.boardShapeCmds.includes(this)) {
-            return;
-        }
-        canvasStore.boardShapeCmds.push(this);
-    }
-
-    /**
-     * 擦除图形
-     */
-    erase(): void {
-        // 从store中删除
-        const canvasStore = useCanvasStore();
-        const index = canvasStore.boardShapeCmds.findIndex(cmd => cmd.id === this.id);
-        if (index >= 0) {
-            canvasStore.boardShapeCmds.splice(index, 1);
-        }
-    }
-
-    /**
-     * 点击事件
-     */
-    click(): void {
-        console.log("click", this.id)
-    }
-
-    /**
-     * 双击事件
-     */
-    dblclick(): void {
-        console.log("dblclick", this.id)
-    }
-
-}
 
 /**
  * 线条配置类
@@ -93,15 +13,15 @@ export abstract class BoardShapeCommand {
 export class LineStyle {
     // 线宽
     _lineWidth: number = 8;
-    // 线颜色
-    lineColor: string = 'var(--line-stroke)';
     // 线样式 实线或虚线配置
     lineDash: string = 'solid';
     // 线头样式
     lineCap: string = 'butt';
     // 线连接样式
     lineJoin: string = 'miter';
-    // 内部填充
+    // 线颜色 默认设置为--line-stroke以应用SvgLine组件样式中指定的线段颜色
+    stroke: string = 'var(--line-stroke)';
+    // 内部填充 默认不填充
     fill: string = 'none';
 
     set lineWidth(value: number) {
@@ -124,7 +44,6 @@ export class LineStyle {
  * @since 2024/08/26
  */
 export abstract class BoardShape {
-
     constructor() {
     }
 
@@ -144,6 +63,12 @@ export abstract class BoardShape {
      * 使路径闭合
      */
     abstract closePath(): BoardShape
+
+    /**
+     * 在当前位置画圆
+     * @param radius 半径
+     */
+    abstract circle(radius: number): BoardShape
 }
 
 /**
@@ -159,8 +84,7 @@ export class BoardShapeSvg extends BoardShape {
     // svg路径集合
     private _paths: {
         // 路径
-        points: { command: string, pos: { x: number, y: number } }[],
-        type?: string,
+        points: { command: string, pos: { x: number, y: number, r?: number } }[],
         attrs: { [key: string]: string | number },
     }[] = [];
     // 图像左上角坐标
@@ -169,9 +93,20 @@ export class BoardShapeSvg extends BoardShape {
     private bottomRight: { x: number, y: number } = { x: null as any, y: null as any };
     // 最大线宽
     private maxLineWidth: number = 0;
+    // 颜色
+    private _stroke: string = 'var(--comp-link-stroke-color)';
+    private _hoverStroke: string = 'var(--comp-link-hover-stroke-color)';
 
     constructor() {
         super();
+    }
+
+    get stroke(): string {
+        return this._stroke;
+    }
+
+    get hoverStroke(): string {
+        return this._hoverStroke;
     }
 
     get width(): number {
@@ -202,9 +137,18 @@ export class BoardShapeSvg extends BoardShape {
         return this._paths.map(path => {
             const pathStr = path.points.map(point => {
                 if (point.command === 'Z') {
+                    // 闭合指令
                     return point.command;
+                } else if (point.command === 'M' || point.command === 'L') {
+                    // 直线 绝对坐标指令
+                    return `${point.command} ${point.pos.x - this.topLeft.x} ${point.pos.y - this.topLeft.y}`;
+                } else if (point.command === 'a') {
+                    // 圆弧相对坐标指令
+                    const r = point.pos.r!;
+                    return `a ${r},${r} 0 1,0 ${r * 2},0 ` + `a ${r},${r} 0 1,0 ${-r * 2},0 `;
                 }
-                return `${point.command} ${point.pos.x - this.topLeft.x} ${point.pos.y - this.topLeft.y}`;
+                // 相对坐标指令
+                return `${point.command} ${point.pos.x} ${point.pos.y}`;
             }).join(' ');
             return { path: pathStr, attrs: path.attrs };
         });
@@ -273,7 +217,7 @@ export class BoardShapeSvg extends BoardShape {
             }],
             // 设置线段属性
             attrs: {
-                'stroke': lineStyle.lineColor,
+                'stroke': lineStyle.stroke,
                 'stroke-width': lineStyle.lineWidth,
                 'fill': lineStyle.fill,
             },
@@ -288,11 +232,8 @@ export class BoardShapeSvg extends BoardShape {
     lineTo(pos: { x: number, y: number }): BoardShape {
         const currentPath = this._paths[this._paths.length - 1];
         if (!currentPath || !currentPath.points || currentPath.points.length === 0) {
-            return this.from(pos);
+            return this;
         }
-        // 将属性设置为线段
-        // todo 如果此时检查到类型有冲突则新建path
-        currentPath.type = 'line';
         // 记录点
         currentPath.points.push({
             command: 'L',
@@ -315,9 +256,31 @@ export class BoardShapeSvg extends BoardShape {
         return this;
     }
 
+    circle(radius: number): BoardShape {
+        const currentPath = this._paths[this._paths.length - 1];
+        if (!currentPath || !currentPath.points || currentPath.points.length === 0) {
+            return this;
+        }
+        // 移动到圆开始位置
+        currentPath.points.push({
+            command: 'm',
+            pos: {
+                x: -radius,
+                y: 0,
+            },
+        });
+        currentPath.points.push({
+            command: 'a',
+            pos: {
+                x: 0,
+                y: 0,
+                r: radius,
+            },
+        });
+        return this;
+    }
+
 }
-
-
 
 /**
  * 画板图形-使用Canvas绘制
@@ -406,6 +369,11 @@ export class BoardShapeCanvas extends BoardShape {
         return this;
     }
 
+    circle(radius: number): BoardShape {
+        //TODO 画圆
+        return this;
+    }
+
     print(): void {
         // 运行画线指令
         this.canvasCommandSet.forEach(commandSet => {
@@ -413,4 +381,5 @@ export class BoardShapeCanvas extends BoardShape {
             this.ctx?.stroke();
         });
     }
+
 }

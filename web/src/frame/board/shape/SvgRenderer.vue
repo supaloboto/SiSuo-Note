@@ -5,9 +5,10 @@
  - @since 2024/08/23
  -->
 <script setup lang="ts">
-    import { BoardShape, BoardShapeSvg } from '@/frame/board/shape/BoardShape';
+    import { BoardShapeSvg } from '@/frame/board/shape/BoardShape';
     import { useCanvasStore } from '@/stores/canvas';
-    import { computed, onMounted, ref, watch } from 'vue';
+    import { computed, ref, watch } from 'vue';
+    import SvgLine from './SvgLine.vue';
 
     const canvasStore = useCanvasStore();
 
@@ -26,8 +27,7 @@
         // 遍历执行绘图指令
         canvasCmds.value.forEach((cmd) => {
             // 获取图形数据
-            const shape: BoardShapeSvg = new BoardShapeSvg();
-            cmd.render(shape);
+            const shape: BoardShapeSvg = cmd.render() as BoardShapeSvg;
             if (!shape) return;
             // 拼接svg数据
             const svg = {
@@ -35,19 +35,25 @@
                 shape
             };
             // 检查是否已存在
-            const index = svgList.value.findIndex((item) => item.id === svg.id);
+            let index = svgList.value.findIndex((item) => item.id === svg.id);
             if (index === -1) {
                 svgList.value.push(svg);
+                index = svgList.value.length - 1;
             } else {
                 svgList.value[index] = svg;
             }
+            // 在命令中记录此图形的更新方式
+            cmd.update = () => {
+                svgList.value[index].shape = cmd.render() as BoardShapeSvg;
+            };
         });
     }
 
-    // 挂载时绘制图形
-    onMounted(() => {
+    // 监听绘图命令数组的变化 当命令增加或减少时触发重绘
+    const cmdIds = computed(() => canvasCmds.value.map((cmd) => cmd.id));
+    watch(() => cmdIds, () => {
         drawShapes();
-    });
+    }, { deep: true });
 
     // 监听视图窗口位置和缩放变化 触发重绘
     const viewRect = computed(() => canvasStore.currentViewRect);
@@ -56,62 +62,11 @@
         drawShapes();
     }, { deep: true });
 
-    // 监听图形数据变化 触发重绘
-    watch(() => canvasCmds, () => {
-        drawShapes();
-    }, { deep: true });
-
-    // 处理图形点击事件
-    const clickTimer = ref<number | null>(null);
-    // 监听图形点击事件
-    const shapeClick = (target: {
-        id: string,
-        shape: BoardShape,
-    }) => {
-        // 延时以区分单击和双击
-        if (clickTimer.value) {
-            clearTimeout(clickTimer.value);
-            clickTimer.value = null;
-            return;
-        }
-        clickTimer.value = setTimeout(() => {
-            canvasStore.boardShapeCmds.find((cmd) => cmd.id === target.id)?.click();
-            clickTimer.value = null;
-        }, 200) as unknown as number;
-    }
-    // 监听图形双击事件
-    const shapeDblclick = (target: {
-        id: string,
-        shape: BoardShape,
-    }) => {
-        canvasStore.boardShapeCmds.find((cmd) => cmd.id === target.id)?.dblclick();
-    }
-
 </script>
 
 <template>
-    <svg v-for="svg in svgList" :key="svg.id" :id="svg.id" xmlns="http://www.w3.org/2000/svg" version="1.1"
-        class="board-shape-svg" :width="svg.shape.width" :height="svg.shape.height" :viewBox="svg.shape.viewBox"
-        :style="{ left: svg.shape.clientPos.x + 'px', top: svg.shape.clientPos.y + 'px' }">
-        <path v-for="path in svg.shape.paths" :key="path.path" :d="path.path" v-bind="path.attrs"
-            @click="shapeClick(svg as any)" @dblclick="shapeDblclick(svg as any)" />
-    </svg>
+    <SvgLine v-for="svg in svgList" :key="svg.id" :id="svg.id" :shape="(svg.shape as any)">
+    </SvgLine>
 </template>
 
-<style lang="scss" scoped>
-    .board-shape-svg {
-        position: absolute;
-        --line-stroke: #3a3d3f81;
-        // 鼠标事件穿透
-        pointer-events: none;
-
-        path {
-            pointer-events: painted;
-        }
-
-        path:hover {
-            cursor: pointer;
-            stroke-width: 12;
-        }
-    }
-</style>
+<style lang="scss" scoped></style>

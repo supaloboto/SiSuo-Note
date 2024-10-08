@@ -5,58 +5,56 @@
  - @since 2024/08/23
  -->
 <script setup lang="ts">
-import { BoardShapeCanvas } from '@/frame/board/shape/BoardShape';
-import { useCanvasStore } from '@/stores/canvas';
-import { computed, onMounted, ref, watch } from 'vue';
+    import { BoardShapeCanvas } from '@/frame/board/shape/BoardShape';
+    import { useCanvasStore } from '@/stores/canvas';
+    import { computed, ref, watch } from 'vue';
 
-const canvasStore = useCanvasStore();
+    const canvasStore = useCanvasStore();
 
-// canvas ref
-const canvasRef = ref(null);
+    // canvas ref
+    const canvasRef = ref(null);
 
-// 图形绘制指令集合
-const canvasCmds = computed(() => canvasStore.boardShapeCmds.filter((cmd) => cmd.type === 'canvas'));
+    // 图形绘制指令集合
+    const canvasCmds = computed(() => canvasStore.boardShapeCmds.filter((cmd) => cmd.type === 'canvas'));
 
-/**
-  * 图形绘制方法
-  */
-const drawShapes = () => {
-    // 清空画布
-    const canvas = canvasRef.value;
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // 设置画布尺寸
-    canvas.width = canvas.clientWidth;
-    canvas.height = canvas.clientHeight;
-    // 遍历执行绘图指令
-    canvasCmds.value.forEach((cmd) => {
-        // 获取图形数据
-        const shape: BoardShapeCanvas = new BoardShapeCanvas();
-        cmd.render(shape);
-        if (!shape) return;
-        // 绘制图形
-        shape.attachToCtx(ctx);
-        shape.print();
-    });
-}
+    /**
+      * 图形绘制方法
+      */
+    const drawShapes = () => {
+        // 清空画布
+        const canvas = canvasRef.value;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // 设置画布尺寸
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+        // 遍历执行绘图指令
+        canvasCmds.value.forEach((cmd) => {
+            // 获取图形数据
+            const shape: BoardShapeCanvas = cmd.render() as BoardShapeCanvas;
+            if (!shape) return;
+            // 绘制图形
+            shape.attachToCtx(ctx);
+            shape.print();
+            // 在命令中记录此图形的更新方式
+            cmd.update = () => {
+                drawShapes();
+            };
+        });
+    }
 
-// 挂载时绘制图形
-onMounted(() => {
-    drawShapes();
-});
+    // 监听绘图命令数组的变化 当命令增加或减少时触发重绘
+    const cmdIds = computed(() => canvasCmds.value.map((cmd) => cmd.id));
+    watch(() => cmdIds, () => {
+        drawShapes();
+    }, { deep: true });
 
-// 监听视图窗口位置和缩放变化 触发重绘
-const viewRect = computed(() => useCanvasStore().currentViewRect);
-const scale = computed(() => useCanvasStore().scale);
-watch([viewRect, scale], () => {
-    drawShapes();
-}, { deep: true });
-
-// 监听图形数据变化 触发重绘
-// 调用者通过使BoardShapeCommand对象的render方法不断发生变化来触发重绘
-watch(() => canvasCmds, () => {
-    drawShapes();
-}, { deep: true });
+    // 监听视图窗口位置和缩放变化 触发重绘
+    const viewRect = computed(() => useCanvasStore().currentViewRect);
+    const scale = computed(() => useCanvasStore().scale);
+    watch([viewRect, scale], () => {
+        drawShapes();
+    }, { deep: true });
 
 </script>
 
@@ -65,11 +63,11 @@ watch(() => canvasCmds, () => {
 </template>
 
 <style lang="scss" scoped>
-.board-canvas {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    // 不与用户的鼠标产生交互
-    pointer-events: none;
-}
+    .board-canvas {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        // 不与用户的鼠标产生交互
+        pointer-events: none;
+    }
 </style>
