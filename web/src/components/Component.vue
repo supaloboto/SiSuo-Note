@@ -14,7 +14,7 @@
   import LinkLineHandler from "./plugins/link/LinkLineHandler.vue";
   import { useKanbanStore } from "@/stores/kanban";
   import { deepCopy } from "@/assets/utils/copy";
-  import { LinkLineRenderCmd } from "@/components/plugins/link/LinkLine";
+  import { LinkLineRenderCmd } from "@/components/plugins/link/LinkLineRenderCmd";
 
   const props = defineProps({
     compData: { type: Component, required: true },

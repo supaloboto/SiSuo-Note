@@ -24,6 +24,8 @@
      * 图形绘制方法
      */
     const drawShapes = () => {
+        // 清空现有svg列表
+        svgList.value = [];
         // 遍历执行绘图指令
         canvasCmds.value.forEach((cmd) => {
             // 获取图形数据

@@ -1,3 +1,4 @@
+import { getShortID } from "@/assets/utils/idworker";
 import { useCanvasStore } from "@/stores/canvas";
 
 /**
@@ -69,6 +70,25 @@ export abstract class BoardShape {
      * @param radius 半径
      */
     abstract circle(radius: number): BoardShape
+
+}
+
+export class BoardShapeSvgPath {
+    // ID
+    id: string = '';
+    // 路径
+    points: { command: string, pos: { x: number, y: number, r?: number } }[] = [];
+    pathStr: string = '';
+    // 属性
+    attrs: { [key: string]: string | number } = {};
+    // 拖动事件
+    dragStart: Function | null = null;
+    dragTo: Function | null = null;
+    dragEnd: Function | null = null;
+
+    constructor() {
+        this.id = getShortID();
+    }
 }
 
 /**
@@ -82,11 +102,7 @@ export class BoardShapeSvg extends BoardShape {
     private _width: number = 0;
     private _height: number = 0;
     // svg路径集合
-    private _paths: {
-        // 路径
-        points: { command: string, pos: { x: number, y: number, r?: number } }[],
-        attrs: { [key: string]: string | number },
-    }[] = [];
+    private _paths: BoardShapeSvgPath[] = [];
     // 图像左上角坐标
     private topLeft: { x: number, y: number } = { x: null as any, y: null as any };
     // 图像右下角坐标
@@ -129,13 +145,10 @@ export class BoardShapeSvg extends BoardShape {
         return result + 2 * this.maxLineWidth;
     }
 
-    get paths(): {
-        path: string,
-        attrs: { [key: string]: string | number },
-    }[] {
+    get paths(): BoardShapeSvgPath[] {
         // 整理路径
-        return this._paths.map(path => {
-            const pathStr = path.points.map(point => {
+        this._paths.forEach(path => {
+            path.pathStr = path.points.map(point => {
                 if (point.command === 'Z') {
                     // 闭合指令
                     return point.command;
@@ -150,8 +163,8 @@ export class BoardShapeSvg extends BoardShape {
                 // 相对坐标指令
                 return `${point.command} ${point.pos.x} ${point.pos.y}`;
             }).join(' ');
-            return { path: pathStr, attrs: path.attrs };
         });
+        return this._paths;
     }
 
     /**
@@ -210,18 +223,18 @@ export class BoardShapeSvg extends BoardShape {
 
     from(pos: { x: number, y: number }, lineStyle: LineStyle = new LineStyle()): BoardShape {
         // 创建一个新的path对象
-        this._paths.push({
-            points: [{
-                command: 'M',
-                pos: this.transPosToClientPos(pos),
-            }],
-            // 设置线段属性
-            attrs: {
-                'stroke': lineStyle.stroke,
-                'stroke-width': lineStyle.lineWidth,
-                'fill': lineStyle.fill,
-            },
+        const newPath = new BoardShapeSvgPath();
+        newPath.points.push({
+            command: 'M',
+            pos: this.transPosToClientPos(pos),
         });
+        // 设置线段属性
+        newPath.attrs = {
+            'stroke': lineStyle.stroke,
+            'stroke-width': lineStyle.lineWidth,
+            'fill': lineStyle.fill,
+        };
+        this._paths.push(newPath);
         // 更新最大线宽
         if (lineStyle.lineWidth > this.maxLineWidth) {
             this.maxLineWidth = lineStyle.lineWidth;
@@ -277,6 +290,36 @@ export class BoardShapeSvg extends BoardShape {
                 r: radius,
             },
         });
+        return this;
+    }
+
+    /**
+     * 设置拖动事件
+     */
+    setDragStartEvt(dragStart: Function): BoardShapeSvg {
+        const currentPath = this._paths[this._paths.length - 1];
+        if (!currentPath || !currentPath.points || currentPath.points.length === 0) {
+            return this;
+        }
+        currentPath.dragStart = dragStart;
+        return this;
+    }
+
+    setDragEvt(dragTo: Function): BoardShapeSvg {
+        const currentPath = this._paths[this._paths.length - 1];
+        if (!currentPath || !currentPath.points || currentPath.points.length === 0) {
+            return this;
+        }
+        currentPath.dragTo = dragTo;
+        return this;
+    }
+
+    setDragEndEvt(dragEnd: Function): BoardShapeSvg {
+        const currentPath = this._paths[this._paths.length - 1];
+        if (!currentPath || !currentPath.points || currentPath.points.length === 0) {
+            return this;
+        }
+        currentPath.dragEnd = dragEnd;
         return this;
     }
 

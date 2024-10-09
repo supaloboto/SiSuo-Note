@@ -1,173 +1,7 @@
-import { BoardShapeCommand } from "@/frame/board/shape/BoardShapeCommand";
-import { BoardShape, BoardShapeCanvas, BoardShapeSvg, LineStyle } from "@/frame/board/shape/BoardShape";
-import { useCanvasStore } from "@/stores/canvas";
 import { useKanbanStore } from "@/stores/kanban";
-import { LinkEditorDialog } from "./LinkEditorDialog.js";
-import { useDialogStore } from "@/stores/dialog";
 import { getLongID } from "@/assets/utils/idworker";
-import { Dialog } from "@/frame/dialog/Dialog.js";
-import { deepCopy } from "@/assets/utils/copy.js";
-import { watch, computed } from "vue";
-
-/**
- * 组件关联连线渲染指令
- * 
- * @author 刘志栋
- * @since 2024/08/26
- */
-export class LinkLineRenderCmd extends BoardShapeCommand {
-    // 关联连线信息
-    private _linkLine: LinkLine;
-
-    constructor(linkLine: LinkLine) {
-        super();
-        this._linkLine = linkLine;
-    }
-
-    get linkLine(): LinkLine {
-        return this._linkLine;
-    }
-
-    get selected(): boolean {
-        return useCanvasStore().currentPointer.selected.includes(this._linkLine.id);
-    }
-
-    render(): BoardShape {
-        this.shape = this.type === 'svg' ? new BoardShapeSvg() : new BoardShapeCanvas();
-        // 如果路径点小于2个则不绘制
-        if (this._linkLine.path.length < 2) {
-            return null as any;
-        }
-        // 箭头宽高
-        const arrowWidth = 2;
-        const arrowHeight = 1;
-        // 箭头与线段终点的间距
-        const arrowGap = -6;
-        // 从第一个点开始绘制
-        this.shape.from(this._linkLine.path[0]);
-        // 所有路径点
-        for (let i = 1; i < this._linkLine.path.length; i++) {
-            // 最后一个点回退一点给箭头留位置
-            if (i < this._linkLine.path.length - 1) {
-                this.shape.lineTo(this._linkLine.path[i]);
-            } else {
-                const lastPos = deepCopy(this._linkLine.path[i]);
-                const lastDirect = this._linkLine.endPos.direct;
-                switch (lastDirect) {
-                    case 'n':
-                        lastPos.y += arrowHeight - arrowGap + 2;
-                        break;
-                    case 's':
-                        lastPos.y -= arrowHeight - arrowGap + 2;
-                        break;
-                    case 'w':
-                        lastPos.x += arrowHeight - arrowGap + 2;
-                        break;
-                    case 'e':
-                        lastPos.x -= arrowHeight - arrowGap + 2;
-                        break;
-                }
-                this.shape.lineTo(lastPos);
-            }
-        }
-        // 绘制箭头
-        const endPos = this._linkLine.endPos;
-        const endDirect = endPos.direct;
-        let arrowPoints: { x: number, y: number }[] = [];
-        switch (endDirect) {
-            case 'n':
-                arrowPoints = [
-                    { x: endPos.x - arrowWidth / 2, y: endPos.y - arrowGap },
-                    { x: endPos.x, y: endPos.y - arrowHeight - arrowGap },
-                    { x: endPos.x + arrowWidth / 2, y: endPos.y - arrowGap },
-                ];
-                break;
-            case 's':
-                arrowPoints = [
-                    { x: endPos.x - arrowWidth / 2, y: endPos.y + arrowGap },
-                    { x: endPos.x, y: endPos.y + arrowHeight + arrowGap },
-                    { x: endPos.x + arrowWidth / 2, y: endPos.y + arrowGap },
-                ];
-                break;
-            case 'w':
-                arrowPoints = [
-                    { x: endPos.x - arrowGap, y: endPos.y - arrowWidth / 2 },
-                    { x: endPos.x - arrowHeight - arrowGap, y: endPos.y },
-                    { x: endPos.x - arrowGap, y: endPos.y + arrowWidth / 2 },
-                ];
-                break;
-            case 'e':
-                arrowPoints = [
-                    { x: endPos.x + arrowGap, y: endPos.y - arrowWidth / 2 },
-                    { x: endPos.x + arrowHeight + arrowGap, y: endPos.y },
-                    { x: endPos.x + arrowGap, y: endPos.y + arrowWidth / 2 },
-                ];
-                break;
-        }
-        this.shape.from(arrowPoints[0]).lineTo(arrowPoints[1]).lineTo(arrowPoints[2]).closePath();
-        // 当被选中时 在线段两端绘制小圆点 用于拖动连线
-        if (this.selected) {
-            const endPointLineStyle = new LineStyle();
-            endPointLineStyle.stroke = 'var(--line-fill-endpoint)';
-            endPointLineStyle.fill = 'var(--line-fill-endpoint)';
-            const shape = this.shape as BoardShapeSvg;
-            shape.from(this._linkLine.startPos, endPointLineStyle).circle(2);
-            shape.from(this._linkLine.endPos, endPointLineStyle).circle(2);
-        }
-        return this.shape;
-    }
-
-    select(removeOtherSelection: boolean = true, reverse: boolean = false): void {
-        const canvasStore = useCanvasStore();
-        // 以线ID作为组件ID
-        const cmdId = this._linkLine.id;
-        canvasStore.selectComponent(cmdId, removeOtherSelection, reverse);
-        // 触发重绘
-        this.update?.();
-        // 如果此时被选中则建立监听 当取消选中时再次触发重绘
-        if (this.selected) {
-            const selectWatch = watch(computed(() => this.selected), (val) => {
-                if (!val) {
-                    this.update?.();
-                    selectWatch();
-                }
-            });
-        }
-    }
-
-    click(): void {
-        super.click();
-        this.select();
-    }
-
-    dblclick(): void {
-        super.dblclick();
-        // 检查是否已经存在此连线的编辑弹窗
-        let dialog: LinkEditorDialog = useDialogStore().dialogs.find((dialog) => {
-            return dialog instanceof LinkEditorDialog && dialog.id === this._linkLine.id;
-        }) as any;
-        if (!dialog) {
-            // 新建编辑弹窗
-            const pos = {
-                clientX: useCanvasStore().currentPointer.clientX - 430, clientY: useCanvasStore().currentPointer.clientY - 480
-            };
-            const rect = {
-                width: 860, height: 960
-            };
-            dialog = new LinkEditorDialog(
-                this._linkLine.id,
-                // todo 国际化
-                "连线编辑",
-                Dialog.fixPos(pos, rect),
-                rect,
-                this._linkLine
-            );
-        }
-        // 打开并聚焦编辑弹窗
-        dialog.openAndFocus();
-    }
-
-}
+import { LinkLineRenderCmd } from "./LinkLineRenderCmd";
+import type { Component } from "@/components/Component";
 
 /**
  * 组件关联连线类
@@ -231,6 +65,28 @@ export class LinkLine {
     }
 
     /**
+     * 更新连线的开始点
+     * @param startPos 开始位置和方向
+     */
+    changeStartPos(startPos: { x: number, y: number, direct?: string }) {
+        // 检查开始点是否在组件上
+        const compList = useKanbanStore().components;
+        const comp = compList.find((item) => {
+            return item.pos.x < startPos.x && item.pos.x + item.rect.width > startPos.x
+                && item.pos.y < startPos.y && item.pos.y + item.rect.height > startPos.y;
+        });
+        // 计算开始点位置
+        if (comp) {
+            startPos = this.getCompLinkPoint(startPos, comp as Component<any>, false);
+            // TODO 如果脱离了原组件则需要把连线数据转移到新组件上
+        }
+        // 更新开始点
+        this.startPos = startPos;
+        // 更新连线
+        this.refresh();
+    }
+
+    /**
      * 更新连线的结束点
      * @param endPos 结束位置和方向
      */
@@ -238,38 +94,14 @@ export class LinkLine {
         // 检查结束点是否在组件上
         const compList = useKanbanStore().components;
         const comp = compList.find((item) => {
+            // 排除连线发起者
             return item.id !== this.compId
                 && item.pos.x < endPos.x && item.pos.x + item.rect.width > endPos.x
                 && item.pos.y < endPos.y && item.pos.y + item.rect.height > endPos.y;
         });
         // 计算结束点位置
         if (comp) {
-            // 选择组件上靠近鼠标的handler点位 为减少组件边框造成的影响进行微调
-            const compPos = comp.pos;
-            const compstartPos = [
-                { x: compPos.x + comp.rect.width / 2, y: compPos.y + comp.rect.height + 1, direct: 'n' },
-                { x: compPos.x + comp.rect.width / 2, y: compPos.y + 1, direct: 's' },
-                { x: compPos.x + 1, y: compPos.y + comp.rect.height / 2, direct: 'e' },
-                { x: compPos.x + comp.rect.width - 1, y: compPos.y + comp.rect.height / 2, direct: 'w' },
-            ];
-            // 检查鼠标位置与各个handler位置的关系
-            let nearestHandler = compstartPos[0];
-            const getDistance = (pos1: { x: number, y: number }, pos2: { x: number, y: number }) => {
-                if (pos1.x === pos2.x) {
-                    return Math.abs(pos1.y - pos2.y);
-                } else if (pos1.y === pos2.y) {
-                    return Math.abs(pos1.x - pos2.x);
-                } else {
-                    return Math.sqrt(Math.pow(pos1.x - pos2.x, 2) + Math.pow(pos1.y - pos2.y, 2));
-                }
-            }
-            for (let i = 1; i < compstartPos.length; i++) {
-                const handler = compstartPos[i];
-                if (getDistance(endPos, handler) < getDistance(endPos, nearestHandler)) {
-                    nearestHandler = handler;
-                }
-            }
-            endPos = nearestHandler;
+            endPos = this.getCompLinkPoint(endPos, comp as Component<any>, true);
             // 记录连接的组件
             this.targetCompId = comp.id;
         } else {
@@ -293,6 +125,65 @@ export class LinkLine {
         this.endPos = endPos;
         // 更新连线
         this.refresh();
+    }
+
+    /**
+     * 获取组件边线上最靠近指定位置的点的位置和连线方向
+     * @param targetPos 指定位置
+     * @param comp 组件信息
+     * @param asLinkEnd 结果是否作为连线的终点 如果是则返回的方向应该是反方向
+     */
+    private getCompLinkPoint(targetPos: { x: number, y: number }, comp: Component<any>, asLinkEnd: boolean = false): { x: number, y: number, direct: string } {
+        // 当目标位置在组件内部 且非常靠近组件边线时 则返回组件边线上的点 当结果作为连线的终点时将方向倒转 并为减少组件边框造成的影响对数值进行微调
+        const offsetTop = targetPos.y - comp.pos.y;
+        const offsetBottom = comp.pos.y + comp.rect.height - targetPos.y;
+        const offsetLeft = targetPos.x - comp.pos.x;
+        const offsetRight = comp.pos.x + comp.rect.width - targetPos.x;
+        const threshold = 25;
+        if (offsetTop >= 0 && offsetTop <= threshold && offsetTop <= offsetLeft && offsetTop <= offsetRight) {
+            // 靠近上边线
+            return { x: targetPos.x, y: comp.pos.y, direct: asLinkEnd ? 's' : 'n' };
+        } else if (offsetBottom >= 0 && offsetBottom <= threshold && offsetBottom <= offsetLeft && offsetBottom <= offsetRight) {
+            // 靠近下边线
+            return { x: targetPos.x, y: comp.pos.y + comp.rect.height + 1, direct: asLinkEnd ? 'n' : 's' };
+        } else if (offsetLeft >= 0 && offsetLeft <= threshold && offsetLeft <= offsetTop && offsetLeft <= offsetBottom) {
+            // 靠近左边线
+            return { x: comp.pos.x, y: targetPos.y, direct: asLinkEnd ? 'e' : 'w' };
+        } else if (offsetRight >= 0 && offsetRight <= threshold && offsetRight <= offsetTop && offsetRight <= offsetBottom) {
+            // 靠近右边线
+            return { x: comp.pos.x + comp.rect.width - 1, y: targetPos.y, direct: asLinkEnd ? 'w' : 'e' };
+        }
+        // 当目标位置在组件内部 且不靠近任何组件边线时 选择附近的handler点 当结果作为连线的终点时将handler方向倒转 并为减少组件边框造成的影响对数值进行微调
+        const compPos = comp.pos;
+        const handlerPosList = [
+            // 顶部中点
+            { x: compPos.x + comp.rect.width / 2, y: compPos.y + 1, direct: asLinkEnd ? 's' : 'n' },
+            // 底部中点
+            { x: compPos.x + comp.rect.width / 2, y: compPos.y + comp.rect.height + 1, direct: asLinkEnd ? 'n' : 's' },
+            // 左侧中点
+            { x: compPos.x + 1, y: compPos.y + comp.rect.height / 2, direct: asLinkEnd ? 'e' : 'w' },
+            // 右侧中点
+            { x: compPos.x + comp.rect.width - 1, y: compPos.y + comp.rect.height / 2, direct: asLinkEnd ? 'w' : 'e' },
+        ];
+        // 计算两点之间距离的方法
+        const getDistance = (pos1: { x: number, y: number }, pos2: { x: number, y: number }) => {
+            if (pos1.x === pos2.x) {
+                return Math.abs(pos1.y - pos2.y);
+            } else if (pos1.y === pos2.y) {
+                return Math.abs(pos1.x - pos2.x);
+            } else {
+                return Math.sqrt(Math.pow(pos1.x - pos2.x, 2) + Math.pow(pos1.y - pos2.y, 2));
+            }
+        }
+        // 检查目标位置与各个handler位置的关系
+        let nearestHandler = handlerPosList[0];
+        for (let i = 1; i < handlerPosList.length; i++) {
+            const handler = handlerPosList[i];
+            if (getDistance(targetPos, handler) < getDistance(targetPos, nearestHandler)) {
+                nearestHandler = handler;
+            }
+        }
+        return nearestHandler;
     }
 
     /**
