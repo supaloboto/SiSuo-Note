@@ -108,7 +108,7 @@
       <!-- 创建看板 -->
       <div class="create-kanban">
         <FormInput v-model="newKanbanTitle" :placeholder="$t('filemanage.newBoard')" />
-        <FormButton class="create-kanban-btn" type="primary" @click="createKanban">{{ $t('common.add') }}</FormButton>
+        <FormButton class="create-kanban-btn" type="primary" :disabled="!newKanbanTitle"@click="createKanban">{{ $t('common.add') }}</FormButton>
       </div>
       <!-- 看板列表 -->
       <div class="kanban-list">
