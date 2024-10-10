@@ -10,6 +10,7 @@
   import * as kanbanApi from '@/assets/api/kanban';
   import { useGlobalStore } from '@/stores/global';
   import router from '@/router';
+  import Header from "@/frame/header/Header.vue";
   import FormButton from '@/views/ui/form/FormButton.vue';
   import FormInput from '@/views/ui/form/FormInput.vue';
 
@@ -104,6 +105,9 @@
 
 <template>
   <div class="kanban-page-background">
+    <!-- header -->
+    <Header></Header>
+    <!-- 列表 -->
     <div class="list-container">
       <!-- 创建看板 -->
       <div class="create-kanban">
