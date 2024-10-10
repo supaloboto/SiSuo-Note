@@ -496,7 +496,7 @@ export class ASTAnalyser {
                 pointerNode.pointTo(pointer, new ConstNode(index, null));
                 return pointerNode;
             } else {
-                return this.variables.find((node) => node.name === varName);
+                return getVarOrImport(varName);
             }
         }
         // 当token有下级时按数组语法处理

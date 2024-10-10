@@ -385,9 +385,9 @@ export class TreeRender {
             // 处理条件
             const condition = astTreeNode.operator === 'else' ? new Constant(true) : this.astNodeToLogicNode(astTreeNode.leftChild as TreeNode);
             // 处理then
-            const thenBranchNode = new FuncNode();
+            const thenBranchNode = new FuncNode(null);
             thenBranchNode.linkRight(astTreeNode.rightChild as TreeNodeSet);
-            const thenBranch = this.transFuncCall(new TreeNode(), thenBranchNode);
+            const thenBranch = this.transFuncCall(new TreeNode(null), thenBranchNode);
             // 记录条件和分支
             ifNode.conditions.push(condition);
             ifNode.branches.push(thenBranch);
@@ -507,9 +507,9 @@ export class TreeRender {
                 const varialbleToChange = subTreeRender._context.variables.find(d => d.name === param.name);
                 if (varialbleToChange) {
                     // 为形参添加变量声明过程 使形参化为实参
-                    const paramToArg = new TreeNode();
+                    const paramToArg = new TreeNode(null);
                     paramToArg.operator = 'var';
-                    paramToArg.setLeft(new VarNode(param.name));
+                    paramToArg.setLeft(new VarNode(param.name, node.token));
                     paramToArg.setRight(arg);
                     subContext.addNode(paramToArg);
                 }
