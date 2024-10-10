@@ -15,10 +15,21 @@
             default: false
         }
     });
+
+    // 点击事件检查
+    const preClick = (evt) => {
+        // 如果按钮被禁用则阻止默认事件 防止通过在调试工具删除disabled属性绕过禁用
+        if (props.disabled) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            evt.stopImmediatePropagation();
+        }
+    }
+
 </script>
 
 <template>
-    <button :class="[props.type, props.disabled ? 'disabled' : '']" :disabled="disabled">
+    <button :class="[props.type, props.disabled ? 'disabled' : '']" :disabled="disabled" @click="preClick">
         <slot></slot>
     </button>
 </template>
