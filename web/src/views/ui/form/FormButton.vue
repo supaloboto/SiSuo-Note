@@ -40,6 +40,7 @@
         border: none;
         border-radius: 5px;
         cursor: pointer;
+        user-select: none;
     }
 
     button:focus {

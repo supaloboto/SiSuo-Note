@@ -110,6 +110,7 @@
 
     input::placeholder {
         font-size: 14px;
+        user-select: none;
     }
 
     input:focus {

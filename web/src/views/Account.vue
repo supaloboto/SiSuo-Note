@@ -6,7 +6,7 @@
  -->
 <script setup lang="ts">
   import * as accountApi from '@/assets/api/account'
-  import { computed, ref, watch } from 'vue';
+  import { computed, onMounted, ref, watch } from 'vue';
   import i18n from "@/assets/lang";
   import { md5 } from 'js-md5';
   import { useGlobalStore } from '@/stores/global';
@@ -53,15 +53,26 @@
    */
   const login = () => {
     const { account, password } = loginForm.value;
-    accountApi.login({
-      account,
-      password: passwdEncrypt(password)
-    }).then(res => {
+    const encryptedPasswd = passwdEncrypt(password);
+    loginRequest(account, encryptedPasswd);
+  }
+
+  /**
+   * 请求登录方法
+   */
+  const loginRequest = (loginAccount: string, encryptedPasswd: string) => {
+    const loginParam = {
+      account: loginAccount,
+      password: encryptedPasswd
+    };
+    accountApi.login(loginParam).then(res => {
       // 记录用户信息
       globalStore.user.id = res.userId;
       globalStore.user.account = res.account;
       globalStore.user.name = res.username;
       globalStore.user.token = res.token;
+      // 将登录信息保存到localStorage
+      localStorage.setItem('loginUser', JSON.stringify(loginParam));
       // 跳转到文件列表页
       router.push({ path: '/filemanage' });
     }).catch(err => {
@@ -70,6 +81,15 @@
       }
     });
   }
+
+  // 挂载后检查本地是否存储了登录信息 有则自动登录
+  onMounted(() => {
+    const loginUser = localStorage.getItem('loginUser');
+    if (loginUser) {
+      const loginParam = JSON.parse(loginUser);
+      loginRequest(loginParam.account, loginParam.password);
+    }
+  });
 
   // 注册表单
   const registerForm = ref({
@@ -116,15 +136,14 @@
    */
   const register = () => {
     const { account, username, password } = registerForm.value;
+    const encryptedPasswd = passwdEncrypt(password);
     accountApi.register({
       account,
       username,
-      password: passwdEncrypt(password)
+      password: encryptedPasswd
     }).then(res => {
       // 注册成功后自动登录
-      loginForm.value.account = account;
-      loginForm.value.password = password;
-      login();
+      loginRequest(account, encryptedPasswd);
     }).catch(err => {
       if (err.errCode === 101) {
         registerFormError.value.account = $t('account.accountExist');

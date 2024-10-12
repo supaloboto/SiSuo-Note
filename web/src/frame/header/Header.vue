@@ -5,7 +5,11 @@
  - @since 2024/07/28
  -->
 <script setup lang="ts">
+  import { ref } from 'vue';
   import HeaderButton from './HeaderButton.vue';
+  import About from './menu/About.vue';
+  import Setting from './menu/Setting.vue';
+  import User from './menu/User.vue';
 
   const props = defineProps({
     title: {
@@ -13,6 +17,8 @@
       required: false
     }
   });
+
+  const showUserMenu = ref(false);
 
 </script>
 
@@ -32,18 +38,21 @@
     </div>
     <!-- 右边部分 按钮顺序是倒排的 -->
     <div class="header-right">
-      <!-- 关于按钮 -->
+      <!-- 关于 -->
       <HeaderButton class="about">
         <icon name="system-about"></icon>
       </HeaderButton>
-      <!-- 系统设置按钮 -->
+      <About v-show="true" />
+      <!-- 系统设置 -->
       <HeaderButton class="setting">
         <icon name="system-setting"></icon>
       </HeaderButton>
-      <!-- 用户按钮 -->
-      <HeaderButton class="user">
+      <Setting v-show="true" />
+      <!-- 用户 -->
+      <HeaderButton class="user" @click="showUserMenu = !showUserMenu">
         <icon name="system-user"></icon>
       </HeaderButton>
+      <User v-model="showUserMenu" />
       <!-- 右侧插槽 -->
       <slot name="right">
       </slot>
@@ -66,14 +75,22 @@
     box-shadow: 0 1px 1px -1px var(--header-shadow-color);
     z-index: var(--header-zindex);
 
+    // 左边部分
     .header-left {
       width: 120px;
 
       .header-btn {
         float: left;
       }
+
+      .header-menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+      }
     }
 
+    // 中间部分
     .header-middle {
       .title {
         color: var(--header-title-color);
@@ -83,14 +100,22 @@
       }
     }
 
+    // 右边部分
     .header-right {
       width: 120px;
 
       .header-btn {
         float: right;
       }
+
+      .header-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+      }
     }
 
+    // 按钮样式
     .header-btn {
       height: 30px;
       width: 30px;
@@ -114,5 +139,6 @@
         --path-fill: var(--header-btn-hover-icon-color);
       }
     }
+
   }
 </style>
