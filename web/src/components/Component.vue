@@ -92,11 +92,12 @@
    * 开始拖拽方法
    */
   const dragStart = () => {
-    // 如果当前选中了多个组件则一起移动 选中了一个组件则改为选中当前组件
     if (canvasStore.currentPointer.selected.length > 1) {
+      // 如果当前已经选中了多个组件 则加上此组件一起移动
       props.compData.select(false);
       // todo 多个组件一起移动
     } else {
+      // 如果当前没有选中或只选中了一个组件 则只移动此组件
       props.compData.select(true);
     }
     // 拖拽开始 计算鼠标偏移量
@@ -166,7 +167,9 @@
    */
   const mouseUp = (evt: MouseEvent) => {
     // 因为dragStart需要preventDefault 所以dragEnd不能被自动触发 因此将停止拖拽的逻辑放在mouseUp上处理
-    dragEnd();
+    if (dragWatch.value) {
+      dragEnd();
+    }
   }
 
   /**
