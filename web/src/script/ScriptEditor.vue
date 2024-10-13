@@ -34,10 +34,19 @@
     const treeRender = new TreeRender(ast);
     treeRender.render();
     console.log('logic tree', treeRender);
-    // 从可执行树中获取变量声明 整理入参
+    // 从可执行树中获取变量声明 整理逻辑输入变量
     const { inputs } = treeRender.logicRoot;
+    // 保留之前的值 在重复运行时不会丢失
+    const inputValues = {};
+    inputList.value.forEach((item: ExecutedVariable) => {
+      inputValues[item.name] = item.value;
+    });
     inputList.value = inputs.map((item: Variable): ExecutedVariable => {
-      return new ExecutedVariable(item.name);
+      const inputVar = new ExecutedVariable(item.name);
+      if (inputValues[item.name] !== undefined) {
+        inputVar.value = inputValues[item.name];
+      }
+      return inputVar;
     });
     // 整理输出物
     outputList.value = new Exec().getOutputs(treeRender.logicRoot, inputList.value as ExecutedVariable[]);
