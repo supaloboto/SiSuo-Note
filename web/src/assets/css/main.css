@@ -1,4 +1,5 @@
 /* 统一管理z-index */
+/* 组件和组件连线不设置z-index 只靠渲染顺序控制覆盖关系 */
 /* dialog的z-index在200-299之间 */
 :root {
     /* header */
@@ -7,4 +8,9 @@
     --toolbar-zindex: 100;
     /* dock */
     --dock-zindex: 300;
+
+    /* 临时组件的z-index较高 避免被组件连线等遮挡 */
+    .temp-comp {
+        z-index: 100;
+    }
 }

@@ -191,8 +191,8 @@
       <div class="canvas-center">
         <!-- 渲染组件 -->
         <sisuo-comp v-for="(comp, index) in components" :key="comp.id" :compData="(comp as any)"></sisuo-comp>
-        <!-- 渲染组件占位符 -->
-        <sisuo-comp v-if="tempComponent" :key="tempComponent.id" :compData="(tempComponent as any)"></sisuo-comp>
+        <!-- 渲染组件占位符 使用temp-comp类控制z-index -->
+        <sisuo-comp v-if="tempComponent" class="temp-comp" :key="tempComponent.id" :compData="(tempComponent as any)"></sisuo-comp>
       </div>
     </div>
     <!-- 缩放工具 -->
