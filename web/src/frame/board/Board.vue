@@ -117,9 +117,15 @@
   }
 
   /**
-   * 左键点击空白处 取消选中
+   * 左键点击空白处
    */
   const clickBlank = () => {
+    // 如果处于框选状态 则切换鼠标状态并退出
+    if (canvasStore.currentPointer.state === PointerState.SELECTING) {
+      canvasStore.currentPointer.state = PointerState.POINTING;
+      return;
+    }
+    // 未处于框选状态时取消选中
     canvasStore.currentPointer.selected = [];
   }
   /**
@@ -228,6 +234,8 @@
   * 开始拖拽方法
   */
   const dragStart = () => {
+    // 切换鼠标状态 在clickBlank中还原
+    canvasStore.currentPointer.state = PointerState.SELECTING;
     // 新建选框绘制命令
     selectionSquareCmd.value = new SelectionSquareCmd();
     const startPos = { x: mousePos.value.x, y: mousePos.value.y };
@@ -235,14 +243,20 @@
     selectionSquareCmd.value.endPos = startPos;
     // 建立监听
     dragSelectWatch.value = watch(mousePos, (val) => {
-      // 鼠标移动时绘制框选框
-      if (val.x < startPos.x || val.y < startPos.y) {
-        selectionSquareCmd.value.startPos = { x: val.x, y: val.y };
-        selectionSquareCmd.value.endPos = startPos;
-      } else {
-        selectionSquareCmd.value.startPos = startPos;
-        selectionSquareCmd.value.endPos = { x: val.x, y: val.y };
+      // 计算选框的坐标范围
+      const square = {
+        start: {
+          x: Math.min(startPos.x, val.x),
+          y: Math.min(startPos.y, val.y),
+        },
+        end: {
+          x: Math.max(startPos.x, val.x),
+          y: Math.max(startPos.y, val.y),
+        }
       }
+      // 绘制框选框
+      selectionSquareCmd.value.startPos = square.start;
+      selectionSquareCmd.value.endPos = square.end;
       selectionSquareCmd.value.update();
       // 利用坐标矩阵查找与选框坐标范围匹配的组件和连线 更新选中对象
       canvasStore.currentPointer.selected = [];
@@ -258,16 +272,16 @@
           }
           // 比较开始位置
           // 如果位置的y坐标小于选框的y坐标 则说明整行都不在选框内 跳出
-          if (location.startPos.y < selectionSquareCmd.value.startPos.y) {
+          if (location.startPos.y < square.start.y) {
             break;
           }
           // 如果位置的x坐标小于选框的x坐标 则跳过此位置 并更新最小x坐标
-          if (location.startPos.x < selectionSquareCmd.value.startPos.x) {
+          if (location.startPos.x < square.start.x) {
             minXIndex = xIndex + 1;
             continue;
           }
           // 如果通过了开始位置比对 则继续比对结束位置 结束位置小于选框的结束位置 则说明此位置在选框内
-          if (location.endPos.x <= selectionSquareCmd.value.endPos.x && location.endPos.y <= selectionSquareCmd.value.endPos.y) {
+          if (location.endPos.x <= square.end.x && location.endPos.y <= square.end.y) {
             // 进行选中
             canvasStore.currentPointer.selected.push(location.target.id);
           }

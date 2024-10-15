@@ -43,6 +43,7 @@
       kanbanStore.kanbanId = res.kanbanId;
       kanbanStore.kanbanTitle = res.title;
       kanbanStore.components = compList;
+      kanbanStore.updatePosMatrix();
     });
   });
 

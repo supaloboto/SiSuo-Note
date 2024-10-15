@@ -7,7 +7,7 @@
 <script setup lang="ts">
   import i18n from "@/assets/lang";
   import { StyleValue, computed, ref, watch, type ComputedRef, onBeforeUnmount } from "vue";
-  import { useCanvasStore } from "@/stores/canvas";
+  import { PointerState, useCanvasStore } from "@/stores/canvas";
   import { Component } from "@/components/Component";
   import { compRegis } from "@/components/index";
   import WrapperPlugin from "./plugins/wrapper/Wrapper.vue";
@@ -31,6 +31,8 @@
 
   // 获取组件选中状态
   const selected: ComputedRef<boolean> = computed(() => canvasStore.currentPointer.selected.includes(props.compData.id));
+  const showLinkHandler = computed(() => selected.value && canvasStore.currentPointer.selected.length === 1
+    && canvasStore.currentPointer.state === PointerState.POINTING);
 
   // 获取视图
   const viewRect = computed(() => canvasStore.currentViewRect);
@@ -175,7 +177,7 @@
     <!-- 四角定位 -->
     <WrapperPlugin v-show="selected" :compData="props.compData" />
     <!-- 连线触发点 -->
-    <LinkLineHandler v-show="selected" :compData="props.compData" />
+    <LinkLineHandler v-show="showLinkHandler" :compData="props.compData" />
     <!-- 组件 -->
     <component :is="compRegis[compData.compType].raw" :compData="compData" ref="compRef" class="component"
       :class="{ selected }"></component>

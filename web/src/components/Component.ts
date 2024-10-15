@@ -28,7 +28,6 @@ export class Component<T> {
         this.pos = props.pos;
         this.rect = props.rect;
         this.data = props.data;
-        this.updatePosMatrix();
     }
 
     /**
@@ -150,6 +149,8 @@ export class Component<T> {
         this.unselect();
         // 从组件列表中删除
         useKanbanStore().deleteComponent(this.id);
+        // 更新坐标矩阵
+        this.updatePosMatrix();
         return true;
     }
 

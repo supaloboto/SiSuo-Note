@@ -40,6 +40,7 @@ export const useKanbanStore = defineStore('kanban', () => {
     // 添加组件
     function addComponent(component: Component<any>): Promise<any> {
         components.value.push(component);
+        updatePosMatrix();
         // 保存组件 只取出组件中可以序列化的部分进行传输
         return kanbanApi.addComponent({
             compType: component.compType,
