@@ -28,7 +28,6 @@
 
   // 获取store
   const canvasStore = useCanvasStore();
-  const kanbanStore = useKanbanStore();
 
   // 获取组件选中状态
   const selected: ComputedRef<boolean> = computed(() => canvasStore.currentPointer.selected.includes(props.compData.id));
@@ -69,19 +68,6 @@
       canvasStore.boardShapeCmds.push(lineRenderCmd);
     }
   }, { immediate: true });
-  // 获取连接到此组件的连线 用于拖拽时更新连线位置
-  const linksAttachedToThisComp = computed(() => {
-    const compList = kanbanStore.components;
-    const links = [];
-    for (const comp of compList) {
-      for (const link of comp.links) {
-        if (link.targetCompId === props.compData.id) {
-          links.push(link);
-        }
-      }
-    }
-    return links;
-  });
 
   /*------ 拖拽逻辑 ------*/
   // 从store中获取鼠标位置
@@ -107,26 +93,7 @@
     };
     // 建立监听 在拖拽中移动组件
     dragWatch.value = watch(mousePos, (pos) => {
-      // 计算新位置
-      const originPos = deepCopy(props.compData.pos);
-      const newX = pos.x - dragMouseOffset.x;
-      const newY = pos.y - dragMouseOffset.y;
-      // 应用新位置
-      props.compData.pos.x = newX;
-      props.compData.pos.y = newY;
-      // 更新组件连线数据
-      const xMovement = newX - originPos.x;
-      const yMovement = newY - originPos.y;
-      props.compData.links.forEach((link) => {
-        link.startPos.x += xMovement;
-        link.startPos.y += yMovement;
-        link.refresh();
-      });
-      linksAttachedToThisComp.value.forEach((link) => {
-        link.endPos.x += xMovement;
-        link.endPos.y += yMovement;
-        link.refresh();
-      });
+      props.compData.moveTo(pos.x - dragMouseOffset.x, pos.y - dragMouseOffset.y);
     }, { deep: true });
     // 因为有时候鼠标移动太快会导致监听不到mouseup事件 所以在document上建立监听
     document.addEventListener('mouseup', dragEnd);

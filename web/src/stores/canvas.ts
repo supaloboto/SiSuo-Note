@@ -11,6 +11,22 @@ import type { Component } from "@/components/Component";
 import type { BoardShapeCommand } from "@/frame/board/shape/BoardShapeCommand";
 
 /**
+ * 指针状态
+ */
+export enum PointerState {
+    // 指针
+    POINTING,
+    // 框选
+    SELECTING,
+    // 拖动
+    DRAGGING,
+    // 创建连线
+    LINKING,
+    // 创建组件
+    CREATING,
+}
+
+/**
  * 指针对象
  */
 export class Pointer {
@@ -31,7 +47,7 @@ export class Pointer {
     // 是否聚焦在画布上 影响画布上的鼠标事件或快捷键是否触发
     focusOnCanvas: boolean = true;
     // 状态
-    state: string = 'pointer';
+    state: PointerState = PointerState.POINTING;
 }
 
 /**

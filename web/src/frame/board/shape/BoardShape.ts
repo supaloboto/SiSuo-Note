@@ -364,7 +364,7 @@ export class BoardShapeCanvas extends BoardShape {
         };
     }
 
-    from(pos: { x: number, y: number }, lineStyle: LineStyle = new LineStyle(),): BoardShapeCanvas {
+    from(pos: { x: number, y: number }, lineStyle: LineStyle = new LineStyle()): BoardShapeCanvas {
         const clientPos = this.transPosToClientPos(pos);
         const newCommands = [];
         newCommands.push(() => {
@@ -375,7 +375,14 @@ export class BoardShapeCanvas extends BoardShape {
             this.ctx.moveTo(clientPos.x, clientPos.y);
             // 设置线段宽度
             this.ctx.lineWidth = lineStyle.lineWidth;
-            // todo 设置线段颜色
+            // 设置线段样式
+            this.ctx.setLineDash(lineStyle.lineDash === 'dashed' ? [5, 5] : []);
+            this.ctx.lineJoin = lineStyle.lineJoin as CanvasLineJoin;
+            this.ctx.lineCap = lineStyle.lineCap as CanvasLineCap;
+            // 设置线段颜色
+            this.ctx.strokeStyle = lineStyle.stroke;
+            // 设置填充样式
+            this.ctx.fillStyle = lineStyle.fill;
         });
         this.canvasCommandSet.push(newCommands);
         this.lastPos = clientPos;
@@ -393,7 +400,6 @@ export class BoardShapeCanvas extends BoardShape {
             if (!this.ctx) {
                 return;
             }
-            this.ctx.lineWidth = 8;
             this.ctx.lineTo(clientPos.x, clientPos.y);
         });
         this.lastPos = clientPos;
@@ -407,6 +413,7 @@ export class BoardShapeCanvas extends BoardShape {
             if (!this.ctx) {
                 return;
             }
+            this.ctx.fill();
             this.ctx.closePath();
         });
         return this;

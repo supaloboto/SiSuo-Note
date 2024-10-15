@@ -5,9 +5,9 @@
  - @since 2024/07/10
  -->
 <script setup lang="ts">
-  import { computed, onBeforeUnmount, onMounted, ref, type StyleValue } from "vue";
+  import { computed, onBeforeUnmount, onMounted, ref, watch, type StyleValue } from "vue";
   import { useGlobalStore } from "@/stores/global";
-  import { useCanvasStore } from "@/stores/canvas";
+  import { PointerState, useCanvasStore } from "@/stores/canvas";
   import { useKanbanStore } from "@/stores/kanban";
   import { Hotkeys } from "@/frame/board/hotkeys";
   import Toolbar from "@/frame/board/toolbar/Toolbar.vue";
@@ -15,6 +15,9 @@
   import Scale from "@/frame/board/scale/Scale.vue";
   import CanvasRenderer from "@/frame/board/shape/CanvasRenderer.vue";
   import SvgRenderer from "@/frame/board/shape/SvgRenderer.vue";
+  import { BoardShapeCommand } from "@/frame/board/shape/BoardShapeCommand";
+  import { BoardShape, BoardShapeCanvas, LineStyle } from "@/frame/board/shape/BoardShape";
+  import { deepCopy } from "@/assets/utils/copy";
 
   const canvasStore = useCanvasStore();
   const kanbanStore = useKanbanStore();
@@ -23,6 +26,9 @@
   // 获取组件列表
   const tempComponent = computed(() => canvasStore.tempComponent);
   const components = computed(() => kanbanStore.components);
+
+  // 监听键盘事件
+  Hotkeys.init();
 
   // 鼠标拖拽移动开关
   const viewDragging = ref<boolean>(false);
@@ -96,11 +102,18 @@
     document.addEventListener('mouseup', onMouseUp);
   }
   /**
-   * 当鼠标抬起时 若当前正处于拖拽移动视图模式 则退出
+   * 鼠标抬起事件
    */
   const onMouseUp = () => {
-    viewDragging.value = false;
-    document.removeEventListener('mouseup', onMouseUp);
+    // 若当前正处于拖拽移动视图模式 则退出
+    if (viewDragging.value) {
+      viewDragging.value = false;
+      document.removeEventListener('mouseup', onMouseUp);
+    }
+    // 若当前正处于框选模式 则退出
+    if (dragSelectWatch.value) {
+      dragEnd();
+    }
   }
 
   /**
@@ -120,13 +133,10 @@
     // todo 弹出右键菜单
   }
 
-  // 监听键盘事件
-  Hotkeys.init();
-
   // 鼠标是否处于组件创建状态
-  const cursorCreatingMode = computed(() => canvasStore.currentPointer.state.startsWith('creating'));
-  // 鼠标状态
-  const cursorState = computed(() => {
+  const cursorCreatingMode = computed(() => canvasStore.currentPointer.state === PointerState.CREATING);
+  // 根据鼠标状态选择鼠标样式类
+  const cursorStyleClass = computed(() => {
     if (viewDragging.value) {
       return 'grabbing';
     }
@@ -178,6 +188,108 @@
     }
   });
 
+  /*------ 框选逻辑 ------*/
+  const mousePos = computed(() => {
+    return {
+      x: canvasStore.currentPointer.x,
+      y: canvasStore.currentPointer.y,
+    }
+  });
+  // 拖拽监听
+  const dragSelectWatch = ref(null);
+  // 选框绘制命令
+  class SelectionSquareCmd extends BoardShapeCommand {
+    startPos: { x: number, y: number };
+    endPos: { x: number, y: number };
+
+    constructor() {
+      super();
+      super.useCanvas();
+    }
+
+    render(): BoardShape {
+      // 线条样式
+      const lineStyle = new LineStyle();
+      lineStyle.lineWidth = 2;
+      lineStyle.stroke = '#adc7d8da';
+      lineStyle.fill = '#84e2ff3d';
+      // 绘制选框
+      const shape = new BoardShapeCanvas();
+      shape.from(this.startPos, lineStyle)
+        .lineTo({ x: this.endPos.x, y: this.startPos.y })
+        .lineTo(this.endPos)
+        .lineTo({ x: this.startPos.x, y: this.endPos.y })
+        .closePath();
+      return shape;
+    }
+  }
+  const selectionSquareCmd = ref(null);
+  /**
+  * 开始拖拽方法
+  */
+  const dragStart = () => {
+    // 新建选框绘制命令
+    selectionSquareCmd.value = new SelectionSquareCmd();
+    const startPos = { x: mousePos.value.x, y: mousePos.value.y };
+    selectionSquareCmd.value.startPos = startPos;
+    selectionSquareCmd.value.endPos = startPos;
+    // 建立监听
+    dragSelectWatch.value = watch(mousePos, (val) => {
+      // 鼠标移动时绘制框选框
+      if (val.x < startPos.x || val.y < startPos.y) {
+        selectionSquareCmd.value.startPos = { x: val.x, y: val.y };
+        selectionSquareCmd.value.endPos = startPos;
+      } else {
+        selectionSquareCmd.value.startPos = startPos;
+        selectionSquareCmd.value.endPos = { x: val.x, y: val.y };
+      }
+      selectionSquareCmd.value.update();
+      // 利用坐标矩阵查找与选框坐标范围匹配的组件和连线 更新选中对象
+      canvasStore.currentPointer.selected = [];
+      const posMatrix = kanbanStore.posMatrix;
+      let minXIndex = 0;
+      for (let yIndex = 0; yIndex < posMatrix.length; yIndex++) {
+        const row = posMatrix[yIndex];
+        for (let xIndex = minXIndex; xIndex < row.length; xIndex++) {
+          const location = row[xIndex];
+          // 跳过空位置
+          if (!location) {
+            continue;
+          }
+          // 比较开始位置
+          // 如果位置的y坐标小于选框的y坐标 则说明整行都不在选框内 跳出
+          if (location.startPos.y < selectionSquareCmd.value.startPos.y) {
+            break;
+          }
+          // 如果位置的x坐标小于选框的x坐标 则跳过此位置 并更新最小x坐标
+          if (location.startPos.x < selectionSquareCmd.value.startPos.x) {
+            minXIndex = xIndex + 1;
+            continue;
+          }
+          // 如果通过了开始位置比对 则继续比对结束位置 结束位置小于选框的结束位置 则说明此位置在选框内
+          if (location.endPos.x <= selectionSquareCmd.value.endPos.x && location.endPos.y <= selectionSquareCmd.value.endPos.y) {
+            // 进行选中
+            canvasStore.currentPointer.selected.push(location.target.id);
+          }
+        }
+      }
+    }, { deep: true });
+    document.addEventListener('mouseup', dragEnd);
+  }
+  /**
+  * 结束拖拽方法
+  */
+  const dragEnd = () => {
+    // 移除监听
+    dragSelectWatch.value && dragSelectWatch.value();
+    dragSelectWatch.value = null;
+    // 移除选框绘制命令
+    selectionSquareCmd.value.erase();
+    selectionSquareCmd.value = null;
+    // 移除document上的监听
+    document.removeEventListener('mouseup', dragEnd);
+  }
+
 </script>
 
 <template>
@@ -185,14 +297,16 @@
     <!-- 侧边栏 -->
     <Toolbar v-show="!cursorCreatingMode"></Toolbar>
     <!-- 组件 -->
-    <div id="sisuo-canvas" :class="[cursorState]" :style="[boardBgStyle, boardBgPos]" @mousemove="mouseMove"
-      @click="clickBlank" @mousedown="onMouseDown" @mouseup="onMouseUp" @contextmenu="rightClickBlank">
+    <div id="sisuo-canvas" :class="[cursorStyleClass]" :style="[boardBgStyle, boardBgPos]" @mousemove="mouseMove"
+      @click="clickBlank" @mousedown="onMouseDown" @mouseup="onMouseUp" @contextmenu="rightClickBlank" draggable="true"
+      @dragstart.stop.prevent="dragStart">
       <!-- 定位居中 为了计算缩放方便 视图采用中心点为坐标原点的定位方式 因此需要让所有组件的渲染以窗口中心为原点 -->
       <div class="canvas-center">
         <!-- 渲染组件 -->
         <sisuo-comp v-for="(comp, index) in components" :key="comp.id" :compData="(comp as any)"></sisuo-comp>
         <!-- 渲染组件占位符 使用temp-comp类控制z-index -->
-        <sisuo-comp v-if="tempComponent" class="temp-comp" :key="tempComponent.id" :compData="(tempComponent as any)"></sisuo-comp>
+        <sisuo-comp v-if="tempComponent" class="temp-comp" :key="tempComponent.id"
+          :compData="(tempComponent as any)"></sisuo-comp>
       </div>
     </div>
     <!-- 缩放工具 -->

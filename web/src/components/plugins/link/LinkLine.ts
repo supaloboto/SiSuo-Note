@@ -21,7 +21,7 @@ export class LinkLine {
     startPos: { x: number, y: number, direct?: string };
     // 结束路径点
     endPos: { x: number, y: number, direct?: string };
-    // 路径点集合
+    // 路径点集合 包含起止点 但没有方向
     path: { x: number, y: number }[] = [];
     // 活跃状态
     _active: boolean = false;
@@ -62,6 +62,28 @@ export class LinkLine {
     deactive() {
         this._active = false;
         this.renderCommand.useSvg();
+    }
+
+    /**
+     * 获取连线的位置 与组件的位置逻辑保持一致 是将连线视为矩形并返回左上角坐标
+     */
+    get pos(): { x: number, y: number } {
+        return {
+            x: Math.min(...this.path.map((item) => item.x)),
+            y: Math.min(...this.path.map((item) => item.y)),
+        }
+    }
+
+    /**
+     * 获取连线的宽高 与组件的大小逻辑保持一致 是将连线视为矩形并返回宽高
+     */
+    get rect(): { width: number, height: number } {
+        const xArray = this.path.map((item) => item.x);
+        const yArray = this.path.map((item) => item.y);
+        return {
+            width: Math.max(...xArray) - Math.min(...xArray),
+            height: Math.max(...yArray) - Math.min(...yArray),
+        }
     }
 
     /**
