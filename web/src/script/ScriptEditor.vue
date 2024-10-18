@@ -7,7 +7,36 @@
   import { ExecutedVariable, Exec } from "@/script/exec";
 
   // 用户输入的脚本内容
-  const scriptText = ref<string>('var a = 1;\nvar b = 2;\nvar c = a + b;');
+  const scriptText = ref<string>(
+    `// ======== 函数声明 和 if/else ========
+// ref a = @num;
+// var b = 2;
+// function test(v1,v2){
+//   if(v1==100){
+//    return "一百";
+//   }
+//   if(v1>v2){
+//    return "大";
+//   }elseif(v1==v2){
+//    return "等";
+//   }else{
+//    return "小";
+//   }
+//   return "???";
+// }
+// ref res = test(a,b);
+
+// ======== for ========
+// var a = 1;
+// for(i=0;i<5;i+=1){
+//   a += i;
+// }
+
+// ======== 数组和结构体 ========
+// var a = ['A','B','C'];
+// var b = {test:2};
+// var c = a[b.test];`
+  );
   // 输入
   const inputList = ref<ExecutedVariable[]>([]);
   // 输出
