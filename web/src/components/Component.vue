@@ -207,6 +207,10 @@
     border: 1px solid var(--component-border-color);
   }
 
+  .component:hover {
+    border: 1px solid var(--component-hover-border-color);
+  }
+
   /* 组件被选中时的四角边框 */
   .selected {
     border: 1px solid var(--component-resize-wrapper-border-color) !important;
