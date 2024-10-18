@@ -17,7 +17,8 @@
   import SvgRenderer from "@/frame/board/shape/SvgRenderer.vue";
   import { BoardShapeCommand } from "@/frame/board/shape/BoardShapeCommand";
   import { BoardShape, BoardShapeCanvas, LineStyle } from "@/frame/board/shape/BoardShape";
-  import { deepCopy } from "@/assets/utils/copy";
+  import { Component } from "@/components/Component";
+  import { LinkLine } from "@/components/plugins/link/LinkLine";
 
   const canvasStore = useCanvasStore();
   const kanbanStore = useKanbanStore();
@@ -283,7 +284,11 @@
           // 如果通过了开始位置比对 则继续比对结束位置 结束位置小于选框的结束位置 则说明此位置在选框内
           if (location.endPos.x <= square.end.x && location.endPos.y <= square.end.y) {
             // 进行选中
-            canvasStore.currentPointer.selected.push(location.target);
+            if (location.target instanceof LinkLine) {
+              (location.target as LinkLine).renderCommand.select(false);
+            } else if (location.target instanceof Component) {
+              (location.target as Component<any>).select(false);
+            }
           }
         }
       }
