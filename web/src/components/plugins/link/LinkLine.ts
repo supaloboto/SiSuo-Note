@@ -2,6 +2,7 @@ import { useKanbanStore } from "@/stores/kanban";
 import { getLongID } from "@/assets/utils/idworker";
 import { LinkLineRenderCmd } from "./LinkLineRenderCmd";
 import type { Component } from "@/components/Component";
+import { useCanvasStore } from "@/stores/canvas";
 
 /**
  * 组件关联连线类
@@ -52,6 +53,22 @@ export class LinkLine {
 
     erase() {
         this.renderCommand.erase();
+    }
+
+    delete() {
+        // 擦除图形
+        this.erase();
+        // 从选中中移除
+        const selected = useCanvasStore().currentPointer.selected;
+        const selectIndex = selected.findIndex((item) => item.id === this.id);
+        if (selectIndex !== -1) {
+            selected.splice(selectIndex, 1);
+        }
+        // 从组件中移除
+        const comp = useKanbanStore().components.find((item) => item.id === this.compId) as Component<any>;
+        if (comp) {
+            comp.deleteLink(this.id);
+        }
     }
 
     active() {

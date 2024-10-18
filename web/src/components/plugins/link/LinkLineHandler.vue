@@ -9,7 +9,6 @@
     import { Component } from "@/components/Component";
     import { PointerState, useCanvasStore } from "@/stores/canvas";
     import { LinkLine } from "./LinkLine";
-    import { deepCopy } from "@/assets/utils/copy";
 
     /*------ 四个触发点 ------*/
     const handlers = ref<string[]>(['n', 'e', 'w', 's']);
@@ -30,7 +29,13 @@
     const linkWatch = ref(null);
     // 获取鼠标位置
     const canvasStore = useCanvasStore();
-    const mousePos = computed(() => canvasStore.currentPointer);
+    const mousePos = computed(() => {
+        return {
+            x: canvasStore.currentPointer.x,
+            y: canvasStore.currentPointer.y,
+        }
+    });
+
     /**
      * 开始拖动连线
      */
@@ -52,13 +57,15 @@
         });
         currentLink.value.active();
         // 监听鼠标移动
-        linkWatch.value = watch(mousePos, (newVal) => {
+        linkWatch.value = watch(mousePos, (pos) => {
             if (!currentLink.value) {
                 return;
             }
-            // 拷贝值以避免坐标引用到响应式对象上 导致监听结束后线条会继续跟着鼠标位置变化
-            currentLink.value.changeEndPos(deepCopy(newVal));
-        }, { deep: true });
+            currentLink.value.changeEndPos({
+                x: pos.x,
+                y: pos.y,
+            });
+        }, { deep: true, immediate: true });
         // 更改鼠标状态
         canvasStore.currentPointer.state = PointerState.LINKING;
         // 监听鼠标抬起
@@ -74,7 +81,7 @@
             linkWatch.value = null;
         }
         // 记录连线数据
-        props.compData.links.push(new LinkLine({
+        props.compData.addLink(new LinkLine({
             compId: props.compData.id,
             targetCompId: currentLink.value.targetCompId,
             startPos: currentLink.value.startPos,

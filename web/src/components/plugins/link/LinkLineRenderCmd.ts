@@ -28,7 +28,7 @@ export class LinkLineRenderCmd extends BoardShapeCommand {
     }
 
     get selected(): boolean {
-        return useCanvasStore().currentPointer.selected.includes(this._linkLine.id);
+        return useCanvasStore().currentPointer.selected.includes(this._linkLine);
     }
 
     render(): BoardShape {
@@ -138,9 +138,8 @@ export class LinkLineRenderCmd extends BoardShapeCommand {
 
     select(removeOtherSelection: boolean = true, reverse: boolean = false): void {
         const canvasStore = useCanvasStore();
-        // 以线ID作为组件ID
-        const cmdId = this._linkLine.id;
-        canvasStore.selectComponent(cmdId, removeOtherSelection, reverse);
+        // 记录选中
+        canvasStore.selectComponent(this._linkLine, removeOtherSelection, reverse);
         // 触发重绘
         this.update?.();
         // 如果此时被选中则建立监听 当取消选中时再次触发重绘

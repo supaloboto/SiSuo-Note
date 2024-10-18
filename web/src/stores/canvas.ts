@@ -41,7 +41,7 @@ export class Pointer {
     // 对于视窗的y坐标
     clientY!: number;
     // 选中的组件
-    selected: string[] = [];
+    selected: any[] = [];
     // 悬浮的组件
     hover: string[] = [];
     // 是否聚焦在画布上 影响画布上的鼠标事件或快捷键是否触发
@@ -62,34 +62,34 @@ export const useCanvasStore = defineStore('canvas', () => {
     const tempComponent = ref<Component<any>>(null as any);
 
     /**
-     * 选中组件
-     * @param id 组件id
+     * 选中对象
+     * @param target 选中对象
      * @param removeOthers 是否移除其他选中
      * @param reverse 是否反选
      */
-    const selectComponent = (id: string, removeOthers: boolean = true, reverse: boolean = false) => {
+    const selectComponent = (target: any, removeOthers: boolean = true, reverse: boolean = false) => {
         if (removeOthers) {
             currentPointer.value.selected = [];
         }
-        if (!id) {
+        if (!target) {
             return;
         }
-        const index = currentPointer.value.selected.indexOf(id);
+        const index = currentPointer.value.selected.indexOf(target);
         if (reverse && index > -1) {
             currentPointer.value.selected.splice(index, 1);
         } else if (index === -1) {
-            currentPointer.value.selected.push(id);
+            currentPointer.value.selected.push(target);
         }
     };
     /**
-     * 取消选中组件
-     * @param id 组件id
+     * 取消选中对象
+     * @param target 取消选中对象
      */
-    const unSelectComponent = (id: string) => {
-        if (!id) {
+    const unSelectComponent = (target: any) => {
+        if (!target) {
             return;
         }
-        const index = currentPointer.value.selected.indexOf(id);
+        const index = currentPointer.value.selected.indexOf(target);
         if (index > -1) {
             currentPointer.value.selected.splice(index, 1);
         }

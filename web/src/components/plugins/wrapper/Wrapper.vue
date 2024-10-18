@@ -18,7 +18,12 @@
 
     // 获取鼠标位置
     const canvasStore = useCanvasStore();
-    const mousePos = computed(() => canvasStore.currentPointer);
+    const mousePos = computed(() => {
+        return {
+            x: canvasStore.currentPointer.x,
+            y: canvasStore.currentPointer.y
+        }
+    });
 
     /**
      * 开始调整大小

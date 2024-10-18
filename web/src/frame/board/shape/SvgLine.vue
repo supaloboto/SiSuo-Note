@@ -42,7 +42,12 @@
 
     /*------ 拖拽逻辑 ------*/
     // 从store中获取鼠标位置
-    const mousePos = computed(() => canvasStore.currentPointer);
+    const mousePos = computed(() => {
+        return {
+            x: canvasStore.currentPointer.x,
+            y: canvasStore.currentPointer.y
+        }
+    });
     // 拖拽监听
     const dragWatch = ref(null);
     // 拖拽事件 拖拽事件本来记录在path中 但随着拖拽进行path往往发生变化 所以在拖拽开始时记录拖拽事件

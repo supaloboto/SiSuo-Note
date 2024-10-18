@@ -12,8 +12,6 @@
   import { compRegis } from "@/components/index";
   import WrapperPlugin from "./plugins/wrapper/Wrapper.vue";
   import LinkLineHandler from "./plugins/link/LinkLineHandler.vue";
-  import { useKanbanStore } from "@/stores/kanban";
-  import { deepCopy } from "@/assets/utils/copy";
   import { LinkLineRenderCmd } from "@/components/plugins/link/LinkLineRenderCmd";
 
   const props = defineProps({
@@ -30,7 +28,7 @@
   const canvasStore = useCanvasStore();
 
   // 获取组件选中状态
-  const selected: ComputedRef<boolean> = computed(() => canvasStore.currentPointer.selected.includes(props.compData.id));
+  const selected: ComputedRef<boolean> = computed(() => canvasStore.currentPointer.selected.includes(props.compData));
   const showLinkHandler = computed(() => selected.value && canvasStore.currentPointer.selected.length === 1
     && canvasStore.currentPointer.state === PointerState.POINTING);
 
@@ -73,7 +71,12 @@
 
   /*------ 拖拽逻辑 ------*/
   // 从store中获取鼠标位置
-  const mousePos = computed(() => canvasStore.currentPointer);
+  const mousePos = computed(() => {
+    return {
+      x: canvasStore.currentPointer.x,
+      y: canvasStore.currentPointer.y
+    }
+  });
   // 拖拽监听
   const dragWatch = ref(null);
   /**
@@ -83,19 +86,22 @@
     if (canvasStore.currentPointer.selected.length > 1) {
       // 如果当前已经选中了多个组件 则加上此组件一起移动
       props.compData.select(false);
-      // todo 多个组件一起移动
     } else {
       // 如果当前没有选中或只选中了一个组件 则只移动此组件
       props.compData.select(true);
     }
-    // 拖拽开始 计算鼠标偏移量
-    const dragMouseOffset = {
-      x: mousePos.value.x - props.compData.pos.x,
-      y: mousePos.value.y - props.compData.pos.y,
+    // 拖拽开始 记录鼠标开始位置
+    const dragStartPos = {
+      x: mousePos.value.x,
+      y: mousePos.value.y,
     };
     // 建立监听 在拖拽中移动组件
     dragWatch.value = watch(mousePos, (pos) => {
-      props.compData.moveTo(pos.x - dragMouseOffset.x, pos.y - dragMouseOffset.y);
+      canvasStore.currentPointer.selected.filter(obj => obj instanceof Component).forEach((comp) => {
+        comp.move(pos.x - dragStartPos.x, pos.y - dragStartPos.y);
+      });
+      dragStartPos.x = pos.x;
+      dragStartPos.y = pos.y;
     }, { deep: true });
     // 因为有时候鼠标移动太快会导致监听不到mouseup事件 所以在document上建立监听
     document.addEventListener('mouseup', dragEnd);

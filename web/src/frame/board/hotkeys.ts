@@ -2,6 +2,8 @@ import { useCanvasStore } from "@/stores/canvas";
 import { useKanbanStore } from "@/stores/kanban";
 import { useDialogStore } from "@/stores/dialog";
 import { deepCopy } from "@/assets/utils/copy";
+import { Component } from "@/components/Component";
+import { LinkLine } from "@/components/plugins/link/LinkLine";
 
 /**
  * 快捷键
@@ -79,14 +81,17 @@ export class Hotkeys {
      * 删除组件
      */
     static deleteComponent() {
-        const kanbanStore = useKanbanStore();
         const canvasStore = useCanvasStore();
-        // 获取选中组件的ID 拷贝以保证遍历过程中删除不会出错
-        const selected: string[] = deepCopy(canvasStore.currentPointer.selected);
         // 删除选中组件
-        selected.forEach(id => {
-            kanbanStore.deleteComponent(id);
-        });
+        const selected = canvasStore.currentPointer.selected;
+        for (let i = selected.length - 1; i >= 0; i--) {
+            const target = selected[i];
+            if (target instanceof Component) {
+                (target as Component<any>).delete();
+            } else if (target instanceof LinkLine) {
+                (target as LinkLine).delete();
+            }
+        }
     }
 
 }

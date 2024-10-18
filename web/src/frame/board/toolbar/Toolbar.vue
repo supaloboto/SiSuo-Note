@@ -11,6 +11,7 @@
   import { getLongID } from "@/assets/utils/idworker";
   import { useKanbanStore } from "@/stores/kanban";
   import { PointerState, useCanvasStore } from "@/stores/canvas";
+  import { Component } from "@/components/Component";
 
   const $t = i18n.global.t;
   const canvasStore = useCanvasStore();
@@ -70,6 +71,7 @@
     const dropComp = () => {
       // 添加组件
       kanbanStore.addComponent(compPlaceholder);
+      (compPlaceholder as Component<any>).select();
       // 重置状态
       resetState();
     }

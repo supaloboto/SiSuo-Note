@@ -128,7 +128,7 @@ export class Component<T> {
      */
     select(removeOthers: boolean = true, reverse: boolean = false): boolean {
         const canvasStore = useCanvasStore();
-        canvasStore.selectComponent(this.id, removeOthers, reverse);
+        canvasStore.selectComponent(this, removeOthers, reverse);
         return true;
     }
 
@@ -137,7 +137,7 @@ export class Component<T> {
      */
     unselect(): boolean {
         const canvasStore = useCanvasStore();
-        canvasStore.unSelectComponent(this.id);
+        canvasStore.unSelectComponent(this);
         return true;
     }
 
@@ -159,6 +159,25 @@ export class Component<T> {
      */
     update(): Promise<any> {
         return useKanbanStore().updateComponent(this);
+    }
+
+    /**
+     * 添加连线
+     */
+    addLink(link: LinkLine): void {
+        this.links.push(link);
+        this.updatePosMatrix();
+    }
+
+    /**
+     * 删除连线
+     */
+    deleteLink(linkId: string): void {
+        const linkIndex = this.links.findIndex((link) => link.id === linkId);
+        if (linkIndex !== -1) {
+            this.links.splice(linkIndex, 1);
+        }
+        this.updatePosMatrix();
     }
 
 }

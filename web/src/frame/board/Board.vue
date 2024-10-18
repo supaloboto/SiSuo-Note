@@ -283,7 +283,7 @@
           // 如果通过了开始位置比对 则继续比对结束位置 结束位置小于选框的结束位置 则说明此位置在选框内
           if (location.endPos.x <= square.end.x && location.endPos.y <= square.end.y) {
             // 进行选中
-            canvasStore.currentPointer.selected.push(location.target.id);
+            canvasStore.currentPointer.selected.push(location.target);
           }
         }
       }

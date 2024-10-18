@@ -32,10 +32,11 @@
         canvasCmds.value.forEach((cmd) => {
             // 获取图形数据
             const shape: BoardShapeCanvas = cmd.render() as BoardShapeCanvas;
-            if (!shape) return;
-            // 绘制图形
-            shape.attachToCtx(ctx);
-            shape.print();
+            if (shape) {
+                // 绘制图形
+                shape.attachToCtx(ctx);
+                shape.print();
+            }
             // 在命令中记录此图形的更新方式
             cmd.update = () => {
                 drawShapes();
