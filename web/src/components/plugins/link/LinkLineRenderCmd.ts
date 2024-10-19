@@ -119,7 +119,10 @@ export class LinkLineRenderCmd extends BoardShapeCommand {
                         const { x, y } = mouse;
                         this._linkLine.changeStartPos({ x, y, direct: this._linkLine.startPos.direct });
                     })
-                    .setDragEndEvt(() => this.useSvg());
+                    .setDragEndEvt(() => {
+                        this.useSvg();
+                        this._linkLine.sourceComp?.updateLink();
+                    });
             }
             // 设置结束点拖动事件
             const endPointDot = shape.from(this._linkLine.endPos, endPointLineStyle).circle(4);
@@ -130,7 +133,10 @@ export class LinkLineRenderCmd extends BoardShapeCommand {
                         const { x, y } = mouse;
                         this._linkLine.changeEndPos({ x, y });
                     })
-                    .setDragEndEvt(() => this.useSvg());
+                    .setDragEndEvt(() => {
+                        this.useSvg();
+                        this._linkLine.sourceComp?.updateLink();
+                    });
             }
         }
         return this.shape;

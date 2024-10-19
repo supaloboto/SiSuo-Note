@@ -6,13 +6,12 @@
  -->
 <script setup lang="ts">
   import i18n from "@/assets/lang";
-  import { StyleValue, computed, ref, watch, type ComputedRef, onBeforeUnmount } from "vue";
+  import { StyleValue, computed, ref, watch, type ComputedRef, onBeforeUnmount, onMounted } from "vue";
   import { PointerState, useCanvasStore } from "@/stores/canvas";
   import { Component } from "@/components/Component";
   import { compRegis } from "@/components/index";
   import WrapperPlugin from "./plugins/wrapper/Wrapper.vue";
-  import LinkLineHandler from "./plugins/link/LinkLineHandler.vue";
-  import { LinkLineRenderCmd } from "@/components/plugins/link/LinkLineRenderCmd";
+  import LinkLinePlugin from "./plugins/link/LinkLinePlugin.vue";
 
   const props = defineProps({
     compData: { type: Component, required: true },
@@ -58,16 +57,6 @@
       marginLeft: `${rect.x}px`,
     };
   });
-
-  /*------ 处理组件连线 ------*/
-  // 注册此组件的连线
-  const links = computed(() => props.compData.links);
-  watch(links, (newLinks) => {
-    for (const link of newLinks) {
-      const lineRenderCmd = new LinkLineRenderCmd(link).useSvg();
-      canvasStore.boardShapeCmds.push(lineRenderCmd);
-    }
-  }, { immediate: true });
 
   /*------ 拖拽逻辑 ------*/
   // 从store中获取鼠标位置
@@ -182,8 +171,8 @@
     draggable="true">
     <!-- 四角定位 -->
     <WrapperPlugin v-show="selected" :compData="props.compData" />
-    <!-- 连线触发点 -->
-    <LinkLineHandler v-show="showLinkHandler" :compData="props.compData" />
+    <!-- 连线 -->
+    <LinkLinePlugin v-show="showLinkHandler" :compData="props.compData" />
     <!-- 组件 -->
     <component :is="compRegis[compData.compType].raw" :compData="compData" ref="compRef" class="component"
       :class="{ selected }"></component>

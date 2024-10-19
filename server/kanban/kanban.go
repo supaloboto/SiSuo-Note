@@ -41,6 +41,27 @@ type Component struct {
 	} `json:"rect"`
 	// 组件数据
 	Data map[string]any `json:"data"`
+	// 组件连线
+	Links []struct {
+		// 连线ID
+		Id string `json:"id"`
+		// 连线起始组件ID
+		CompId string `json:"compId"`
+		// 连线终止组件ID
+		TargetCompId string `json:"targetCompId"`
+		// 连线起始点
+		StartPos struct {
+			X      float32 `json:"x"`
+			Y      float32 `json:"y"`
+			Direct string  `json:"direct"`
+		} `json:"startPos"`
+		// 连线终止点
+		EndPos struct {
+			X      float32 `json:"x"`
+			Y      float32 `json:"y"`
+			Direct string  `json:"direct"`
+		} `json:"endPos"`
+	} `json:"links"`
 }
 
 /**

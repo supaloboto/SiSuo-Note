@@ -77,7 +77,16 @@ export const useKanbanStore = defineStore('kanban', () => {
             id: component.id,
             pos: component.pos,
             rect: component.rect,
-            data: component.data
+            data: component.data,
+            links: component.links.map((link) => {
+                return {
+                    id: link.id,
+                    compId: link.compId,
+                    targetCompId: link.targetCompId,
+                    startPos: link.startPos,
+                    endPos: link.endPos,
+                }
+            })
         } as Component<any>).then(() => {
             console.log("组件更新成功");
         });

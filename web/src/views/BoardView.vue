@@ -16,6 +16,8 @@
   import Dock from "@/frame/dock/Dock.vue";
   import { compRegis } from "@/components";
   import { getKanban } from "@/assets/api/kanban";
+  import { Component } from "@/components/Component";
+  import { LinkLine } from "@/components/plugins/link/LinkLine";
 
   onBeforeMount(() => {
     // 使用传递来的看板ID
@@ -33,16 +35,30 @@
     useKanbanStore().reset();
     // 获取看板数据
     getKanban(kanbanId as string).then((res) => {
-      // 将返回的组件列表数据转化为组件对象集合
-      const compList = res.componentList.map(obj => {
-        const compCLass = compRegis.value[obj?.compType]?.class;
-        return new compCLass(obj);
-      });
       // 更新store
       const kanbanStore = useKanbanStore();
       kanbanStore.kanbanId = res.kanbanId;
       kanbanStore.kanbanTitle = res.title;
+      // 将返回的组件列表数据转化为组件对象集合
+      // 连线数据需要等组件全部转化完成后再处理
+      const makeLink: Function[] = [];
+      const compList = res.componentList.map(obj => {
+        // 转化组件
+        const compCLass = compRegis.value[obj?.compType]?.class;
+        const comp = new compCLass(obj) as Component<any>;
+        // 转化连线
+        if (obj.links) {
+          makeLink.push(() => {
+            comp.links = obj.links.map(link => {
+              return new LinkLine(link);
+            });
+          });
+        }
+        return comp;
+      });
       kanbanStore.components = compList;
+      makeLink.forEach(func => func());
+      // 更新位置矩阵
       kanbanStore.updatePosMatrix();
     });
   });

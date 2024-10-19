@@ -51,6 +51,14 @@ export class LinkLine {
         }
     }
 
+    get sourceComp(): Component<any> {
+        return useKanbanStore().components.find((item) => item.id === this.compId) as Component<any>;
+    }
+
+    get targetComp(): Component<any> {
+        return useKanbanStore().components.find((item) => item.id === this.targetCompId) as Component<any>;
+    }
+
     erase() {
         this.renderCommand.erase();
     }
@@ -65,10 +73,7 @@ export class LinkLine {
             selected.splice(selectIndex, 1);
         }
         // 从组件中移除
-        const comp = useKanbanStore().components.find((item) => item.id === this.compId) as Component<any>;
-        if (comp) {
-            comp.deleteLink(this.id);
-        }
+        this.sourceComp?.deleteLink(this.id);
     }
 
     active() {
@@ -375,7 +380,7 @@ export class LinkLine {
             const assistPos = { x: 0, y: 0 };
             if (cmdDirection[0] === realDirectionOpposite[0] || cmdDirection[0] === realDirectionOpposite[1]) {
                 // 开始点方向错误 则沿结束点的方向 从开始点的位置出发 给开始点加一个辅助点
-                const comp = useKanbanStore().components.find((item) => item.id === this.compId) as any;
+                const comp = this.sourceComp;
                 const assistDirect = cmdDirection[1];
                 switch (assistDirect) {
                     case 'n':
@@ -401,7 +406,7 @@ export class LinkLine {
                 this.makeLineOfSameDirection(assistPos, endPos, cmdDirection, minDist);
             } else {
                 // 结束点方向错误 则沿开始点的方向 从组件位置出发 给结束点加一个辅助点
-                const comp = useKanbanStore().components.find((item) => item.id === this.targetCompId) as any;
+                const comp = this.targetComp;
                 const assistDirect = cmdDirection[0];
                 switch (assistDirect) {
                     case 'n':

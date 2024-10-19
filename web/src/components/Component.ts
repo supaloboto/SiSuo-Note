@@ -167,6 +167,15 @@ export class Component<T> {
     addLink(link: LinkLine): void {
         this.links.push(link);
         this.updatePosMatrix();
+        this.update();
+    }
+
+    /**
+    * 更新连线
+    */
+    updateLink(): void {
+        this.updatePosMatrix();
+        this.update();
     }
 
     /**
@@ -178,6 +187,7 @@ export class Component<T> {
             this.links.splice(linkIndex, 1);
         }
         this.updatePosMatrix();
+        this.update();
     }
 
 }
