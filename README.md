@@ -1,4 +1,4 @@
-# 思索笔记 | Sisuo-Note
+# 思索笔记 | SiSuo-Note
 主要基于以下开源项目构建：
 - [Gin](https://github.com/gin-gonic/gin)
 - [sonic](https://github.com/bytedance/sonic)
@@ -29,7 +29,7 @@ docker run -itd --name {容器名} -p {前端对外端口}:80 --privileged=true 
 ### 以打包代码方式部署 | Deploy By Building the Code
 - 拉取代码  
 ```
-git clone https://github.com/supaloboto/SiSuo-note.git
+git clone https://github.com/supaloboto/SiSuo-Note.git
 ```
 - 前端构建
 ```
