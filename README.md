@@ -33,7 +33,7 @@ git clone https://github.com/supaloboto/SiSuo-Note.git
 ```
 - 前端构建
 ```
-cd SiSuo-note/web
+cd SiSuo-Note/web
 
 ## 安装依赖
 yarn install
@@ -43,7 +43,7 @@ yarn run build
 ```
 - 后端构建
 ```
-cd SiSuo-note/server
+cd SiSuo-Note/server
 
 ## 安装依赖
 go mod download
