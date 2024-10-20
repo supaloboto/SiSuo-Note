@@ -235,6 +235,10 @@
   * 开始拖拽方法
   */
   const dragStart = () => {
+    // 如果鼠标处于创建状态则退出 避免与创建组件冲突
+    if (cursorCreatingMode.value) {
+      return;
+    }
     // 切换鼠标状态 在clickBlank中还原
     canvasStore.currentPointer.state = PointerState.SELECTING;
     // 新建选框绘制命令

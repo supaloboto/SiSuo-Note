@@ -59,6 +59,8 @@
   });
 
   /*------ 拖拽逻辑 ------*/
+  // 从store中获取鼠标状态 当鼠标状态为CREATING时不允许拖拽 以免与创建组件冲突
+  const mouseState = computed(() => canvasStore.currentPointer.state);
   // 从store中获取鼠标位置
   const mousePos = computed(() => {
     return {
@@ -168,7 +170,7 @@
   <!-- 外层容器 -->
   <div class="comp-div" :class="{ moving: !!dragWatch }" :style="compDivStyle" @dragstart.stop.prevent="dragStart"
     @click.stop="click" @dblclick="dblclick" @mouseup="mouseUp" @contextmenu.stop.prevent="contextMenu"
-    draggable="true">
+    :draggable="mouseState!==PointerState.CREATING">
     <!-- 四角定位 -->
     <WrapperPlugin v-show="selected" :compData="props.compData" />
     <!-- 连线 -->
