@@ -37,7 +37,7 @@ export default defineConfig({
         proxy: {
             '/api': {
                 //代理地址
-                target: 'http://localhost:8088',
+                target: 'http://localhost:8618',
                 // 开启websocket支持
                 ws: true,
                 changeOrigin: true,

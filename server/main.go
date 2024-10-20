@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"server/account"
 	"server/kanban"
+
+	"github.com/gin-gonic/gin"
 )
 
 var db = make(map[string]string)
@@ -73,7 +74,7 @@ func main() {
 	// 看板相关接口
 	kanban.SetupRouter(r)
 	// 建立服务
-	err := r.Run(":8088")
+	err := r.Run(":8618")
 	if err != nil {
 		fmt.Println("Server Run Error:", err)
 		return
