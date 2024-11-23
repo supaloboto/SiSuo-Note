@@ -90,6 +90,7 @@
     dragWatch.value = watch(mousePos, (pos) => {
       canvasStore.currentPointer.selected.filter(obj => obj instanceof Component).forEach((comp) => {
         comp.move(pos.x - dragStartPos.x, pos.y - dragStartPos.y);
+        comp.update();
       });
       dragStartPos.x = pos.x;
       dragStartPos.y = pos.y;
@@ -106,8 +107,6 @@
     dragWatch.value = null;
     // 移除document上的监听
     document.removeEventListener('mouseup', dragEnd);
-    // 更新组件数据
-    props.compData.update();
   }
 
   /*------ 鼠标动作交互 ------*/
@@ -170,7 +169,7 @@
   <!-- 外层容器 -->
   <div class="comp-div" :class="{ moving: !!dragWatch }" :style="compDivStyle" @dragstart.stop.prevent="dragStart"
     @click.stop="click" @dblclick="dblclick" @mouseup="mouseUp" @contextmenu.stop.prevent="contextMenu"
-    :draggable="mouseState!==PointerState.CREATING">
+    :draggable="mouseState !== PointerState.CREATING">
     <!-- 四角定位 -->
     <WrapperPlugin v-show="selected" :compData="props.compData" />
     <!-- 连线 -->

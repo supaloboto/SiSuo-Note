@@ -69,20 +69,26 @@ export class Component<T> {
             link.startPos.y += yMovement;
             link.refresh();
         });
-        // 更新连接到此组件的连线数据
-        //TODO 优化逻辑
+        // 更新连接到此组件的连线数据 记录需要更新的组件id
         const compList = useKanbanStore().components;
+        const compIdToUpdate = new Set<string>();
         for (const comp of compList) {
             for (const link of comp.links) {
                 if (link.targetCompId === this.id) {
                     link.endPos.x += xMovement;
                     link.endPos.y += yMovement;
                     link.refresh();
+                    compIdToUpdate.add(link.compId);
                 }
             }
         }
         // 更新坐标矩阵
         this.updatePosMatrix();
+        // 更新需要更新的组件
+        compIdToUpdate.forEach((compId) => {
+            const comp = compList.find((comp) => comp.id === compId);
+            comp?.update();
+        });
     }
 
     /**
@@ -157,8 +163,8 @@ export class Component<T> {
     /**
      * 更新组件信息
      */
-    update(): Promise<any> {
-        return useKanbanStore().updateComponent(this);
+    update(): void {
+        useKanbanStore().updateComponent(this);
     }
 
     /**

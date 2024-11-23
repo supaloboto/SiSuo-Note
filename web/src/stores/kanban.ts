@@ -67,29 +67,37 @@ export const useKanbanStore = defineStore('kanban', () => {
     }
 
     // 组件更新队列
-    const componentSaveQueue = ref<Component<any>[]>([]);
+    const componentSaveQueue = new Set<Component<any>>();
+    const compSaveTimer = ref<any>(null);
     // 更新组件
-    function updateComponent(component: Component<any>): Promise<any> {
+    function updateComponent(component: Component<any>): void {
         // 进入组件更新队列
-        // todo 组件更新队列
-        return kanbanApi.updateComponent({
-            compType: component.compType,
-            id: component.id,
-            pos: component.pos,
-            rect: component.rect,
-            data: component.data,
-            links: component.links.map((link) => {
-                return {
-                    id: link.id,
-                    compId: link.compId,
-                    targetCompId: link.targetCompId,
-                    startPos: link.startPos,
-                    endPos: link.endPos,
-                }
-            })
-        } as Component<any>).then(() => {
-            console.log("组件更新成功");
-        });
+        componentSaveQueue.add(component);
+        // 组件更新队列每秒保存一次
+        clearInterval(compSaveTimer.value);
+        compSaveTimer.value = setInterval(() => {
+            componentSaveQueue.forEach((component) => {
+                kanbanApi.updateComponent({
+                    compType: component.compType,
+                    id: component.id,
+                    pos: component.pos,
+                    rect: component.rect,
+                    data: component.data,
+                    links: component.links.map((link) => {
+                        return {
+                            id: link.id,
+                            compId: link.compId,
+                            targetCompId: link.targetCompId,
+                            startPos: link.startPos,
+                            endPos: link.endPos,
+                        }
+                    })
+                } as Component<any>).then(() => {
+                    console.log("组件更新成功");
+                });
+            });
+            componentSaveQueue.clear();
+        }, 1000);
     }
 
     // 组件和组件连线的坐标矩阵 用于快速查找坐标范围内的组件和连线
